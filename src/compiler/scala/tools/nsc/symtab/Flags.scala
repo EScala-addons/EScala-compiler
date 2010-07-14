@@ -38,21 +38,26 @@ object Flags extends reflect.generic.Flags {
 
   /** These modifiers can be set explicitly in source programs. */
   final val ExplicitFlags: Long =
+    // @LS events
     PRIVATE | PROTECTED | ABSTRACT | FINAL | SEALED |
-    OVERRIDE | CASE | IMPLICIT | ABSOVERRIDE | LAZY
+    OVERRIDE | CASE | IMPLICIT | ABSOVERRIDE | LAZY | IMPERATIVE | OBSERVABLE
 
   /** These modifiers appear in TreePrinter output. */
   final val PrintableFlags: Long =
     ExplicitFlags | LOCAL | SYNTHETIC | STABLE | CASEACCESSOR |
-    ACCESSOR | SUPERACCESSOR | PARAMACCESSOR | BRIDGE | STATIC | VBRIDGE | SPECIALIZED
+    ACCESSOR | SUPERACCESSOR | PARAMACCESSOR | BRIDGE | STATIC | VBRIDGE | SPECIALIZED |
+    // @LS events
+    EVENT | OBSERVABLE | INSTRUMENTED
 
   /** The two bridge flags */
   final val BRIDGES = BRIDGE | VBRIDGE
 
   final val FieldFlags: Long =
-    MUTABLE | CASEACCESSOR | PARAMACCESSOR | STATIC | FINAL | PRESUPER | LAZY
+    // @LS events
+    MUTABLE | CASEACCESSOR | PARAMACCESSOR | STATIC | FINAL | PRESUPER | LAZY | IMPERATIVE
 
-  final val AccessFlags: Long   = PRIVATE | PROTECTED | LOCAL
+  // @LS events
+  final val AccessFlags: Long   = PRIVATE | PROTECTED | LOCAL | OBSERVABLE
   final val VARIANCES     = COVARIANT | CONTRAVARIANT
   final val ConstrFlags: Long   = JAVA
 
@@ -104,6 +109,12 @@ object Flags extends reflect.generic.Flags {
     else if (flag == TRANS_FLAG  ) "<trans-flag>"
     else if (flag == LOCKED      ) "<locked>"
     else if (flag == LAZY        ) "lazy"
+    // @LS events
+    else if (flag == OBSERVABLE  ) "observable"
+    else if (flag == INSTRUMENTED) "<instrumented>"
+    else if (flag == IMPERATIVE  ) "imperative"
+    else if (flag == EVENT       ) "<event>"
+    // END @LS events
     else if (flag == SPECIALIZED ) "<specialized>"
     else flag.toInt match {
       case IMPLICIT      => "implicit"
@@ -153,5 +164,7 @@ object Flags extends reflect.generic.Flags {
     def isProtected = (mods & PROTECTED) != 0L
     def isVariable  = (mods &   MUTABLE) != 0L
     def isPublic    = !isPrivate && !isProtected
+    // @LS events
+    def isObservable = (mods & OBSERVABLE) != 0L
   }
 }

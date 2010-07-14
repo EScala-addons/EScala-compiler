@@ -156,6 +156,17 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     super.setPos(NoPosition)
     override def setPos(pos: Position) = { assert(false); this }
   }
+  
+  // @LS events
+  def EventDef(sym: Symbol, tparams: List[Tree], rhs: Tree): EventDef =
+    atPos(sym.pos) {
+      EventDef(Modifiers(sym.flags), sym.name,
+          tparams, rhs) setSymbol sym
+    }
+  
+  def EventDef(sym: Symbol, tparams: List[Tree]): EventDef =
+    EventDef(sym, tparams, EmptyTree)
+  // END @LS events
 
   def DefDef(sym: Symbol, mods: Modifiers, vparamss: List[List[ValDef]], rhs: Tree): DefDef =
     atPos(sym.pos) {
@@ -355,6 +366,10 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     def ModuleDef(tree: Tree, mods: Modifiers, name: Name, impl: Template): ModuleDef
     def ValDef(tree: Tree, mods: Modifiers, name: Name, tpt: Tree, rhs: Tree): ValDef
     def DefDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree): DefDef
+    // @LS events
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree): EventDef
+    def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree): ExecEvent
+    // END @LS events
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree): TypeDef
     def LabelDef(tree: Tree, name: Name, params: List[Ident], rhs: Tree): LabelDef
     def Import(tree: Tree, expr: Tree, selectors: List[ImportSelector]): Import
@@ -408,6 +423,12 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
       new ValDef(mods, name, tpt, rhs).copyAttrs(tree)
     def DefDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree) =
       new DefDef(mods, name, tparams, vparamss, tpt, rhs).copyAttrs(tree)
+    // @LS events
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree) = 
+      new EventDef(mods, name, tparams, rhs).copyAttrs(tree)
+    def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = 
+      new ExecEvent(kind, meth).copyAttrs(tree)
+    // END @LS events
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =
       new TypeDef(mods, name, tparams, rhs).copyAttrs(tree)
     def LabelDef(tree: Tree, name: Name, params: List[Ident], rhs: Tree) =
@@ -523,6 +544,18 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
          (vparamss0 == vparamss) && (tpt0 == tpt) && (rhs == rhs0) => t
       case _ => treeCopy.DefDef(tree, mods, name, tparams, vparamss, tpt, rhs)
     }
+    // @LS events
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree) = tree match {
+      case t @ EventDef(mods0, name0, tparams0, rhs0)
+      if (mods0 == mods) && (name0 == name) && (tparams0 == tparams) && 
+         (rhs0 == rhs) => t
+      case _ => treeCopy.EventDef(tree, mods, name, tparams, rhs)
+    }
+    def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = tree match {
+      case t @ ExecEvent(kind0, meth0) if (kind0 == kind) && (meth0 == meth) => t
+      case _ => treeCopy.ExecEvent(tree, kind, meth)
+    }
+    // END @LS events
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) = tree match {
       case t @ TypeDef(mods0, name0, tparams0, rhs0)
       if (mods0 == mods) && (name0 == name) && (tparams0 == tparams) && (rhs0 == rhs) => t
@@ -845,6 +878,15 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
         treeCopy.ExistentialTypeTree(tree, transform(tpt), transformTrees(whereClauses))
       case SelectFromArray(qualifier, selector, erasure) =>
         treeCopy.SelectFromArray(tree, transform(qualifier), selector, erasure)
+      // @LS events
+      case EventDef(mods, name, tparams, rhs) =>
+        atOwner(tree.symbol) {
+          treeCopy.EventDef(tree, transformModifiers(mods),
+                          name, transformTrees(tparams), transform(rhs))
+        }
+      case ExecEvent(kind, meth) =>
+        treeCopy.ExecEvent(tree, kind, transform(meth))
+      // END @LS events
     }
 
     def transformTrees(trees: List[Tree]): List[Tree] =

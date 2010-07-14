@@ -199,7 +199,8 @@ abstract class SuperAccessors extends transform.Transform with transform.TypingT
           else mayNeedProtectedAccessor(sel, List(EmptyTree), false)
 
         case Select(sup @ Super(_, mix), name) =>
-          if (sym.isValue && !sym.isMethod || sym.hasFlag(ACCESSOR)) {
+          // @LS events check that it is not an event
+          if (sym.isValue && !sym.isMethod || (sym.hasFlag(ACCESSOR) && !sym.hasFlag(EVENT))) {
             unit.error(tree.pos, "super may be not be used on "+
                        (if (sym.hasFlag(ACCESSOR)) sym.accessed else sym))
           }

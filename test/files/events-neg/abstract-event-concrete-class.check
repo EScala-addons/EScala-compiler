@@ -1,0 +1,4 @@
+abstract-event-concrete-class.scala:1: error: class C needs to be abstract, since value e is not defined
+class C {
+      ^
+one error found

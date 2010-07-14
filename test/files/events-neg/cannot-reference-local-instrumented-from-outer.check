@@ -1,0 +1,4 @@
+cannot-reference-local-instrumented-from-outer.scala:8: error: the argument must be an observable method or a local method
+  evt e[Int] = beforeExec(c1.m)
+                             ^
+one error found

@@ -1,0 +1,4 @@
+before m(4)
+Test reaction before: m(4)
+overriding observable method
+m(4)

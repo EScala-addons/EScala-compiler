@@ -1,0 +1,3 @@
+before m(4)
+m(4)
+after m(4) = 5

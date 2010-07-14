@@ -1,0 +1,4 @@
+abstract-no-type.scala:3: error: abstract and imperative events must have type declaration
+}
+^
+one error found

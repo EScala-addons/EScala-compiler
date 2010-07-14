@@ -1262,7 +1262,8 @@ trait Namers { self: Analyzer =>
      *   - declarations only in mixins or abstract classes (when not @native)
      */
     def validate(sym: Symbol) {
-      def checkNoConflict(flag1: Int, flag2: Int) {
+      // @LS events => parameter as Long instead of Int to allow to check the new modifiers
+      def checkNoConflict(flag1: Long, flag2: Long) {
         if (sym.hasFlag(flag1) && sym.hasFlag(flag2))
           context.error(sym.pos,
             if (flag1 == DEFERRED) 
@@ -1309,6 +1310,10 @@ trait Namers { self: Analyzer =>
       checkNoConflict(FINAL, SEALED)
       checkNoConflict(PRIVATE, PROTECTED)
       checkNoConflict(PRIVATE, OVERRIDE)
+      // @LS events
+      checkNoConflict(OBSERVABLE, PRIVATE)
+      checkNoConflict(OBSERVABLE, PROTECTED)
+      // END @LS events
       /* checkNoConflict(PRIVATE, FINAL) // can't do this because FINAL also means compile-time constant */
       checkNoConflict(ABSTRACT, FINAL)  // bug #1833
       checkNoConflict(DEFERRED, FINAL)

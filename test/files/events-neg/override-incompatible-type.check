@@ -1,0 +1,5 @@
+override-incompatible-type.scala:5: error: overriding lazy value e in class C1 of type scala.events.Event[Unit];
+ lazy value e has incompatible type
+  override evt e[Int] = emptyevent
+               ^
+one error found

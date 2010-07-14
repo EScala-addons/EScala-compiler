@@ -16,6 +16,10 @@ import collection.generic.CanBuildFrom
 import annotation.elidable
 import annotation.elidable.ASSERTION
 
+// @LS events
+import events.VarList
+// END @LS events
+
 /** The <code>Predef</code> object provides definitions that are
  *  accessible in all Scala compilation units without explicit
  *  qualification.
@@ -233,6 +237,55 @@ object Predef extends LowPriorityImplicits {
   implicit def shortArrayOps(xs: Array[Short]): ArrayOps[Short] = new ArrayOps.ofShort(xs)
   implicit def booleanArrayOps(xs: Array[Boolean]): ArrayOps[Boolean] = new ArrayOps.ofBoolean(xs)
   implicit def unitArrayOps(xs: Array[Unit]): ArrayOps[Unit] = new ArrayOps.ofUnit(xs)
+  
+  // @LS events
+  implicit def toUnitfun[T](f: () => T) =
+    f match {
+      case named: NamedFunction =>
+        new Function1[Unit,T] with NamedFunction {
+          def apply(u: Unit) = named()
+          def owner = named.owner
+          def name = named.name
+        }
+      case _ => (u: Unit) => f()
+    }
+  
+  implicit def toTupledFun2[T1,T2,R](f: (T1,T2) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun3[T1,T2,T3,R](f: (T1,T2,T3) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun4[T1,T2,T3,T4,R](f: (T1,T2,T3,T4) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun5[T1,T2,T3,T4,T5,R](f: (T1,T2,T3,T4,T5) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun6[T1,T2,T3,T4,T5,T6,R](f: (T1,T2,T3,T4,T5,T6) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun7[T1,T2,T3,T4,T5,T6,T7,R](f: (T1,T2,T3,T4,T5,T6,T7) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun8[T1,T2,T3,T4,T5,T6,T7,T8,R](f: (T1,T2,T3,T4,T5,T6,T7,T8) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun9[T1,T2,T3,T4,T5,T6,T7,T8,T9,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun10[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun11[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun12[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun13[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun14[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14) => R) = handleNamedFunctions(f, f.tupled)
+  implicit def toTupledFun15[T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,T15,R](f: (T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,T15) => R) = handleNamedFunctions(f, f.tupled)
+
+  @inline private[Predef] def handleNamedFunctions[T,R](f: Any, tupled: T => R): T => R = f match {
+    case named: NamedFunction =>
+      new Function1[T,R] with NamedFunction {
+        def apply(t: T) = tupled(t)
+        def owner = named.owner
+        def name = named.name
+      }
+    case _ => tupled
+  }
+
+  // convert any event to an event without parameter
+  implicit def dropParam[T](ev: scala.events.Event[T]) = ev.dropParam
+
+  /* the empty event never triggered */
+  object emptyevent extends scala.events.Event[Nothing] {
+    def +=(sink: Sink) { /* do nothing */ }
+    def -=(sink: Sink) { /* do nothing */ }
+    def +=(react: Nothing => Unit) { /* do nothing */ }
+    def -=(react: Nothing => Unit) { /* do nothing */ }
+  }
+  // END @LS events
 
   // Primitive Widenings --------------------------------------------------------------
 

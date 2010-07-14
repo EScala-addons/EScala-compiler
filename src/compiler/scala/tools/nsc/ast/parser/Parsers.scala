@@ -428,8 +428,9 @@ self =>
 /* -------------- TOKEN CLASSES ------------------------------------------- */
 
     def isModifier: Boolean = in.token match {
+      // @LS events
       case ABSTRACT | FINAL | SEALED | PRIVATE |
-           PROTECTED | OVERRIDE | IMPLICIT | LAZY => true
+           PROTECTED | OVERRIDE | IMPLICIT | LAZY | IMPERATIVE | OBSERVABLE => true
       case _ => false
     }
 
@@ -439,13 +440,15 @@ self =>
     }
 
     def isDefIntro: Boolean = in.token match {
+      // @LS events
       case VAL | VAR | DEF | TYPE | OBJECT |
-           CASEOBJECT | CLASS | CASECLASS | TRAIT => true
+           CASEOBJECT | CLASS | CASECLASS | TRAIT | EVENT => true
       case _ => false
     }
 
     def isDclIntro: Boolean = in.token match {
-      case VAL | VAR | DEF | TYPE => true
+      // @LS events
+      case VAL | VAR | DEF | TYPE | EVENT => true
       case _ => false
     }
 
@@ -455,7 +458,8 @@ self =>
       case CHARLIT | INTLIT | LONGLIT | FLOATLIT | DOUBLELIT |
            STRINGLIT | SYMBOLLIT | TRUE | FALSE | NULL | IDENTIFIER | BACKQUOTED_IDENT |
            THIS | SUPER | IF | FOR | NEW | USCORE | TRY | WHILE |
-           DO | RETURN | THROW | LPAREN | LBRACE | XMLSTART => true
+           // @LS events
+           DO | RETURN | THROW | LPAREN | LBRACE | XMLSTART | BEFORE | AFTER => true
       case _ => false
     }
 
@@ -1261,6 +1265,8 @@ self =>
     /* SimpleExpr    ::= new (ClassTemplate | TemplateBody)
      *                |  BlockExpr
      *                |  SimpleExpr1 [`_']
+     *                |  beforeExec `(' SimpleExpr `)' // @LS events
+     *                |  afterExec `(' SimpleExpr `)' // @LS events
      * SimpleExpr1   ::= literal
      *                |  xLiteral
      *                |  Path
@@ -1304,6 +1310,22 @@ self =>
           val (parents, argss, self, stats) = template(false)
           val cpos = r2p(tstart, tstart, in.lastOffset max tstart)
           makeNew(parents, self, stats, argss, npos, cpos)
+        // @LS events
+        case BEFORE =>
+          atPos(in.offset, in.skipToken) {
+            accept(LPAREN)
+            val before = ExecEvent(BeforeExec(), simpleExpr())
+            accept(RPAREN)
+            before
+          }
+        case AFTER =>
+          atPos(in.offset, in.skipToken) {
+            accept(LPAREN)
+            val after = ExecEvent(AfterExec(), simpleExpr())
+            accept(RPAREN)
+            after
+          }
+        // END @LS events
         case _ =>
           syntaxErrorOrIncomplete("illegal start of simple expression", true)
           errorTermTree
@@ -1660,11 +1682,14 @@ self =>
     }
 
     /** AccessModifier ::= (private | protected) [AccessQualifier]
+     *                  |  observable // @LS events
      */
     def accessModifierOpt(): Modifiers = normalize {
       in.token match {
         case PRIVATE => in.nextToken(); accessQualifierOpt(Modifiers(Flags.PRIVATE))
         case PROTECTED => in.nextToken(); accessQualifierOpt(Modifiers(Flags.PROTECTED))
+        // @LS events
+        case OBSERVABLE => in.nextToken(); Modifiers(Flags.OBSERVABLE | Flags.INSTRUMENTED)
         case _ => NoMods
       }
     }
@@ -1673,6 +1698,7 @@ self =>
      *  Modifier  ::= LocalModifier 
      *             |  AccessModifier
      *             |  override
+     *             |  imperative // @LS events
      */
     def modifiers(): Modifiers = normalize {
       def loop(mods: Modifiers): Modifiers = in.token match {
@@ -1692,6 +1718,12 @@ self =>
           loop(addMod(mods, Flags.IMPLICIT, tokenRange(in)))
         case LAZY =>
           loop(addMod(mods, Flags.LAZY, tokenRange(in)))
+        // @LS events
+        case IMPERATIVE =>
+          loop(addMod(mods, Flags.IMPERATIVE, tokenRange(in)))
+        case OBSERVABLE =>
+          loop(addMod(mods, Flags.OBSERVABLE | Flags.INSTRUMENTED, tokenRange(in)))
+        // END @LS events
         case NEWLINE =>
           in.nextToken()
           loop(mods)
@@ -2065,15 +2097,23 @@ self =>
      *           | var VarDef
      *           | def FunDef
      *           | type [nl] TypeDef
+     *           | evt EventDef // @LS events
      *           | TmplDef 
      *  Dcl    ::= val ValDcl
      *           | var ValDcl
      *           | def FunDcl
      *           | type [nl] TypeDcl
+     *           | evt EventDcl // @LS events
      */
     def defOrDcl(pos: Int, mods: Modifiers): List[Tree] = {
       if ((mods hasFlag Flags.LAZY) && in.token != VAL)
         syntaxError("lazy not allowed here. Only vals can be lazy", false)
+      // @LS events
+      if((mods hasFlag Flags.IMPERATIVE) && in.token != EVENT)
+        syntaxError("imperative not allowed here. Only evts can be imperative", false)
+      if((mods hasFlag Flags.OBSERVABLE) && in.token != DEF)
+        syntaxError("observable not allowed here. Only defs can be observable", false)
+      // END @LS events
       in.token match {
         case VAL =>
           patDefOrDcl(pos, mods withPosition(VAL, tokenRange(in)))
@@ -2083,6 +2123,9 @@ self =>
           List(funDefOrDcl(pos, mods withPosition(DEF, tokenRange(in))))
         case TYPE =>
           List(typeDefOrDcl(pos, mods withPosition(TYPE, tokenRange(in))))
+        // @LS events
+        case EVENT =>
+          List(eventDefOrDcl(pos, mods withPosition(EVENT, tokenRange(in))))
         case _ =>
           List(tmplDef(pos, mods))
       }
@@ -2225,6 +2268,91 @@ self =>
             }
           DefDef(newmods, name, tparams, vparamss, restype, rhs)
         }
+      }
+    }
+    
+    /** @LS events
+     *  EventDcl      ::= id [`[' SimpleType {`,' SimpleType} `]'] 
+     *  EventDef      ::= id [`[' SimpleType {`,' SimpleType} `]'] `=' EventExpr
+     *  EventExpr     ::= SimpleExpr
+     */
+    def eventDefOrDcl(start : Int, mods: Modifiers): Tree = {
+      in.nextToken
+      var newmods = mods | Flags.EVENT | Flags.LAZY
+      val nameOffset = in.offset
+      val name = ident()
+
+      def makeEventType(tparams: List[Tree], className: String) =
+        AppliedTypeTree(
+          Select(
+            Select(
+              Ident("scala"),
+              newTermName("events")
+            ),
+            newTypeName(className)
+          ),
+          List(makeTupleType(tparams, true))
+        )
+
+      def makeExplicitEvent(tparams: List[Tree]) =
+        Apply(
+          Select(
+            New(
+              AppliedTypeTree(
+                Select(
+                  Select(
+                    Ident("scala"),
+                    newTermName("events")
+                  ),
+                  newTypeName("ImperativeEvent")
+                ),
+                List(makeTupleType(tparams, true))
+              )
+            ),
+            nme.CONSTRUCTOR
+          ),
+          Nil
+        )
+
+      atPos(start, if (name == nme.ERROR) start else nameOffset) {
+        val types: Option[List[Tree]] =
+          if(in.token == LBRACKET)  
+            Some(surround(LBRACKET, RBRACKET)(commaSeparated(simpleType(false)),
+              List(errorTermTree)))
+          else 
+            None
+
+        val tpt =
+          if(types.isDefined && !newmods.hasFlag(Flags.IMPERATIVE))
+            makeEventType(types.get, "Event")
+          else if(types.isDefined && newmods.hasFlag(Flags.IMPERATIVE))
+            makeEventType(types.get, "ImperativeEvent")
+          else TypeTree()
+
+        val rhs = 
+          if (in.token == EQUALS) {
+            if(newmods hasFlag Flags.IMPERATIVE) {
+              syntaxError("imperative events may not have definition declaration", false)
+              EmptyTree
+            } else {
+              accept(EQUALS)
+              expr()
+            }
+          } else if(!types.isDefined) {
+            syntaxError("abstract and imperative events must have type declaration", false)
+            EmptyTree
+          } else if(!newmods.hasFlag(Flags.IMPERATIVE)) {
+            newmods = (newmods | Flags.DEFERRED) & ~Flags.LAZY
+            EmptyTree
+          } else { 
+            newmods = (newmods | Flags.FINAL) & ~Flags.IMPERATIVE
+            makeExplicitEvent(types.get)
+          }
+        //EventDef(newmods, name, types, rhs)
+        // TODO by making a value of an event at this point, we operate as a kind of preprocessor for
+        // events and we can not later generate good error messages. However we avoid to redefine how an
+        // event is typed as far as it behaves exactly like a lazy val.
+        ValDef(newmods, name, tpt, rhs)
       }
     }
 
@@ -2570,6 +2698,7 @@ self =>
      *  TemplateStat     ::= Import
      *                     | Annotations Modifiers Def
      *                     | Annotations Modifiers Dcl
+     *                     | Annotations Modifiers Event // @LS events
      *                     | Expr1
      *                     | super ArgumentExprs {ArgumentExprs}
      *                     |

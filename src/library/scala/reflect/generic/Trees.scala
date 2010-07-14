@@ -40,6 +40,11 @@ trait Trees { self: Universe =>
     def isSynthetic     = hasFlag(SYNTHETIC)
     def isTrait         = hasFlag(TRAIT    )
     def isVariable      = hasFlag(MUTABLE  )
+    // @LS events
+    def isImperative    = hasFlag(IMPERATIVE )
+    def isObservable    = hasFlag(OBSERVABLE )
+    def isEvent         = hasFlag(EVENT      )
+    // END @LS events
     
     def hasFlag(flag: Long) = (flag & flags) != 0L
     def & (flag: Long): Modifiers = {
@@ -185,7 +190,7 @@ trait Trees { self: Universe =>
       case DefDef(_, _, _, _, _, _) => "def"
       case ModuleDef(_, _, _)       => "object"
       case PackageDef(_, _)         => "package"
-      case ValDef(mods, _, _, _)    => if (mods.isVariable) "var" else "val"
+      case ValDef(mods, _, _, _)    => if (mods.isVariable) "var" /* @LS events */ else if(mods.isEvent) "evt" else "val"
       case _ => ""
     }
     final def hasFlag(mask: Long): Boolean = (mods.flags & mask) != 0L
@@ -225,6 +230,27 @@ trait Trees { self: Universe =>
    */
   case class DefDef(mods: Modifiers, name: Name, tparams: List[TypeDef],
                     vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree) extends ValOrDefDef
+                    
+  // @LS events                  
+  /** 
+   * Event definition
+   */
+  case class EventDef(mods: Modifiers, name: Name, tparams: List[Tree],
+                      rhs: Tree) extends MemberDef
+  
+  /**
+   * Kinds of method execution event references: before or after
+   */
+  abstract sealed class ExecEvtKind  
+  case class BeforeExec extends ExecEvtKind  
+  case class AfterExec extends ExecEvtKind
+  
+  /**
+   * Event expression referencing points before or after method execution
+   */
+  case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends TermTree
+  
+  // END @LS events
 
   /** Abstract type, type parameter, or type alias */
   case class TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) 
@@ -480,6 +506,16 @@ trait Trees { self: Universe =>
         atOwner(tree.symbol) {
           traverseTrees(mods.annotations); traverseTrees(tparams); traverseTreess(vparamss); traverse(tpt); traverse(rhs)
         }
+      // @LS events
+      case EventDef(mods, name, tparams, rhs) =>
+        atOwner(tree.symbol) {
+          traverseTrees(mods.annotations); traverseTrees(tparams); traverse(rhs)
+        }
+      case ExecEvent(kind, meth) =>
+        atOwner(tree.symbol) {
+          traverse(meth)
+        }      
+      // END @LS events
       case TypeDef(mods, name, tparams, rhs) =>
         atOwner(tree.symbol) {
           traverseTrees(mods.annotations); traverseTrees(tparams); traverse(rhs)

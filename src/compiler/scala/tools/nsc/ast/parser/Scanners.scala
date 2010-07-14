@@ -962,6 +962,13 @@ trait Scanners {
     enterKeyword(nme.SUPERTYPEkw, SUPERTYPE)
     enterKeyword(nme.HASHkw, HASH)
     enterKeyword(nme.ATkw, AT)
+    // @LS events
+    enterKeyword(nme.OBSERVABLEkw, OBSERVABLE)
+    enterKeyword(nme.EVENTkw, EVENT)
+    enterKeyword(nme.BEFOREkw, BEFORE)
+    enterKeyword(nme.AFTERkw, AFTER)
+    enterKeyword(nme.IMPERATIVEkw, IMPERATIVE)
+    // END @LS events
   }
 
   { // initialization

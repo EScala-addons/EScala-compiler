@@ -283,6 +283,14 @@ abstract class TreeBrowsers {
 
       case DefDef(mods, name, tparams, vparams, tpe, rhs) =>
         ("DefDef", name)
+        
+      // @LS events
+      case EventDef(mods, name, tparams, rhs) =>
+        ("EventDef", name)
+
+      case ExecEvent(kind, meth) =>
+        ("ExecEvent", EMPTY)
+      // END @LS events
 
       case TypeDef(mods, name, tparams, rhs) =>
         ("TypeDef", name)
@@ -424,6 +432,14 @@ abstract class TreeBrowsers {
 
       case DefDef(mods, name, tparams, vparams, tpe, rhs) =>
         mods.annotations ::: tpe :: rhs :: vparams.flatten ::: tparams
+        
+      // @LS events
+      case EventDef(mods, name, tparams, rhs) =>
+        mods.annotations ::: tparams ::: List(rhs)
+
+      case ExecEvent(kind, meth) =>
+        List(meth)
+      // END @LS events
 
       case TypeDef(mods, name, tparams, rhs) =>
         mods.annotations ::: rhs :: tparams // @M: was List(rhs, lobound)

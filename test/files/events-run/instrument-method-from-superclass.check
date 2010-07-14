@@ -1,0 +1,5 @@
+before m(4)
+test before m(4)
+m(4)
+after m(4): res = 5
+test after m(4): res = 5

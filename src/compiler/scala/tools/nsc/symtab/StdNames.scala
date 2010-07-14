@@ -69,6 +69,14 @@ trait StdNames extends reflect.generic.StdNames { self: SymbolTable =>
     val SUPERTYPEkw = newTermName(">:")
     val HASHkw = newTermName("#")
     val ATkw = newTermName("@")
+    
+    // @LS events
+    val OBSERVABLEkw = newTermName("observable")
+    val EVENTkw = newTermName("evt")
+    val BEFOREkw = newTermName("beforeExec")
+    val AFTERkw = newTermName("afterExec")
+    val IMPERATIVEkw = newTermName("imperative")
+    // END @LS events
 
     val LOCALDUMMY_PREFIX_STRING = "<local "
     val SUPER_PREFIX_STRING = "super$"
@@ -266,6 +274,9 @@ trait StdNames extends reflect.generic.StdNames { self: SymbolTable =>
     val Tuple = newTermName("Tuple")
     val Tuple2 = newTermName("Tuple2")
     val Unit = newTermName("Unit")
+    // @LS events
+    val Event = newTermName("Event")
+    // END @LS events
 
     val apply = newTermName("apply")
     val arrayValue = newTermName("arrayValue")

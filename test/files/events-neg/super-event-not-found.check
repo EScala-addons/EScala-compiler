@@ -1,0 +1,4 @@
+super-event-not-found.scala:4: error: event e overrides nothing
+  override imperative evt e[Unit]
+                          ^
+one error found

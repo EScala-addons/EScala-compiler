@@ -285,6 +285,41 @@ abstract class UnCurry extends InfoTransform with TypingTransformers {
       case _ => 
         fun
     }
+    
+    /**
+     * @LS events
+     * Extracts the owner reference and the method name for this Function object.
+     */
+    private def extractOwnerAndMethod(fun: Function): Option[(Tree, Literal)] = {
+      def extractIntern(tree: Tree, vparams: List[ValDef], funSym: Symbol): Option[(Tree, Literal)] = {
+        tree match {
+          // with prefix
+          case Select(owner: Ident,name) =>
+            // only take direct methods not applied methods
+            val ownerSym = owner.symbol
+            if(ownerSym != null && ownerSym.owner != funSym && !ownerSym.isModule)
+              // we only extract if the owner is not a local variable to the apply method
+              Some(owner, buildMethLiteral(name, vparams))
+            else
+              None
+           case Select(owner: This, name) =>
+            Some(owner, buildMethLiteral(name, vparams))
+          // partially applied curried function
+          // TODO is this correct???
+          case Apply(meth, arg) => 
+            extractIntern(meth, vparams, funSym)
+          case _ => None
+        }
+      }
+      def buildMethLiteral(name: Name, vparams: List[ValDef]) = {
+        Literal(name.toString + vparams.map(vd => vd.tpt).mkString("(", ",", ")"))
+      }
+      fun match {
+        case Function(vparams, Apply(meth, args)) =>
+          extractIntern(meth, vparams, fun.symbol)
+        case _ => None
+      }
+    }
         
 
     /*  Transform a function node (x_1,...,x_n) => body of type FunctionN[T_1, .., T_N, R] to
@@ -313,6 +348,18 @@ abstract class UnCurry extends InfoTransform with TypingTransformers {
      *  However, if one of the patterns P_i if G_i is a default pattern, generate instead
      *
      *      def isDefinedAt(x: T): boolean = true
+     *      
+     *  @LS events
+     *  If the experimental option was set, transform to
+     *    class $anon() extends Object() with FunctionN[T_1, .., T_N, R] with NamedFunction with ScalaObject {
+     *      def apply(x_1: T_1, ..., x_N: T_n): R = body
+     *      override def name: String = "method(T_1, ..., T_2)"
+     *      override def owner: Any = ownerRef
+     *    }
+     *    new $anon()
+     *  where "method" and ownerRef are the called method name and the object on which the method is called.
+     *  These information are retrieved from the body if it is a simple call to the method.
+     *  END @LS events
      */
     def transformFunction(fun: Function): Tree = {
       val fun1 = deEta(fun)
@@ -324,9 +371,17 @@ abstract class UnCurry extends InfoTransform with TypingTransformers {
       else {
         val (formals, restpe) = (targs.init, targs.last)
         val anonClass = owner newAnonymousFunctionClass fun.pos setFlag (FINAL | SYNTHETIC | inConstructorFlag)
+        // @LS events
+        lazy val extracted = extractOwnerAndMethod(fun)
+        val namedParent =
+          if(!global.settings.noevents.value && extracted.isDefined)
+            List(definitions.getClass("scala.NamedFunction").tpe)
+          else
+            Nil
         def parents =
-          if (isFunctionType(fun.tpe)) List(abstractFunctionForFunctionType(fun.tpe))
-          else List(ObjectClass.tpe, fun.tpe)
+          if (isFunctionType(fun.tpe)) abstractFunctionForFunctionType(fun.tpe) :: namedParent
+          else ObjectClass.tpe :: fun.tpe :: namedParent
+        // END @LS events
           
         anonClass setInfo ClassInfoType(parents, new Scope, anonClass)
         val applyMethod = anonClass.newMethod(fun.pos, nme.apply) setFlag FINAL
@@ -344,6 +399,20 @@ abstract class UnCurry extends InfoTransform with TypingTransformers {
           }
         }
         
+        // @LS events
+        def ownerDefDef(methOwner: Tree) = {
+          val ownerMethod = anonClass.newMethod(fun.pos, newTermName("owner")) setFlag FINAL setFlag OVERRIDE
+          ownerMethod setInfo MethodType(Nil, definitions.AnyClass.tpe)
+          anonClass.info.decls enter ownerMethod
+          DefDef(Modifiers(FINAL | OVERRIDE), newTermName("owner"), Nil, Nil, TypeTree(definitions.AnyClass.tpe), methOwner.duplicate) setSymbol ownerMethod
+        }
+        def nameDefDef(methName: Literal) = {
+          val nameMethod = anonClass.newMethod(fun.pos, newTermName("name")) setFlag FINAL setFlag OVERRIDE
+          nameMethod setInfo MethodType(Nil, definitions.StringClass.tpe)
+          anonClass.info.decls enter nameMethod
+          DefDef(Modifiers(FINAL | OVERRIDE), newTermName("name"), Nil, Nil, TypeTree(definitions.StringClass.tpe), methName) setSymbol nameMethod
+        }
+        // END @LS events
         def applyMethodDef() = {
           val body = if (isPartial) mkUnchecked(fun.body) else fun.body
           DefDef(Modifiers(FINAL), nme.apply, Nil, List(fun.vparams), TypeTree(restpe), body) setSymbol applyMethod
@@ -369,9 +438,20 @@ abstract class UnCurry extends InfoTransform with TypingTransformers {
           ))
         }
           
+        // @LS events
+        val namedFunctionsDef = 
+          if(!global.settings.noevents.value) {
+            extracted match {
+              case Some((methOwner, methName)) => List(ownerDefDef(methOwner), nameDefDef(methName))
+              case _ => Nil
+            }
+          } else
+            Nil
+
         val members =
-          if (isPartial) List(applyMethodDef, isDefinedAtMethodDef)
-          else List(applyMethodDef)
+          if (isPartial) applyMethodDef :: isDefinedAtMethodDef :: Nil
+          else applyMethodDef :: namedFunctionsDef
+        // END @LS events
 
         localTyper.typed {
           atPos(fun.pos) {

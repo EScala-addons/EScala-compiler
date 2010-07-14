@@ -107,14 +107,25 @@ object Tokens extends Tokens {
   final val FORSOME = 59
   final val REQUIRES = 60
   final val LAZY = 61
+  
+  // @LS events
+  final val OBSERVABLE = 62
+  final val EVENT = 63
+  final val BEFORE = 64
+  final val AFTER = 65
+  final val IMPERATIVE = 66
+  // END @LS events
 
   def isKeyword(code : Int) =
-    code >= IF && code <= LAZY
+    // @LS events
+    code >= IF && code <= IMPERATIVE
   
   @switch def isDefinition(code : Int) = code match {
     case CLASS|TRAIT|OBJECT => true
     case CASECLASS|CASEOBJECT => true
     case DEF|VAL|VAR => true
+    // @LS events
+    case EVENT => true
     case TYPE => true
     case _ => false
   }

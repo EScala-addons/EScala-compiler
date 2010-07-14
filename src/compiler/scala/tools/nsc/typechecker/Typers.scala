@@ -1565,6 +1565,76 @@ trait Typers { self: Analyzer =>
         }
       treeCopy.ValDef(vdef, typedMods, vdef.name, tpt1, checkDead(rhs1)) setType NoType
     }
+    
+    // @LS events
+    /*
+     * Generate the event type for the parameter types
+     */
+    private def genEventType(tparams: List[Tree]): Type =
+      appliedType(definitions.getClass("scala.events.Event").tpe, tparams map (_.tpe))
+
+    /*
+     * Generate a tree refering to the empty event
+     */
+    private def emptyEvent(pos: Position) =
+      atPos(pos) {
+        Select(
+          Select(
+            Ident("scala"),
+            newTermName("events")
+          ),
+          newTypeName("EmptyEvent")
+        )
+      }
+
+    def typedExecEvent(ev: ExecEvent, mode: Int, pt: Type): Tree = {
+      val typedRef = typed(ev.meth, FUNmode, WildcardType)
+
+      val typedMeth = 
+        typedRef match {
+            case Apply(tree, List()) => tree
+            case _ => typedRef
+        }
+      
+      val dataType : Type =
+        typedMeth.tpe match {
+          case meth @ MethodType(params, rtpe) =>
+            //val method = params.last.owner
+            val paramType = 
+              params.length match {
+                case 0 => UnitClass.tpe  
+                case 1 => meth.paramTypes.head
+                case _ => tupleType(meth.paramTypes)
+            }
+            ev.kind match {
+                case BeforeExec() => paramType
+                case AfterExec() => tupleType(List(paramType, rtpe))
+            }
+          case _ => 
+            error(typedMeth.pos, "a reference to a method expected")
+            ErrorType
+      }
+      
+      val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
+
+      val sym = typedMeth.symbol      
+      //check that the method is observable or defined in the class or in a parent class
+      val isLocal = typedMeth match {
+        case Select(This(_), _) | Select(Super(_, _), _) => true
+        case _ => false
+      }
+      if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
+        error(typedMeth.pos, "the argument must be an observable method or a local method")
+      }
+      
+      // eventType = Event[dataType]      
+      val eventType = typeRef(ImperativeEventClass.typeConstructor.prefix, 
+                              ImperativeEventClass, 
+                              List(dataType))
+      
+      typedEvent.setType(eventType)
+    }
+    // END @LS events
 
     /** Enter all aliases of local parameter accessors.
      *
@@ -3777,6 +3847,15 @@ trait Typers { self: Analyzer =>
 
         case ddef @ DefDef(_, _, _, _, _, _) => 
           newTyper(context.makeNewScope(tree, sym)).typedDefDef(ddef)
+          
+        // @LS events
+        /*case edef @ EventDef(_, _, _, _) =>
+          // TODO if we allow variable binding, similar to DefDef case
+          typedEvtDef(edef)*/
+
+        case ev @ ExecEvent(kind, meth) =>
+          typedExecEvent(ev, mode, pt)       
+        // END @LS events
 
         case tdef @ TypeDef(_, _, _, _) =>
           newTyper(context.makeNewScope(tree, sym)).typedTypeDef(tdef)

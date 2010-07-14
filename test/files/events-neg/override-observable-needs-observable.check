@@ -1,0 +1,5 @@
+override-observable-needs-observable.scala:5: error: overriding method m in class C1 of type ()Unit;
+ method m has weaker access privileges; it should be observable
+  override def m() = ()
+               ^
+one error found
