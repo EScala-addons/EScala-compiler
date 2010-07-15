@@ -135,7 +135,7 @@ abstract class ObservableInstrumentation extends Transform
             val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
             
             // the flags for the implementation method
-            var implMod = Modifiers(PROTECTED | SYNTHETIC)
+            var implMod = Modifiers(PROTECTED | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
             if (overrideInstr && sym.isOverride) {
               implMod = implMod | OVERRIDE  
             }
@@ -424,7 +424,7 @@ abstract class ObservableInstrumentation extends Transform
     // generate an imperative event declaration initialized with the given body
     private def genEvent(tree: DefDef, modifiers: Modifiers, name: Name, tpt: Tree, body: Tree, pos: Position) = {
       
-      val flags = modifiers | LAZY /*| SYNTHETIC*/ | EVENT
+      val flags = modifiers | LAZY | EVENT | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC)
       
       val event = ValDef(flags, name, tpt, body)
       atPos(pos)(event)
