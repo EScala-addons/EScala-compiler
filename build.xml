@@ -755,12 +755,12 @@ QUICK BUILD (QUICK)
     <taskdef name="quick-bin" classname="scala.tools.ant.ScalaTool" classpathref="quick.bin.classpath"/>
     <mkdir dir="${build-quick.dir}/bin"/>
     <quick-bin
-      file="${build-quick.dir}/bin/scala"
+      file="${build-quick.dir}/bin/escala"
       class="scala.tools.nsc.MainGenericRunner"
       javaFlags="${java.flags}"
       classpathref="quick.bin.classpath"/>
     <quick-bin
-      file="${build-quick.dir}/bin/scalac"
+      file="${build-quick.dir}/bin/escalac"
       class="scala.tools.nsc.Main"
       javaFlags="${java.flags}"
       classpathref="quick.bin.classpath"/>
@@ -779,8 +779,8 @@ QUICK BUILD (QUICK)
       class="scala.tools.scalap.Main"
       javaFlags="${java.flags}"
       classpathref="quick.bin.classpath"/>
-    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scala"/>
-    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scalac"/>
+    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/escala"/>
+    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scaladoc"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/fsc"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scalap"/>
@@ -922,11 +922,11 @@ PACKED QUICK BUILD (PACK)
     </taskdef>
     <mkdir dir="${build-pack.dir}/bin"/>
     <pack-bin
-      file="${build-pack.dir}/bin/scala"
+      file="${build-pack.dir}/bin/escala"
       class="scala.tools.nsc.MainGenericRunner"
       javaFlags="${java.flags}"/>
     <pack-bin
-      file="${build-pack.dir}/bin/scalac"
+      file="${build-pack.dir}/bin/escalac"
       class="scala.tools.nsc.Main"
       javaFlags="${java.flags}"/>
     <pack-bin
@@ -941,8 +941,8 @@ PACKED QUICK BUILD (PACK)
       file="${build-pack.dir}/bin/scalap"
       class="scala.tools.scalap.Main"
       javaFlags="${java.flags}"/>
-    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scala"/>
-    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scalac"/>
+    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/escala"/>
+    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scaladoc"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/fsc"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scalap"/>
@@ -1581,6 +1581,27 @@ BOOTRAPING TEST AND TEST SUITE
     </partest>
   </target>
 
+  <!-- @LS events -->
+  <target name="test.events.suite" depends="pack.done">
+     <property name="partest.srcdir" value="files" />
+     <partest showlog="yes" erroronfailed="yes" javacmd="${java.home}/bin/java"
+              timeout="2400000" javaccmd="${javac.cmd}" 
+              srcdir="${partest.srcdir}"
+              scalacopts="${scalac.args.optimise}">
+        <compilationpath>
+          <path refid="pack.classpath"/>
+          <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
+        </compilationpath>
+        <negtests  dir="${partest.dir}/${partest.srcdir}/events-neg" includes="*.scala"/>
+        <runtests  dir="${partest.dir}/${partest.srcdir}">
+          <include name="events-run/**/*.scala"/>
+          <exclude name="events-run/**/mixin-events.scala"/>
+        </runtests>
+      </partest>
+    </target>
+    <!-- END @LS events -->
+
+
   <target name="test.done" depends="test.suite, test.continuations.suite, test.stability"/>
 
 <!-- ===========================================================================
@@ -1600,8 +1621,8 @@ DISTRIBUTION
     <copy toDir="${dist.dir}/bin">
       <fileset dir="${build-pack.dir}/bin"/>
     </copy>
-    <chmod perm="ugo+rx" file="${dist.dir}/bin/scala"/>
-    <chmod perm="ugo+rx" file="${dist.dir}/bin/scalac"/>
+    <chmod perm="ugo+rx" file="${dist.dir}/bin/escala"/>
+    <chmod perm="ugo+rx" file="${dist.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/scaladoc"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/fsc"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/scalap"/>
