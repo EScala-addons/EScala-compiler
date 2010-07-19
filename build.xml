@@ -1593,8 +1593,9 @@ BOOTRAPING TEST AND TEST SUITE
           <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
         </compilationpath>
         <negtests  dir="${partest.dir}/${partest.srcdir}/events-neg" includes="*.scala"/>
+        <postests  dir="${partest.dir}/${partest.srcdir}/events-pos" includes="*.scala"/>
         <runtests  dir="${partest.dir}/${partest.srcdir}">
-          <include name="events-run/**/*.scala"/>
+          <include name="events-run/*.scala"/>
           <exclude name="events-run/**/mixin-events.scala"/>
         </runtests>
       </partest>
