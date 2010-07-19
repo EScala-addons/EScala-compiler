@@ -304,17 +304,15 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   var printTypings = settings.Ytyperdebug.value
  
   // @LS events
+  object markerPhases extends {
+    val global: Global.this.type = Global.this
+  } with MarkerPhases
   // phaseName ="localinstrumentation"
-  /*object localinstrumentation extends {
+  /*object instrumentMarker extends {
     val global: Global.this.type = Global.this
     val runsAfter = List[String]("typer")
     val runsRightAfter = None
-  } with LocalInstrumentation*/
-  object instrumentMarker extends {
-    val global: Global.this.type = Global.this
-    val runsAfter = List[String]("typer")
-    val runsRightAfter = None
-  } with InstrumentMarker
+  } with InstrumentMarker*/
 
   // phaseName = "observables"
   object observables extends {
@@ -545,8 +543,8 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     phasesSet += analyzer.packageObjects    //   consistency check after refchecks would fail.
     phasesSet += analyzer.typerFactory
     // @LS events
-    //phasesSet += localinstrumentation       // prepare instrumentation of methods
-    phasesSet += instrumentMarker           // marks the methods that must be instrumented. New version allowing to correct the fact that the order in which the classes are declared is important
+    phasesSet += markerPhases.referencesCollecter // collect the referenced methods
+    phasesSet += markerPhases.instrumentMarker    // marks the methods that must be instrumented
     phasesSet += observables                // instrument observable methods
     phasesSet += execevents                 // replace exec events references by the generated event
     // END @LS events
