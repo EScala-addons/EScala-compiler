@@ -22,13 +22,18 @@ class ModelFactory(val global: Global, val settings: doc.Settings) { thisFactory
   def templatesCount = templatesCache.size - droppedPackages
 
   private var modelFinished = false
+  private var universe: Universe = null
   
   /**  */
   def makeModel: Universe = {
-    val rootPackage =
-      makeRootPackage getOrElse { throw new Error("no documentable class found in compilation units") }
-    val universe = new Universe(settings, rootPackage)
+    val universe = new Universe { thisUniverse =>
+      thisFactory.universe = thisUniverse
+      val settings = thisFactory.settings
+      val rootPackage =
+        makeRootPackage getOrElse { throw new Error("no documentable class found in compilation units") }
+    }
     modelFinished = true
+    thisFactory.universe = null
     universe
   }
 
@@ -52,6 +57,7 @@ class ModelFactory(val global: Global, val settings: doc.Settings) { thisFactory
     def inTemplate: TemplateImpl = inTpl
     def toRoot: List[EntityImpl] = this :: inTpl.toRoot
     def qualifiedName = name
+    val universe = thisFactory.universe
   }
 
   /** Provides a default implementation for instances of the `WeakTemplateEntity` type. It must be instantiated as a
@@ -119,7 +125,14 @@ class ModelFactory(val global: Global, val settings: doc.Settings) { thisFactory
     def inheritedFrom =
       if (inTemplate.sym == this.sym.owner || inTemplate.sym.isPackage) Nil else
         makeTemplate(this.sym.owner) :: (sym.allOverriddenSymbols map { os => makeTemplate(os.owner) })
-    def resultType = makeType(sym.tpe.finalResultType, inTemplate, sym)
+    def resultType = {
+      def resultTpe(tpe: Type): Type = tpe match { // similar to finalResultType, except that it leaves singleton types alone
+        case PolyType(_, res) => resultTpe(res)
+        case MethodType(_, res) => resultTpe(res)
+        case _ => tpe
+      }
+      makeType(resultTpe(sym.tpe), inTemplate, sym)
+    }
     def isDef = false
     def isVal = false
     def isLazyVal = false
@@ -443,7 +456,14 @@ class ModelFactory(val global: Global, val settings: doc.Settings) { thisFactory
   def makeType(aType: Type, inTpl: => TemplateImpl, dclSym: Symbol): TypeEntity = {
     def ownerTpl(sym: Symbol): Symbol =
       if (sym.isClass || sym.isModule || sym == NoSymbol) sym else ownerTpl(sym.owner)
-    makeType(aType.asSeenFrom(inTpl.sym.thisType, ownerTpl(dclSym)), inTpl)
+    val tpe =
+      if (thisFactory.settings.useStupidTypes.value) aType else {
+        def ownerTpl(sym: Symbol): Symbol =
+          if (sym.isClass || sym.isModule || sym == NoSymbol) sym else ownerTpl(sym.owner)
+        val fixedSym = if (inTpl.sym.isModule) inTpl.sym.moduleClass else inTpl.sym
+        aType.asSeenFrom(fixedSym.thisType, ownerTpl(dclSym))
+      }
+    makeType(tpe, inTpl)
   }
   
   /** */
