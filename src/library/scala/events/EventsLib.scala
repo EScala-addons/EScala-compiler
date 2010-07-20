@@ -586,6 +586,7 @@ class Variable[T](private var v: T) {
 
 object Variable {
   def apply[T](v: T) = new Variable(v)
+  def unapply[T](v: Variable[T]): Option[T] = Some(v())
 }
 
 /*
