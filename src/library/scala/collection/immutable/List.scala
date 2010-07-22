@@ -50,6 +50,10 @@ sealed abstract class List[+A] extends LinearSeq[A]
 
   import scala.collection.{Iterable, Traversable, Seq, IndexedSeq}
 
+  // @LS events
+  def any[T >: A, U](evf: T => scala.events.Event[U]) = new scala.events.EventNodeListExists[T,U](this, evf)
+  // END @LS events
+
   def isEmpty: Boolean
   def head: A
   def tail: List[A]
