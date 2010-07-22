@@ -76,6 +76,12 @@ trait Event[+T] {
   def map[U, S >: T](mapping: S => U) = new EventNodeMap[S, U](this, mapping)
 
   /**
+   * Event is triggered if the first event was already triggered but not the second one yet
+   */
+   def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
+   def between[U, V, S >: T](ep: (Event[U], Event[V])) = new BetweenEventNode[S,U,V](this, ep._1, ep._2)
+
+  /**
    * Drop the event parameter; equivalent to map((_: Any) => ())
    */
   def dropParam[S >: T] = new EventNodeMap[S, Unit](this, (_: Any) => ())
@@ -133,12 +139,12 @@ abstract class EventNode[T] extends Event[T] {
   /**
    * Deploy the event (i.e. registers to the referenced events)
    */
-  protected def deploy
+  protected def deploy: Unit
 
   /**
    * Undeploy the event (i.e. unregisters from the referenced events)
    */
-  protected def undeploy
+  protected def undeploy: Unit
 
   def reactions(id: Int, v: T, reacts: ListBuffer[() => Unit]) {
     // collect the reactions of this event
