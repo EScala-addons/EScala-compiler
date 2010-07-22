@@ -278,8 +278,8 @@ object Predef extends LowPriorityImplicits {
   // convert any event to an event without parameter
   implicit def dropParam[T](ev: scala.events.Event[T]) = ev.dropParam
 
-  implicit def toVariable[T](v: T) = Variable(v)
-  implicit def fromVariable[T](v: Variable[T]) = v()
+  //implicit def toVariable[T](v: T) = Variable(v)
+  //implicit def fromVariable[T](v: Variable[T]) = v()
 
   /* the empty event never triggered */
   object emptyevent extends scala.events.Event[Nothing] {
