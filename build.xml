@@ -772,7 +772,7 @@ QUICK BUILD (QUICK)
       javaFlags="${java.flags}"
       classpathref="quick.bin.classpath"/>
     <quick-bin
-      file="${build-quick.dir}/bin/fsc"
+      file="${build-quick.dir}/bin/fesc"
       class="scala.tools.nsc.CompileClient"
       javaFlags="${java.flags}"
       classpathref="quick.bin.classpath"/>
@@ -784,7 +784,7 @@ QUICK BUILD (QUICK)
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/escala"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scaladoc"/>
-    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/fsc"/>
+    <chmod perm="ugo+rx" file="${build-quick.dir}/bin/fesc"/>
     <chmod perm="ugo+rx" file="${build-quick.dir}/bin/scalap"/>
     <touch file="${build-quick.dir}/bin.complete" verbose="no"/>
   </target>
@@ -936,7 +936,7 @@ PACKED QUICK BUILD (PACK)
       class="scala.tools.nsc.ScalaDoc"
       javaFlags="${java.flags}"/>
     <pack-bin
-      file="${build-pack.dir}/bin/fsc"
+      file="${build-pack.dir}/bin/fesc"
       class="scala.tools.nsc.CompileClient"
       javaFlags="${java.flags}"/>
     <pack-bin
@@ -946,7 +946,7 @@ PACKED QUICK BUILD (PACK)
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/escala"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scaladoc"/>
-    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/fsc"/>
+    <chmod perm="ugo+rx" file="${build-pack.dir}/bin/fesc"/>
     <chmod perm="ugo+rx" file="${build-pack.dir}/bin/scalap"/>
     <touch file="${build-pack.dir}/bin.complete" verbose="no"/>
   </target>
@@ -1457,7 +1457,7 @@ DOCUMENTATION
     <taskdef name="genman"
              classname="scala.tools.docutil.ManMaker"
              classpathref="manual.classpath"/>
-    <genman command="fsc, sbaz, scala, scalac, scaladoc, scalap"
+    <genman command="fesc, sbaz, escala, escalac, scaladoc, scalap"
             htmlout="${build-docs.dir}/manual/html"
             manout="${build-docs.dir}/manual/genman"/>
     <!-- On Windows source and target files can't be the same ! -->
@@ -1628,7 +1628,7 @@ DISTRIBUTION
     <chmod perm="ugo+rx" file="${dist.dir}/bin/escala"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/escalac"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/scaladoc"/>
-    <chmod perm="ugo+rx" file="${dist.dir}/bin/fsc"/>
+    <chmod perm="ugo+rx" file="${dist.dir}/bin/fesc"/>
     <chmod perm="ugo+rx" file="${dist.dir}/bin/scalap"/>
     <mkdir dir="${dist.dir}/misc/scala-devel/plugins"/>
     <copy toDir="${dist.dir}/misc/scala-devel/plugins">
