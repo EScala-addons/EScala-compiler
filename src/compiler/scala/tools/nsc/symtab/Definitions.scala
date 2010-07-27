@@ -164,10 +164,10 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val SerializableClass    = getClass(sn.Serializable)
     lazy val ComparableClass      = getClass("java.lang.Comparable")
     
-    // @VG events
+    // @ESCALA
     lazy val EventClass = getClass("scala.events.Event")
     lazy val ImperativeEventClass = getClass("scala.events.ImperativeEvent")    
-    // END @VG events
+    // @ESCALA END
     
     lazy val RepeatedParamClass = newCovariantPolyClass(
       ScalaPackageClass,

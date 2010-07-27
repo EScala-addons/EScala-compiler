@@ -82,7 +82,7 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val Xwarnfatal    = BooleanSetting    ("-Xfatal-warnings", "Fail the compilation if there are any warnings.")
   val Xwarninit     = BooleanSetting    ("-Xwarninit", "Warn about possible changes in initialization semantics")
   val Xchecknull    = BooleanSetting    ("-Xcheck-null", "Emit warning on selection of nullable reference")
-  // @LS events
+  // @ESCALA
   val noevents      = BooleanSetting    ("-Xnoevents", "Deactivate experimental features for events")
   // END @Ls events
   
@@ -142,9 +142,9 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val Ypmatnaive    = BooleanSetting    ("-Ypmat-naive", "Desugar matches as naively as possible..")
   // val Yjenkins      = BooleanSetting    ("-Yjenkins-hashCodes", "Use jenkins hash algorithm for case class generated hashCodes.")
   val Ynotnull      = BooleanSetting    ("-Ynotnull", "Enable the experimental and incomplete scala.NotNull")
-  // @LS events
+  // @ESCALA
   val Yeventsdebug  = BooleanSetting    ("-Yevents-debug", "Enable the debugging output for the event transformations")
-  // END @LS events
+  // @ESCALA END
 
   // Warnings
   val Ywarndeadcode = BooleanSetting    ("-Ywarn-dead-code", "Emit warnings for dead code")

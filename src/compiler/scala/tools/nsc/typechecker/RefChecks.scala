@@ -302,7 +302,7 @@ abstract class RefChecks extends InfoTransform {
         if (member hasFlag PRIVATE) { // (1.1)
           overrideError("has weaker access privileges; it should not be private")
         } else if(!(member hasFlag OBSERVABLE) && (other hasFlag OBSERVABLE)) {
-          // @LS events
+          // @ESCALA
           overrideError("has weaker access privileges; it should be observable")
         }
         val mb = member.accessBoundary(member.owner)

@@ -66,7 +66,7 @@ trait TreePrinters { trees: SymbolTable =>
       }
     }
     
-    // @LS events
+    // @ESCALA
     def printEventTypes(ts: List[Tree]) {
       if(!ts.isEmpty) {
         print("["); printSeq(ts){ t =>
@@ -75,7 +75,7 @@ trait TreePrinters { trees: SymbolTable =>
         print("]")
       }
     }
-    // END @LS events
+    // @ESCALA END
 
     def printValueParams(ts: List[ValDef]) {
       print("(")
@@ -193,7 +193,7 @@ trait TreePrinters { trees: SymbolTable =>
           printTypeParams(tparams); vparamss foreach printValueParams
           printOpt(": ", tp); printOpt(" = ", rhs)
           
-        // @LS events
+        // @ESCALA
         case EventDef(mods, name, tparams, rhs) =>
           printAnnotations(tree)
           printModifiers(tree, mods)
@@ -208,7 +208,7 @@ trait TreePrinters { trees: SymbolTable =>
           }
           print(meth)
           print(")")
-        // END @LS events
+        // @ESCALA END
 
         case TypeDef(mods, name, tparams, rhs) =>
           if (mods hasFlag (PARAM | DEFERRED)) {

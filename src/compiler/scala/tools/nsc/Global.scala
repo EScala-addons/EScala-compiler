@@ -23,7 +23,7 @@ import ast._
 import ast.parser._
 import typechecker._
 import transform._
-// @LS events
+// @ESCALA
 import events._
 
 import backend.icode.{ ICodes, GenICode, Checkers }
@@ -305,7 +305,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   /** Switch to turn on detailed type logs */
   var printTypings = settings.Ytyperdebug.value
  
-  // @LS events
+  // @ESCALA
   object markerPhases extends {
     val global: Global.this.type = Global.this
   } with MarkerPhases
@@ -333,11 +333,11 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   // phaseName = "superaccessors"
   object superAccessors extends {
     val global: Global.this.type = Global.this
-    //@LS events val runsAfter = List[String]("typer")
+    //@ESCALA val runsAfter = List[String]("typer")
     val runsAfter = List[String]("execevents")
     val runsRightAfter = None
   } with SuperAccessors
-  // END @LS events
+  // @ESCALA END
  
   // phaseName = "pickler"
   object pickler extends {
@@ -544,12 +544,12 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     phasesSet += analyzer.namerFactory      //   note: types are there because otherwise
     phasesSet += analyzer.packageObjects    //   consistency check after refchecks would fail.
     phasesSet += analyzer.typerFactory
-    // @LS events
+    // @ESCALA
     phasesSet += markerPhases.referencesCollecter // collect the referenced methods
     phasesSet += markerPhases.instrumentMarker    // marks the methods that must be instrumented
     phasesSet += observables                // instrument observable methods
     phasesSet += execevents                 // replace exec events references by the generated event
-    // END @LS events
+    // @ESCALA END
     phasesSet += superAccessors             // add super accessors
     phasesSet += pickler                    // serialize symbol tables
     phasesSet += refchecks                  // perform reference and override checking, translate nested objects

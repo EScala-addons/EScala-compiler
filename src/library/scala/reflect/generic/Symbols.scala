@@ -137,11 +137,11 @@ trait Symbols { self: Universe =>
     final def isJavaDefined = hasFlag(JAVA)
     final def isLazy = hasFlag(LAZY)
     final def isMethod = isTerm && hasFlag(METHOD)
-    // @LS events
+    // @ESCALA
     final def isEvent = hasFlag(EVENT)
     final def isObservable = isMethod && hasFlag(OBSERVABLE)
     final def isInstrumented = isMethod && hasFlag(INSTRUMENTED)
-    // END @LS events
+    // @ESCALA END
     final def isModule = isTerm && hasFlag(MODULE)
     final def isModuleClass = isClass && hasFlag(MODULE)
     final def isMutable = hasFlag(MUTABLE)

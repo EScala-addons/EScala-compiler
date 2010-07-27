@@ -428,7 +428,7 @@ self =>
 /* -------------- TOKEN CLASSES ------------------------------------------- */
 
     def isModifier: Boolean = in.token match {
-      // @LS events
+      // @ESCALA
       case ABSTRACT | FINAL | SEALED | PRIVATE |
            PROTECTED | OVERRIDE | IMPLICIT | LAZY | IMPERATIVE | OBSERVABLE => true
       case _ => false
@@ -440,14 +440,14 @@ self =>
     }
 
     def isDefIntro: Boolean = in.token match {
-      // @LS events
+      // @ESCALA
       case VAL | VAR | DEF | TYPE | OBJECT |
            CASEOBJECT | CLASS | CASECLASS | TRAIT | EVENT => true
       case _ => false
     }
 
     def isDclIntro: Boolean = in.token match {
-      // @LS events
+      // @ESCALA
       case VAL | VAR | DEF | TYPE | EVENT => true
       case _ => false
     }
@@ -458,7 +458,7 @@ self =>
       case CHARLIT | INTLIT | LONGLIT | FLOATLIT | DOUBLELIT |
            STRINGLIT | SYMBOLLIT | TRUE | FALSE | NULL | IDENTIFIER | BACKQUOTED_IDENT |
            THIS | SUPER | IF | FOR | NEW | USCORE | TRY | WHILE |
-           // @LS events
+           // @ESCALA
            DO | RETURN | THROW | LPAREN | LBRACE | XMLSTART | BEFORE | AFTER => true
       case _ => false
     }
@@ -1265,8 +1265,8 @@ self =>
     /* SimpleExpr    ::= new (ClassTemplate | TemplateBody)
      *                |  BlockExpr
      *                |  SimpleExpr1 [`_']
-     *                |  beforeExec `(' SimpleExpr `)' // @LS events
-     *                |  afterExec `(' SimpleExpr `)' // @LS events
+     *                |  beforeExec `(' SimpleExpr `)' // @ESCALA
+     *                |  afterExec `(' SimpleExpr `)' // @ESCALA
      * SimpleExpr1   ::= literal
      *                |  xLiteral
      *                |  Path
@@ -1310,7 +1310,7 @@ self =>
           val (parents, argss, self, stats) = template(false)
           val cpos = r2p(tstart, tstart, in.lastOffset max tstart)
           makeNew(parents, self, stats, argss, npos, cpos)
-        // @LS events
+        // @ESCALA
         case BEFORE =>
           atPos(in.offset, in.skipToken) {
             accept(LPAREN)
@@ -1325,7 +1325,7 @@ self =>
             accept(RPAREN)
             after
           }
-        // END @LS events
+        // @ESCALA END
         case _ =>
           syntaxErrorOrIncomplete("illegal start of simple expression", true)
           errorTermTree
@@ -1682,13 +1682,13 @@ self =>
     }
 
     /** AccessModifier ::= (private | protected) [AccessQualifier]
-     *                  |  observable // @LS events
+     *                  |  observable // @ESCALA
      */
     def accessModifierOpt(): Modifiers = normalize {
       in.token match {
         case PRIVATE => in.nextToken(); accessQualifierOpt(Modifiers(Flags.PRIVATE))
         case PROTECTED => in.nextToken(); accessQualifierOpt(Modifiers(Flags.PROTECTED))
-        // @LS events
+        // @ESCALA
         case OBSERVABLE => in.nextToken(); Modifiers(Flags.OBSERVABLE | Flags.INSTRUMENTED)
         case _ => NoMods
       }
@@ -1698,7 +1698,7 @@ self =>
      *  Modifier  ::= LocalModifier 
      *             |  AccessModifier
      *             |  override
-     *             |  imperative // @LS events
+     *             |  imperative // @ESCALA
      */
     def modifiers(): Modifiers = normalize {
       def loop(mods: Modifiers): Modifiers = in.token match {
@@ -1718,12 +1718,12 @@ self =>
           loop(addMod(mods, Flags.IMPLICIT, tokenRange(in)))
         case LAZY =>
           loop(addMod(mods, Flags.LAZY, tokenRange(in)))
-        // @LS events
+        // @ESCALA
         case IMPERATIVE =>
           loop(addMod(mods, Flags.IMPERATIVE, tokenRange(in)))
         case OBSERVABLE =>
           loop(addMod(mods, Flags.OBSERVABLE | Flags.INSTRUMENTED, tokenRange(in)))
-        // END @LS events
+        // @ESCALA END
         case NEWLINE =>
           in.nextToken()
           loop(mods)
@@ -2097,23 +2097,23 @@ self =>
      *           | var VarDef
      *           | def FunDef
      *           | type [nl] TypeDef
-     *           | evt EventDef // @LS events
+     *           | evt EventDef // @ESCALA
      *           | TmplDef 
      *  Dcl    ::= val ValDcl
      *           | var ValDcl
      *           | def FunDcl
      *           | type [nl] TypeDcl
-     *           | evt EventDcl // @LS events
+     *           | evt EventDcl // @ESCALA
      */
     def defOrDcl(pos: Int, mods: Modifiers): List[Tree] = {
       if ((mods hasFlag Flags.LAZY) && in.token != VAL)
         syntaxError("lazy not allowed here. Only vals can be lazy", false)
-      // @LS events
+      // @ESCALA
       if((mods hasFlag Flags.IMPERATIVE) && in.token != EVENT)
         syntaxError("imperative not allowed here. Only evts can be imperative", false)
       if((mods hasFlag Flags.OBSERVABLE) && in.token != DEF)
         syntaxError("observable not allowed here. Only defs can be observable", false)
-      // END @LS events
+      // @ESCALA END
       in.token match {
         case VAL =>
           patDefOrDcl(pos, mods withPosition(VAL, tokenRange(in)))
@@ -2123,7 +2123,7 @@ self =>
           List(funDefOrDcl(pos, mods withPosition(DEF, tokenRange(in))))
         case TYPE =>
           List(typeDefOrDcl(pos, mods withPosition(TYPE, tokenRange(in))))
-        // @LS events
+        // @ESCALA
         case EVENT =>
           List(eventDefOrDcl(pos, mods withPosition(EVENT, tokenRange(in))))
         case _ =>
@@ -2271,7 +2271,7 @@ self =>
       }
     }
     
-    /** @LS events
+    /** @ESCALA
      *  EventDcl      ::= id [`[' SimpleType {`,' SimpleType} `]'] 
      *  EventDef      ::= id [`[' SimpleType {`,' SimpleType} `]'] `=' EventExpr
      *  EventExpr     ::= SimpleExpr
@@ -2698,7 +2698,7 @@ self =>
      *  TemplateStat     ::= Import
      *                     | Annotations Modifiers Def
      *                     | Annotations Modifiers Dcl
-     *                     | Annotations Modifiers Event // @LS events
+     *                     | Annotations Modifiers Event // @ESCALA
      *                     | Expr1
      *                     | super ArgumentExprs {ArgumentExprs}
      *                     |

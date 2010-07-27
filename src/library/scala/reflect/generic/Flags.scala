@@ -62,7 +62,7 @@ class Flags {
   final val MONOMORPHIC   = 0x40000000    // for type symbols: does not have type parameters
   final val LAZY          = 0x80000000L   // symbol is a lazy val. can't have MUTABLE unless transformed by typer
 
-  // @LS events
+  // @ESCALA
   final val OBSERVABLE    = 0x100000000L  // method is observable
                                           // pre: INSTRUMENTED
   final val IMPERATIVE    = 0x80000000000L// event is imperative
@@ -77,7 +77,7 @@ class Flags {
   final val LIFTED        = 0x400000000000L  // class has been lifted out to package level
                                           // local value has been lifted out to class level
                                           // todo: make LIFTED = latePRIVATE?
-  // END @LS events
+  // @ESCALA END
   final val MIXEDIN       = 0x800000000L  // term member has been mixed in
   final val EXISTENTIAL   = 0x800000000L  // type is an existential parameter or skolem
 
@@ -112,14 +112,14 @@ class Flags {
   private final val MODULE_PKL     = 0x00000400
   private final val INTERFACE_PKL  = 0x00000800
 
-  // @LS events
+  // @ESCALA
   private final val OBSERVABLE_PKL = 0x00001000
   private final val EVENT_PKL      = 0x00002000
-  // END @LS events
+  // @ESCALA END
   
   private final val PKL_MASK       = 0x00000FFF
 
-  // @LS events final val PickledFlags: Long  = 0xFFFFFFFFL
+  // @ESCALA final val PickledFlags: Long  = 0xFFFFFFFFL
   final val PickledFlags: Long  = 0xFFFFFFFFFL
 
   private val r2p = {

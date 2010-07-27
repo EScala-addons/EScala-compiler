@@ -1507,9 +1507,9 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       else if (isPackage) "package"
       else if (isModule) "object"
       else if (isMethod) "def"
-      // @LS events
+      // @ESCALA
       else if (isEvent) "evt"
-      // END@LS events
+      // END@ESCALA
       else if (isTerm && (!hasFlag(PARAM) || hasFlag(PARAMACCESSOR))) "val"
       else ""
 
@@ -1524,9 +1524,9 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       else if (isTrait) "trait"
       else if (isClass) "class"
       else if (isType) "type"
-      // @LS events
+      // @ESCALA
       else if (isEvent) "event"
-      // END @LS events
+      // @ESCALA END
       else if (isTerm && hasFlag(LAZY)) "lazy value"
       else if (isVariable) "variable"
       else if (isPackage) "package"

@@ -16,9 +16,9 @@ import collection.generic.CanBuildFrom
 import annotation.elidable
 import annotation.elidable.ASSERTION
 
-// @LS events
+// @ESCALA
 import events.{VarList,Variable}
-// END @LS events
+// @ESCALA END
 
 /** The <code>Predef</code> object provides definitions that are
  *  accessible in all Scala compilation units without explicit
@@ -238,7 +238,7 @@ object Predef extends LowPriorityImplicits {
   implicit def booleanArrayOps(xs: Array[Boolean]): ArrayOps[Boolean] = new ArrayOps.ofBoolean(xs)
   implicit def unitArrayOps(xs: Array[Unit]): ArrayOps[Unit] = new ArrayOps.ofUnit(xs)
   
-  // @LS events
+  // @ESCALA
   implicit def toUnitfun[T](f: () => T) =
     f match {
       case named: NamedFunction =>
@@ -288,7 +288,7 @@ object Predef extends LowPriorityImplicits {
     def +=(react: Nothing => Unit) { /* do nothing */ }
     def -=(react: Nothing => Unit) { /* do nothing */ }
   }
-  // END @LS events
+  // @ESCALA END
 
   // Primitive Widenings --------------------------------------------------------------
 

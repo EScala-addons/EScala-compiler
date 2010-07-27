@@ -43,7 +43,7 @@ case class Target(sym: LabelSymbol, body: Tree) extends Tree
 case class Goto(target: LabelSymbol) extends Tree
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
 case class ValDef(sym: Symbol, rhs: Tree) extends Tree
-// @LS events
+// @ESCALA
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
 case class EventDef(sym: Symbol, rhs: Tree) extends Tree
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
@@ -52,7 +52,7 @@ case class BeforeExec extends ExecEvtKind
 case class AfterExec extends ExecEvtKind
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
 case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends Tree
-// END @LS events
+// @ESCALA END
 
 //Monomorphic
 /** This type is required by the compiler and <b>should not be used in client code</b>. */

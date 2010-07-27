@@ -1566,7 +1566,7 @@ trait Typers { self: Analyzer =>
       treeCopy.ValDef(vdef, typedMods, vdef.name, tpt1, checkDead(rhs1)) setType NoType
     }
     
-    // @LS events
+    // @ESCALA
     /*
      * Generate the event type for the parameter types
      */
@@ -1634,7 +1634,7 @@ trait Typers { self: Analyzer =>
       
       typedEvent.setType(eventType)
     }
-    // END @LS events
+    // @ESCALA END
 
     /** Enter all aliases of local parameter accessors.
      *
@@ -3848,14 +3848,14 @@ trait Typers { self: Analyzer =>
         case ddef @ DefDef(_, _, _, _, _, _) => 
           newTyper(context.makeNewScope(tree, sym)).typedDefDef(ddef)
           
-        // @LS events
+        // @ESCALA
         /*case edef @ EventDef(_, _, _, _) =>
           // TODO if we allow variable binding, similar to DefDef case
           typedEvtDef(edef)*/
 
         case ev @ ExecEvent(kind, meth) =>
           typedExecEvent(ev, mode, pt)       
-        // END @LS events
+        // @ESCALA END
 
         case tdef @ TypeDef(_, _, _, _) =>
           newTyper(context.makeNewScope(tree, sym)).typedTypeDef(tdef)

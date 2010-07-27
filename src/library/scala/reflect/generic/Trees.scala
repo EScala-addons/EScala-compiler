@@ -40,11 +40,11 @@ trait Trees { self: Universe =>
     def isSynthetic     = hasFlag(SYNTHETIC)
     def isTrait         = hasFlag(TRAIT    )
     def isVariable      = hasFlag(MUTABLE  )
-    // @LS events
+    // @ESCALA
     def isImperative    = hasFlag(IMPERATIVE )
     def isObservable    = hasFlag(OBSERVABLE )
     def isEvent         = hasFlag(EVENT      )
-    // END @LS events
+    // @ESCALA END
     
     def hasFlag(flag: Long) = (flag & flags) != 0L
     def & (flag: Long): Modifiers = {
@@ -190,7 +190,7 @@ trait Trees { self: Universe =>
       case DefDef(_, _, _, _, _, _) => "def"
       case ModuleDef(_, _, _)       => "object"
       case PackageDef(_, _)         => "package"
-      case ValDef(mods, _, _, _)    => if (mods.isVariable) "var" /* @LS events */ else if(mods.isEvent) "evt" else "val"
+      case ValDef(mods, _, _, _)    => if (mods.isVariable) "var" /* @ESCALA */ else if(mods.isEvent) "evt" else "val"
       case _ => ""
     }
     final def hasFlag(mask: Long): Boolean = (mods.flags & mask) != 0L
@@ -231,7 +231,7 @@ trait Trees { self: Universe =>
   case class DefDef(mods: Modifiers, name: Name, tparams: List[TypeDef],
                     vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree) extends ValOrDefDef
                     
-  // @LS events                  
+  // @ESCALA                  
   /** 
    * Event definition
    */
@@ -250,7 +250,7 @@ trait Trees { self: Universe =>
    */
   case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends TermTree
   
-  // END @LS events
+  // @ESCALA END
 
   /** Abstract type, type parameter, or type alias */
   case class TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) 
@@ -506,7 +506,7 @@ trait Trees { self: Universe =>
         atOwner(tree.symbol) {
           traverseTrees(mods.annotations); traverseTrees(tparams); traverseTreess(vparamss); traverse(tpt); traverse(rhs)
         }
-      // @LS events
+      // @ESCALA
       case EventDef(mods, name, tparams, rhs) =>
         atOwner(tree.symbol) {
           traverseTrees(mods.annotations); traverseTrees(tparams); traverse(rhs)
@@ -515,7 +515,7 @@ trait Trees { self: Universe =>
         atOwner(tree.symbol) {
           traverse(meth)
         }      
-      // END @LS events
+      // @ESCALA END
       case TypeDef(mods, name, tparams, rhs) =>
         atOwner(tree.symbol) {
           traverseTrees(mods.annotations); traverseTrees(tparams); traverse(rhs)
