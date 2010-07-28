@@ -2,37 +2,64 @@ package scala.events
 
 import scala.collection.mutable.ListBuffer
 
-class BetweenEventNode[T,U,V](val event: Event[T], val start: Event[U], val end: Event[V]) extends EventNode[T] {
+trait IntervalEvent[Start, Stop] {
+  this: EventNode[_] =>
 
-  private[this] var active = false
+  val start: Event[Start]
+  val end: Event[Stop]
 
-  def onStart(u: U) {
+  private var _active = false
+
+  def active = _active
+
+  private def onStart(v: Start) {
     if(!active) {
-      event += onEvt _
-      active = true
+      started(v)
+      _active = true
     }
   }
 
-  def onEnd(v: V) {
+  private def onEnd(v: Stop) {
     if(active) {
-      event -= onEvt _
-      active = false
+      ended(v)
+      _active = false
     }
+  }
+
+  /** Called when the interval event starts
+  */
+  protected[this] def started(v: Start)
+
+  /** Called when the interval event stops
+  */
+  protected[this] def ended(v: Stop)
+
+  protected def deploy {
+    start += onStart _
+    end += onEnd _
+  }
+
+  protected def undeploy {
+    start -= onStart _
+    end -= onEnd _
+  }
+
+}
+
+class BetweenEventNode[T,U,V](val event: Event[T], val start: Event[U], val end: Event[V]) extends EventNode[T]
+                                                                                           with IntervalEvent[U,V] {
+
+  protected[this] def started(u: U) {
+      event += onEvt _
+  }
+
+  protected[this] def ended(v: V) {
+      event -= onEvt _
   }
 
   def onEvt(id: Int, value: T, reacts: ListBuffer[(() => Unit)]) {
     if(active)
       reactions(id, value, reacts)
-  }
-
-  def deploy {
-    start += onStart _
-    end += onEnd _
-  }
-
-  def undeploy {
-    start -= onStart _
-    end -= onEnd _
   }
 
 }
