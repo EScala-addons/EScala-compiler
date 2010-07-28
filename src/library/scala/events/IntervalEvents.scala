@@ -64,4 +64,13 @@ class BetweenEventNode[T,U,V](val event: Event[T], val start: Event[U], val end:
 
 }
 
+//class ExecutionEventNode[T,U](val start: ImperativeEvent[T], val end: ImperativeEvent[U]) extends EventNode[Unit]
+//                                                                                          with    IntervalEvent[T,U] {
+//  
+//  
+//
+//
+//}
+
+
 // vim: set ts=4 sw=4 et:
