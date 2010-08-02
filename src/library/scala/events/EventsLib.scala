@@ -78,8 +78,8 @@ trait Event[+T] {
   /**
    * Event is triggered if the first event was already triggered but not the second one yet
    */
-   def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
-   def between[U, V, S >: T](ep: (Event[U], Event[V])) = new BetweenEventNode[S,U,V](this, ep._1, ep._2)
+   //def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
+   //def between[U, V, S >: T](ep: (Event[U], Event[V])) = new BetweenEventNode[S,U,V](this, ep._1, ep._2)
 
   /**
    * Drop the event parameter; equivalent to map((_: Any) => ())

@@ -2,7 +2,7 @@ package scala
 
 package object events {
 
-  def between[T,U](start: Event[T], end: Event[U]) = () // TODO
+  def between[T,U](start: Event[T], end: Event[U]) = new BetweenEvent(start, end)
 
   def within[T,U](ie: IntervalEvent[T,U]) = ie.active _
 

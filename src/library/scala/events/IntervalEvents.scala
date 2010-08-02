@@ -2,14 +2,13 @@ package scala.events
 
 import scala.collection.mutable.{ListBuffer,Stack}
 
-trait IntervalEvent[Start, Stop] {
-  this: EventNode[_] =>
+trait IntervalEvent[+Start, +Stop] {
 
   def start: Event[Start]
   def end: Event[Stop]
 
-  private evt realStart[Start] = start && (_ => !active) && startCondition _
-  private evt realEnd[Stop] = end && (_ => active) && endCondition _
+  private lazy val realStart: Event[Start] = start && (_ => !active) && startCondition _
+  private lazy val realEnd: Event[Stop] = end && (_ => active) && endCondition _
 
   protected[this] var _active = false
 
@@ -22,47 +21,39 @@ trait IntervalEvent[Start, Stop] {
 
   protected[this] def onEnd(v: Stop): Unit
 
-  private def started(v: Start) {
+  protected[this] lazy val started = (v: Start) => {
     onStart(v)
     _active = true
   }
 
-  private def ended(v: Stop) {
+  protected[this] lazy val ended = (v: Stop) => {
     onEnd(v)
     _active = false
   }
 
   protected def deploy {
-    realStart += started _
-    realEnd += ended _
+    realStart += started
+    realEnd += ended
   }
 
   protected def undeploy {
-    realStart -= started _
-    realEnd -= ended _
+    realStart -= started
+    realEnd -= ended
   }
 
 }
 
-class BetweenEventNode[T,U,V](val event: Event[T], val start: Event[U], val end: Event[V]) extends EventNode[T]
-                                                                                           with IntervalEvent[U,V] {
+class BetweenEvent[T,U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T,U] {
 
-  protected[this] def onStart(u: U) {
-      event += onEvt _
+  protected[this] def onStart(t: T) {
   }
 
-  protected[this] def onEnd(v: V) {
-      event -= onEvt _
-  }
-
-  def onEvt(id: Int, value: T, reacts: ListBuffer[(() => Unit)]) {
-      reactions(id, value, reacts)
+  protected[this] def onEnd(u: U) {
   }
 
 }
 
-class Execution[T,U](val start: ImperativeEvent[T], val end: ImperativeEvent[U]) extends EventNode[Nothing]
-                                                                                 with    IntervalEvent[T,U] {
+class ExecutionEvent[T,U](val start: ImperativeEvent[T], val end: ImperativeEvent[U]) extends IntervalEvent[T,U] {
 
   private val cflow = Stack[T]()
 
@@ -80,4 +71,13 @@ class Execution[T,U](val start: ImperativeEvent[T], val end: ImperativeEvent[U])
 
 }
 
-// vim: set ts=4 sw=4 et:
+class FromEvent[T](val start: Event[T]) extends IntervalEvent[T,Nothing] {
+
+  val end = emptyevent
+
+  protected[this] def onStart(t: T) {
+  }
+
+  protected[this] def onEnd(u: Nothing) {
+  }
+}
