@@ -1,3 +1,4 @@
+import scala.events._
 object Test {
 
   // built-in events from the mouse
@@ -6,7 +7,7 @@ object Test {
   imperative evt mouseMove[Int, Int]
 
   // combined events
-  evt drag[Int, Int] = mouseMove between(mouseDown, mouseUp)
+  evt drag[Int, Int] = mouseMove && within(between(mouseDown, mouseUp))
   evt drop[Int, Int] = (drag.dropParam then mouseUp).map((_: Unit, p: (Int, Int)) => p)
 
   def main(args: Array[String]) {
