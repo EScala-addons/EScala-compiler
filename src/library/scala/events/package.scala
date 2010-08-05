@@ -4,7 +4,7 @@ package object events {
 
   def between[T,U](start: Event[T], end: Event[U]) = new BetweenEvent(start, end)
 
-  def within[T,U](ie: IntervalEvent[T,U]) = ie.active _
+  def within[T,U](ie: IntervalEvent[T,U]) = new WithinEvent(ie)
 
 }
 

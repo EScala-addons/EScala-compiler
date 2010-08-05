@@ -14,8 +14,7 @@ import typechecker._
  */
 abstract class ObservableInstrumentation extends Transform 
                                          with EventUtil
-                                         with TypingTransformers
-                                         /*with LocalInstrumentation*/ {
+                                         with TypingTransformers {
 
   import global._
   import definitions._
@@ -205,17 +204,22 @@ abstract class ObservableInstrumentation extends Transform
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
+              val execEvName = buildExecutionEventName(sym)
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newImperativeEvent(tupledGenericParam), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
                                      newImperativeEvent(tupledGenericParam ::: List(retType)), pos)
+              var execEv = genEvent(dd, modifiers, execEvName, genIntervalEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)), newExecutionEvent(beforeEvName, tupledGenericParam,
+                                    afterEvName, tupledGenericParam ::: List(retType)), pos)
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
+              namer.enterSyntheticSym(execEv)
 
               // type the events
               def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
+              execEv = typeEvent(execEv)
               
               // the wrapper method
 
@@ -284,7 +288,7 @@ abstract class ObservableInstrumentation extends Transform
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
               
               // add to the list of synthesized members
-              synthesized = wrapperMeth :: beforeEv :: afterEv :: synthesized
+              synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
             } else if(!overrideObs && overrideInstr && sym.isObservable) {
               // the method overrides an already internally instrumented method
               // makes the protected events visible
@@ -296,16 +300,21 @@ abstract class ObservableInstrumentation extends Transform
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
+              val execEvName = buildExecutionEventName(sym)
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), superBeforeExec(sym.name), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)), superAfterExec(sym.name), pos)
+              var execEv = genEvent(dd, modifiers, execEvName, genIntervalEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)), newExecutionEvent(beforeEvName, tupledGenericParam,
+                                    afterEvName, tupledGenericParam ::: List(retType)), pos)
 
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
+              namer.enterSyntheticSym(execEv)
 
               // type the events
               beforeEv = localTyper.typed(beforeEv).asInstanceOf[ValDef]
               afterEv = localTyper.typed(afterEv).asInstanceOf[ValDef]
+              execEv = localTyper.typed(execEv).asInstanceOf[ValDef]
 
               // the wrapper method simply calls the super instrumented method
               // handle curried function call
@@ -323,7 +332,7 @@ abstract class ObservableInstrumentation extends Transform
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
 
               // add to the list of synthesized members
-              synthesized = wrapperMeth :: beforeEv :: afterEv :: synthesized
+              synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
 
             } else {
                // remove the original method from the symbol table
@@ -384,6 +393,15 @@ abstract class ObservableInstrumentation extends Transform
           nme.CONSTRUCTOR),
         Nil)
 
+    private def newExecutionEvent(beforeEvt: Name, beforeTparams: List[Tree], afterEvt: Name, afterTparams: List[Tree]) =
+      Apply(
+        Select(
+          New(
+            genExecutionEventTpt(beforeTparams, afterTparams)
+          ),
+          nme.CONSTRUCTOR),
+        Ident(beforeEvt) :: Ident(afterEvt) :: Nil)
+
     private def genImperativeEventTpt(tparams: List[Tree]) = {
       val generics = 
         if(tparams.size > 1)
@@ -399,6 +417,50 @@ abstract class ObservableInstrumentation extends Transform
           newTypeName("ImperativeEvent")
         ),
       generics)
+    }
+
+    private def genExecutionEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
+      val beforeG = 
+        if(beforeTparams.size > 1)
+          genTupleType(beforeTparams)
+        else
+          beforeTparams
+      val afterG =
+        if(afterTparams.size > 1)
+          genTupleType(afterTparams)
+        else
+          afterTparams
+      AppliedTypeTree(
+        Select(
+          Select(
+            Ident("scala"),
+            newTermName("events")
+          ),
+          newTypeName("ExecutionEvent")
+        ),
+      beforeG ::: afterG)
+    }
+
+    private def genIntervalEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
+      val beforeG = 
+        if(beforeTparams.size > 1)
+          genTupleType(beforeTparams)
+        else
+          beforeTparams
+      val afterG =
+        if(afterTparams.size > 1)
+          genTupleType(afterTparams)
+        else
+          afterTparams
+      AppliedTypeTree(
+        Select(
+          Select(
+            Ident("scala"),
+            newTermName("events")
+          ),
+          newTypeName("IntervalEvent")
+        ),
+      beforeG ::: afterG)
     }
 
     private def superBeforeExec(meth: Name) =

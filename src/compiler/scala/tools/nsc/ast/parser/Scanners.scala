@@ -967,6 +967,7 @@ trait Scanners {
     enterKeyword(nme.EVENTkw, EVENT)
     enterKeyword(nme.BEFOREkw, BEFORE)
     enterKeyword(nme.AFTERkw, AFTER)
+    enterKeyword(nme.EXECUTIONkw, EXECUTION)
     enterKeyword(nme.IMPERATIVEkw, IMPERATIVE)
     // @ESCALA END
   }

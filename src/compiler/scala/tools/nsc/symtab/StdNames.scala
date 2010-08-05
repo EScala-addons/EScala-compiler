@@ -75,6 +75,7 @@ trait StdNames extends reflect.generic.StdNames { self: SymbolTable =>
     val EVENTkw = newTermName("evt")
     val BEFOREkw = newTermName("beforeExec")
     val AFTERkw = newTermName("afterExec")
+    val EXECUTIONkw = newTermName("execution")
     val IMPERATIVEkw = newTermName("imperative")
     // @ESCALA END
 

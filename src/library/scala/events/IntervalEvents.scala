@@ -10,8 +10,9 @@ trait IntervalEvent[+Start, +Stop] {
   private lazy val realStart: Event[Start] = start && (_ => !active) && startCondition _
   private lazy val realEnd: Event[Stop] = end && (_ => active) && endCondition _
 
-  protected[this] var _active = false
+  protected[events] var deployed = false
 
+  protected[this] var _active = false
   def active = _active
 
   protected[this] def startCondition(v: Start) = true
@@ -31,14 +32,16 @@ trait IntervalEvent[+Start, +Stop] {
     _active = false
   }
 
-  protected def deploy {
+  protected[events] def deploy {
     realStart += started
     realEnd += ended
+    deployed = true
   }
 
-  protected def undeploy {
+  protected[events] def undeploy {
     realStart -= started
     realEnd -= ended
+    deployed = false
   }
 
 }
@@ -69,15 +72,4 @@ class ExecutionEvent[T,U](val start: ImperativeEvent[T], val end: ImperativeEven
     cflow.pop
   }
 
-}
-
-class FromEvent[T](val start: Event[T]) extends IntervalEvent[T,Nothing] {
-
-  val end = emptyevent
-
-  protected[this] def onStart(t: T) {
-  }
-
-  protected[this] def onEnd(u: Nothing) {
-  }
 }

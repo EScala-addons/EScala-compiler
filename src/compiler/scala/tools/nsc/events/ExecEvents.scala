@@ -43,6 +43,7 @@ abstract class ExecEvents extends Transform with TypingTransformers with EventUt
               val eventName = kind match {
                 case BeforeExec() => buildBeforeEventName(methSymbol)
                 case AfterExec() => buildAfterEventName(methSymbol)
+                case Execution() => buildExecutionEventName(methSymbol)
               }
 
               // search the symbol in the class

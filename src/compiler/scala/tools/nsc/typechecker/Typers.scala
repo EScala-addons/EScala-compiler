@@ -1596,7 +1596,7 @@ trait Typers { self: Analyzer =>
             case _ => typedRef
         }
       
-      val dataType : Type =
+      val dataType : Type Either (Type, Type) =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
             //val method = params.last.owner
@@ -1607,12 +1607,13 @@ trait Typers { self: Analyzer =>
                 case _ => tupleType(meth.paramTypes)
             }
             ev.kind match {
-                case BeforeExec() => paramType
-                case AfterExec() => tupleType(List(paramType, rtpe))
+                case BeforeExec() => Left(paramType)
+                case AfterExec() => Left(tupleType(List(paramType, rtpe)))
+                case Execution() => Right((paramType, tupleType(List(paramType, rtpe))))
             }
           case _ => 
             error(typedMeth.pos, "a reference to a method expected")
-            ErrorType
+            Left(ErrorType)
       }
       
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
@@ -1628,9 +1629,13 @@ trait Typers { self: Analyzer =>
       }
       
       // eventType = Event[dataType]      
-      val eventType = typeRef(ImperativeEventClass.typeConstructor.prefix, 
-                              ImperativeEventClass, 
-                              List(dataType))
+      val eventType = 
+        if(dataType.isRight)
+          typeRef(IntervalEventClass.typeConstructor.prefix,
+                  IntervalEventClass, dataType.right.get._1 :: dataType.right.get._2 :: Nil)
+        else
+          typeRef(ImperativeEventClass.typeConstructor.prefix, 
+                  ImperativeEventClass, List(dataType.left.get))
       
       typedEvent.setType(eventType)
     }

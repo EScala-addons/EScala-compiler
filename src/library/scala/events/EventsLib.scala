@@ -54,6 +54,8 @@ trait Event[+T] {
    * Event filtered with a boolean variable
    */
   def &&[U >: T](pred: => Boolean) = new EventNodeFilter[U](this, _ => pred)
+
+  def &&[U >: T](itp: IntervalToPoint) = new EventNodeFilterInterval[U](this, itp)
   
   /**
    * Event is triggered except if the other one is triggered
@@ -562,6 +564,24 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
   override def undeploy {
     accpeted -= onAccepted
     except -= onExcept
+  }
+}
+
+class EventNodeFilterInterval[T](event: Event[T], itp: IntervalToPoint) extends EventNode[T] {
+
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+    if(itp())
+      reactions(id, v, reacts)
+  }
+
+  override def deploy {
+    event += onEvt
+    itp.deploy
+  }
+
+  override def undeploy {
+    event -= onEvt
+    itp.undeploy
   }
 }
 

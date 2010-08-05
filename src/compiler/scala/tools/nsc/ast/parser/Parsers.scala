@@ -1267,6 +1267,7 @@ self =>
      *                |  SimpleExpr1 [`_']
      *                |  beforeExec `(' SimpleExpr `)' // @ESCALA
      *                |  afterExec `(' SimpleExpr `)' // @ESCALA
+     *                |  execution `(' SimpleExpr `)' // @ESCALA
      * SimpleExpr1   ::= literal
      *                |  xLiteral
      *                |  Path
@@ -1324,6 +1325,13 @@ self =>
             val after = ExecEvent(AfterExec(), simpleExpr())
             accept(RPAREN)
             after
+          }
+        case EXECUTION =>
+          atPos(in.offset, in.skipToken) {
+            accept(LPAREN)
+            val exec = ExecEvent(Execution(), simpleExpr())
+            accept(RPAREN)
+            exec
           }
         // @ESCALA END
         case _ =>
