@@ -14,7 +14,8 @@ import typechecker._
  */
 abstract class ObservableInstrumentation extends Transform 
                                          with EventUtil
-                                         with TypingTransformers {
+                                         with TypingTransformers
+                                         with ObservableUtil {
 
   import global._
   import definitions._
@@ -377,111 +378,6 @@ abstract class ObservableInstrumentation extends Transform
         case _ => super.transform(tree)
       }
     }
-    
-    private def genTupleType(l: List[Tree])=
-      List(AppliedTypeTree(Select(Ident("scala"), newTypeName("Tuple" + l.size)), l))
-    private def genTupleTerm(l: List[Tree])=
-      Apply(Select(Ident("scala"), newTermName("Tuple" + l.size)), l)
-
-    // creates a tree creating a new imperative event
-    private def newImperativeEvent(tparams: List[Tree]) = 
-      Apply(
-        Select(
-          New(
-            genImperativeEventTpt(tparams)
-          ),
-          nme.CONSTRUCTOR),
-        Nil)
-
-    private def newExecutionEvent(beforeEvt: Name, beforeTparams: List[Tree], afterEvt: Name, afterTparams: List[Tree]) =
-      Apply(
-        Select(
-          New(
-            genExecutionEventTpt(beforeTparams, afterTparams)
-          ),
-          nme.CONSTRUCTOR),
-        Ident(beforeEvt) :: Ident(afterEvt) :: Nil)
-
-    private def genImperativeEventTpt(tparams: List[Tree]) = {
-      val generics = 
-        if(tparams.size > 1)
-          genTupleType(tparams)
-        else
-          tparams
-      AppliedTypeTree(
-        Select(
-          Select(
-            Ident("scala"),
-            newTermName("events")
-          ),
-          newTypeName("ImperativeEvent")
-        ),
-      generics)
-    }
-
-    private def genExecutionEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
-      val beforeG = 
-        if(beforeTparams.size > 1)
-          genTupleType(beforeTparams)
-        else
-          beforeTparams
-      val afterG =
-        if(afterTparams.size > 1)
-          genTupleType(afterTparams)
-        else
-          afterTparams
-      AppliedTypeTree(
-        Select(
-          Select(
-            Ident("scala"),
-            newTermName("events")
-          ),
-          newTypeName("ExecutionEvent")
-        ),
-      beforeG ::: afterG)
-    }
-
-    private def genIntervalEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
-      val beforeG = 
-        if(beforeTparams.size > 1)
-          genTupleType(beforeTparams)
-        else
-          beforeTparams
-      val afterG =
-        if(afterTparams.size > 1)
-          genTupleType(afterTparams)
-        else
-          afterTparams
-      AppliedTypeTree(
-        Select(
-          Select(
-            Ident("scala"),
-            newTermName("events")
-          ),
-          newTypeName("IntervalEvent")
-        ),
-      beforeG ::: afterG)
-    }
-
-    private def superBeforeExec(meth: Name) =
-      ExecEvent(
-        BeforeExec(),
-        Select(
-          // TODO better handles in which mixin it was?
-          Super(nme.EMPTY, nme.EMPTY),
-          meth
-        )
-      )
-
-    private def superAfterExec(meth: Name) =
-      ExecEvent(
-        AfterExec(),
-        Select(
-          // TODO better handles in which mixin it was?
-          Super(nme.EMPTY, nme.EMPTY),
-          meth
-        )
-      )
 
     // generate an imperative event declaration initialized with the given body
     private def genEvent(tree: DefDef, modifiers: Modifiers, name: Name, tpt: Tree, body: Tree, pos: Position) = {
