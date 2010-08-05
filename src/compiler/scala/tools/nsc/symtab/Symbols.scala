@@ -1506,7 +1506,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       else if (isVariable) "var"
       else if (isPackage) "package"
       else if (isModule) "object"
-      else if (isMethod) "def"
+      else if (isSourceMethod) "def"
       // @ESCALA
       else if (isEvent) "evt"
       // END@ESCALA
