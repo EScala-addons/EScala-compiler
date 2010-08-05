@@ -1,8 +1,8 @@
 package scala.events
 
-abstract class IntervalToPoint {
+abstract class IntervalEventFilter {
   self =>
-  object Negation extends IntervalToPoint {
+  object Negation extends IntervalEventFilter {
     protected[this] val ie = self.ie
     def apply() = !self.apply()
   }
@@ -13,7 +13,7 @@ abstract class IntervalToPoint {
   def unary_!() = Negation
 }
 
-class WithinEvent[T,U](protected[this] val ie: IntervalEvent[T,U]) extends IntervalToPoint {
+class WithinEvent[T,U](protected[this] val ie: IntervalEvent[T,U]) extends IntervalEventFilter {
   def apply() = ie.active
 }
 

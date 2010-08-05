@@ -55,7 +55,7 @@ trait Event[+T] {
    */
   def &&[U >: T](pred: => Boolean) = new EventNodeFilter[U](this, _ => pred)
 
-  def &&[U >: T](itp: IntervalToPoint) = new EventNodeFilterInterval[U](this, itp)
+  def &&[U >: T](itp: IntervalEventFilter) = new EventNodeFilterInterval[U](this, itp)
   
   /**
    * Event is triggered except if the other one is triggered
@@ -567,7 +567,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
   }
 }
 
-class EventNodeFilterInterval[T](event: Event[T], itp: IntervalToPoint) extends EventNode[T] {
+class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) extends EventNode[T] {
 
   lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
     if(itp())
