@@ -206,11 +206,11 @@ abstract class ObservableInstrumentation extends Transform
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
               val execEvName = buildExecutionEventName(sym)
-              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newImperativeEvent(tupledGenericParam), pos)
+              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeExecEvent(tupledGenericParam, execEvName), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
-                                     newImperativeEvent(tupledGenericParam ::: List(retType)), pos)
-              var execEv = genEvent(dd, modifiers, execEvName, genIntervalEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)), newExecutionEvent(beforeEvName, tupledGenericParam,
-                                    afterEvName, tupledGenericParam ::: List(retType)), pos)
+                                     newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName), pos)
+              var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
+                                    newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
@@ -218,9 +218,9 @@ abstract class ObservableInstrumentation extends Transform
 
               // type the events
               def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
+              execEv = typeEvent(execEv)
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
-              execEv = typeEvent(execEv)
               
               // the wrapper method
 
@@ -304,8 +304,8 @@ abstract class ObservableInstrumentation extends Transform
               val execEvName = buildExecutionEventName(sym)
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), superBeforeExec(sym.name), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)), superAfterExec(sym.name), pos)
-              var execEv = genEvent(dd, modifiers, execEvName, genIntervalEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)), newExecutionEvent(beforeEvName, tupledGenericParam,
-                                    afterEvName, tupledGenericParam ::: List(retType)), pos)
+              var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
+                                    newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
 
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
@@ -313,9 +313,9 @@ abstract class ObservableInstrumentation extends Transform
               namer.enterSyntheticSym(execEv)
 
               // type the events
+              execEv = localTyper.typed(execEv).asInstanceOf[ValDef]
               beforeEv = localTyper.typed(beforeEv).asInstanceOf[ValDef]
               afterEv = localTyper.typed(afterEv).asInstanceOf[ValDef]
-              execEv = localTyper.typed(execEv).asInstanceOf[ValDef]
 
               // the wrapper method simply calls the super instrumented method
               // handle curried function call

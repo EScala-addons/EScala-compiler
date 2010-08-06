@@ -18,17 +18,11 @@ trait IntervalEvent[+Start, +Stop] {
   protected[this] def startCondition(v: Start) = true
   protected[this] def endCondition(v: Stop) = true
 
-  protected[this] def onStart(v: Start): Unit
-
-  protected[this] def onEnd(v: Stop): Unit
-
-  protected[this] lazy val started = (v: Start) => {
-    onStart(v)
+  protected[this] lazy val started = (id: Int, v: Start, reacts: ListBuffer[() => Unit]) => {
     _active = true
   }
 
-  protected[this] lazy val ended = (v: Stop) => {
-    onEnd(v)
+  protected[this] lazy val ended = (id: Int, v: Stop, reacts: ListBuffer[() => Unit]) => {
     _active = false
   }
 
@@ -46,30 +40,36 @@ trait IntervalEvent[+Start, +Stop] {
 
 }
 
-class BetweenEvent[T,U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T,U] {
+class BetweenEvent[T,U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T,U]
 
-  protected[this] def onStart(t: T) {
+class ExecutionEvent[T,U] extends IntervalEvent[T,U] {
+
+  def start: Event[T] = _start
+  def end: Event[U] = _end
+
+  private var _start: Event[T] = _
+  private var _end: Event[U] = _
+
+  trait BeforeExecution {
+    this: ImperativeEvent[T] =>
+    _start = this
+    protected[events] abstract override def afterTrigger(t: T) {
+      cflow.push(t)
+    }
   }
 
-  protected[this] def onEnd(u: U) {
+  trait AfterExecution {
+    this: ImperativeEvent[U] =>
+    _end = this
+    protected[events] abstract override def beforeTrigger(u: U) {
+      cflow.pop
+    }
   }
-
-}
-
-class ExecutionEvent[T,U](val start: ImperativeEvent[T], val end: ImperativeEvent[U]) extends IntervalEvent[T,U] {
 
   private val cflow = Stack[T]()
 
   override def active = !cflow.isEmpty
 
   protected[this] override def endCondition(u: U) = cflow.size == 1
-
-  protected[this] def onStart(t: T) {
-    cflow.push(t)
-  }
-
-  protected[this] def onEnd(u: U) {
-    cflow.pop
-  }
 
 }

@@ -5,6 +5,7 @@ trait ObservableUtil {
 
   val global: Global
   import global._
+  import symtab.Flags._
 
   protected[events] def genTupleType(l: List[Tree])=
     List(AppliedTypeTree(Select(Ident("scala"), newTypeName("Tuple" + l.size)), l))
@@ -21,14 +22,54 @@ trait ObservableUtil {
         nme.CONSTRUCTOR),
       Nil)
 
-  protected[events] def newExecutionEvent(beforeEvt: Name, beforeTparams: List[Tree], afterEvt: Name, afterTparams: List[Tree]) =
+  protected[events] def newBeforeExecEvent(tparams: List[Tree], exec: Name) = {
+    val dependentType =
+      Select(
+        Ident(exec),
+        newTypeName("BeforeExecution"))
+    val x = nme.ANON_CLASS_NAME.toTypeName
+    Block(
+      List(
+        ClassDef(
+          Modifiers(FINAL), x, Nil,
+          Template(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
+        )
+      ),
+      New(
+        Ident(x),
+        List(Nil)
+      )
+    )
+  }
+
+  protected[events] def newAfterExecEvent(tparams: List[Tree], exec: Name) = {
+    val dependentType =
+      Select(
+        Ident(exec),
+        newTypeName("AfterExecution"))
+    val x = nme.ANON_CLASS_NAME.toTypeName
+    Block(
+      List(
+        ClassDef(
+          Modifiers(FINAL), x, Nil,
+          Template(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
+        )
+      ),
+      New(
+        Ident(x),
+        List(Nil)
+      )
+    )
+  }
+
+  protected[events] def newExecutionEvent(beforeTparams: List[Tree], afterTparams: List[Tree]) =
     Apply(
       Select(
         New(
           genExecutionEventTpt(beforeTparams, afterTparams)
         ),
         nme.CONSTRUCTOR),
-      Ident(beforeEvt) :: Ident(afterEvt) :: Nil)
+      Nil)
 
   private def tupleize(params: List[Tree]) = 
     if(params.size > 1)

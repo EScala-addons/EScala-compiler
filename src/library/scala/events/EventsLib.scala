@@ -181,6 +181,7 @@ class ImperativeEvent[T] extends EventNode[T] {
   * Trigger the event
   */
   def apply(v: T) = {
+    beforeTrigger(v)
     // does something only if the event is deployed, i.e. if some reactions or sinks
     // are registered
     if(deployed) {
@@ -190,7 +191,11 @@ class ImperativeEvent[T] extends EventNode[T] {
       // execute the collected reactions
       reacts.foreach((react: (() => Unit)) => react())
     }
+    afterTrigger(v)
   }
+
+  protected[events] def beforeTrigger(v: T) {}
+  protected[events] def afterTrigger(v: T) {}
 
   protected override def deploy { deployed = true }
 
