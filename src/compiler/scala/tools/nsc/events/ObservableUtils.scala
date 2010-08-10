@@ -1,11 +1,29 @@
 package scala.tools.nsc
 package events
 
+import ast.parser.TreeBuilder
+
 trait ObservableUtil {
+  self: ObservableInstrumentation =>
 
   val global: Global
   import global._
   import symtab.Flags._
+
+  object treeBuilder extends TreeBuilder {
+    val global: self.global.type = self.global
+    private var cnt = 0
+
+    def freshName(prefix: String) = {
+      cnt += 1
+      newTermName(prefix + (cnt - 1) + "$")
+    }
+    override def freshName() = freshName("events$")
+    def o2p(offset: Int) = NoPosition
+    def r2p(start: Int, point: Int, end: Int) = NoPosition
+  }
+
+  import treeBuilder._
 
   protected[events] def genTupleType(l: List[Tree])=
     List(AppliedTypeTree(Select(Ident("scala"), newTypeName("Tuple" + l.size)), l))
@@ -27,19 +45,7 @@ trait ObservableUtil {
       Select(
         Ident(exec),
         newTypeName("BeforeExecution"))
-    val x = nme.ANON_CLASS_NAME.toTypeName
-    Block(
-      List(
-        ClassDef(
-          Modifiers(FINAL), x, Nil,
-          Template(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
-        )
-      ),
-      New(
-        Ident(x),
-        List(Nil)
-      )
-    )
+    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
   protected[events] def newAfterExecEvent(tparams: List[Tree], exec: Name) = {
@@ -47,19 +53,7 @@ trait ObservableUtil {
       Select(
         Ident(exec),
         newTypeName("AfterExecution"))
-    val x = nme.ANON_CLASS_NAME.toTypeName
-    Block(
-      List(
-        ClassDef(
-          Modifiers(FINAL), x, Nil,
-          Template(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
-        )
-      ),
-      New(
-        Ident(x),
-        List(Nil)
-      )
-    )
+    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
   protected[events] def newExecutionEvent(beforeTparams: List[Tree], afterTparams: List[Tree]) =

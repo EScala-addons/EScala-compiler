@@ -72,4 +72,7 @@ class ExecutionEvent[T,U] extends IntervalEvent[T,U] {
 
   protected[this] override def endCondition(u: U) = cflow.size == 1
 
+  protected[events] override def deploy {}
+  protected[events] override def undeploy {}
+
 }
