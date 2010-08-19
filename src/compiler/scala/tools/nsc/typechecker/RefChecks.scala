@@ -304,9 +304,9 @@ abstract class RefChecks extends InfoTransform {
         else {
           if (member hasFlag PRIVATE) { // (1.1)
             overrideError("has weaker access privileges; it should not be private")
-	  } else if(!(member hasFlag OBSERVABLE) && (other hasFlag OBSERVABLE)) {
-	    // @ESCALA
-	    overrideError("has weaker access privileges; it should be observable")
+          } else if(!(member hasFlag OBSERVABLE) && (other hasFlag OBSERVABLE)) {
+            // @ESCALA
+            overrideError("has weaker access privileges; it should be observable")
           }
           val mb = member.accessBoundary(member.owner)
           val ob = other.accessBoundary(member.owner)
@@ -345,7 +345,6 @@ abstract class RefChecks extends InfoTransform {
           } else {
             checkOverrideTypes()
           }
->>>>>>> 18448954d96aaeb433ead9071acab5ec20c767e4:src/compiler/scala/tools/nsc/typechecker/RefChecks.scala
         }
 
         def checkOverrideTypes() {

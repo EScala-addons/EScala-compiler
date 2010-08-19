@@ -184,14 +184,15 @@ class ImperativeEvent[T] extends EventNode[T] {
     beforeTrigger(v)
     // does something only if the event is deployed, i.e. if some reactions or sinks
     // are registered
-    if(deployed) {
-      // collect matching reactions
-      val reacts: ListBuffer[() => Unit] = new ListBuffer;
-      reactions(EventIds.newId(), v, reacts)
-      // execute the collected reactions
-      reacts.foreach((react: (() => Unit)) => react())
-    }
+    //if(deployed) {
+    // collect matching reactions
+    val reacts: ListBuffer[() => Unit] = new ListBuffer;
+    reactions(EventIds.newId(), v, reacts)
+    // once reactions are collected, we are after the triggering
     afterTrigger(v)
+    // execute the collected reactions
+    reacts.foreach((react: (() => Unit)) => react())
+    //}
   }
 
   protected[events] def beforeTrigger(v: T) {}
