@@ -1,6 +1,7 @@
 package scala.events
 
-import collection.mutable.ListBuffer
+import collection.mutable.{ListBuffer,Stack}
+import scala.util.DynamicVariable
 
 trait Event[+T] {
   /*
@@ -8,17 +9,18 @@ trait Event[+T] {
    * fills the given list with reactions to be executed
    * the reactions represt
    */
-  type Sink = (Int, T, ListBuffer[(() => Unit)]) => Unit
+  type Sink = (Int, T, ListBuffer[() => Unit], Trace) => Unit
+  type Trace = List[Event[_]]
 
   /*
    * Register a sink function to the event (used for propagation of events)
    */
-  def +=(sink: Sink)
+  protected[events] def +=(sink: Sink)
 
   /*
    * Unregister a sink function
    */
-  def -=(sink: Sink)
+  protected[events] def -=(sink: Sink)
 
   /*
    * Register a reaction to the event
@@ -96,7 +98,7 @@ trait Event[+T] {
  */
 abstract class EventNode[T] extends Event[T] {
   protected val sinks = new ListBuffer[Sink]
-  protected val _reactions = new ListBuffer[T => Unit]
+  protected[events] val _reactions = new ListBuffer[T => Unit]
 
   /*
    * Register a reaction to the event
@@ -148,14 +150,63 @@ abstract class EventNode[T] extends Event[T] {
    */
   protected def undeploy: Unit
 
-  def reactions(id: Int, v: T, reacts: ListBuffer[() => Unit]) {
+  /** Collects the reactions registered with this event and associates the current event trace.
+   *  It then propagates to sinks.
+   */
+  def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) {
+    // collect the reactions registered with this event
+    _reactions.foreach(react => reacts += ((() => react(v)) -> trace))
+    // propagate to sinks adding this event to the event trace
+    sinks.foreach(sink => sink(id, v, reacts, this :: trace))
+  }
+
+/*  def reactions(id: Int, v: T, reacts: ListBuffer[() => Unit]) {
     // collect the reactions of this event
     _reactions.foreach(react => reacts += (() => react(v)))
     // collect the reactions of the sinks
     sinks.foreach(sink => sink(id, v, reacts))
-  }
+  }*/
 
 }
+
+/** The current tree of triggered events
+ *  TODO remove it?
+ */
+//protected[events] object eventTrace {
+//
+//  class Node(val parent: Option[Node], val ev: Event[_]) {
+//
+//    parent match {
+//      case Some(n) => n.children = n.children ::: List(this)
+//      case None => // nothing
+//    }
+//
+//    def this(ev: Event[_]) = this(None, ev)
+//    def root_? = parent.isEmpty
+//    var children: List[Node] = Nil
+//    def flatMap[T](f: Node => List[T]): List[T] =
+//      children.flatMap(n => f(n) ::: n.flatMap(f))
+//    def map[T](f: Node => T): List[T] =
+//      children.flatMap(n => f(n) :: n.map(f))
+//  }
+//
+//  private val _current = new DynamicVariable(new Node(emptyevent))
+//  /** the currently pointed node */
+//  def current: Node = _current.value
+//
+//  def up = current.parent match {
+//    case Some(n) => _current.value = n
+//    case None => // nothing
+//  }
+//
+//  def reactions =  current.map(n => n)
+//
+//  /** empties the current tree */
+//  def empty = _current.value = new Node(emptyevent)
+//
+//}
+
+protected[events] object eventTrace extends DynamicVariable[List[Event[_]]](Nil)
 
 object EventIds {
   // last used event id
@@ -186,12 +237,21 @@ class ImperativeEvent[T] extends EventNode[T] {
     // are registered
     //if(deployed) {
     // collect matching reactions
-    val reacts: ListBuffer[() => Unit] = new ListBuffer;
-    reactions(EventIds.newId(), v, reacts)
-    // once reactions are collected, we are after the triggering
-    afterTrigger(v)
-    // execute the collected reactions
-    reacts.foreach((react: (() => Unit)) => react())
+    val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
+
+    eventTrace.withValue(this :: eventTrace.value) {
+      reactions(EventIds.newId(), v, reacts, eventTrace.value)
+      // once reactions are collected, we are after the triggering
+      afterTrigger(v)
+      // execute the collected reactions
+      reacts.foreach(
+        (react: () => Unit, trace: Trace) => {
+          eventTrace.withValue(trace) {
+            react()
+          }
+        }
+      )
+    }
     //}
   }
 
@@ -217,34 +277,37 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
   // Parameter value of event1 or event2 (depending on which is received first)
   var v1: T1 = _
   var v2: T2 = _
+  var currentTrace: Trace = Nil
 
   /*
   * Reaction to event1
   */
-  lazy val onEvt1 = (id: Int, v1: T1, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt1 = (id: Int, v1: T1, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
     if (this.id == id) {
       // event2 is already received; collect the reactions
-      reactions(id, merge(v1, this.v2), reacts)
+      reactions(id, merge(v1, this.v2), reacts, this :: trace ::: this.currentTrace)
     }
     else {
       // event2 is not received yet; save the data of the event1
       this.id = id
       this.v1 = v1
+      this.currentTrace = trace
     }
   }
 
   /*
    * Reaction to event2
    */
-  lazy val onEvt2 = (id: Int, v2: T2, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt2 = (id: Int, v2: T2, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
     if (this.id == id) {
       // event1 is already received; collect the reactions
-      reactions(id, merge(this.v1, v2), reacts)
+      reactions(id, merge(this.v1, v2), reacts, this :: trace ::: currentTrace)
     }
     else {
       // event1 is not received yet; save the data of the event2
       this.id = id
       this.v2 = v2
+      this.currentTrace = trace
     }
   }
 
@@ -261,7 +324,8 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
   */
   protected override def undeploy {
     ev1 -= onEvt1
-    ev2 -= onEvt2
+    ev2 -= onEvt2:w
+
   }
 
   override def toString = "(" + ev1 + " and " + ev2 + ")"
@@ -279,12 +343,12 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
   /*
    * Reaction to both events
    */
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
     // if the event was already received, avoid processing it twice
     if (this.id != id) {
       this.id = id
       // the event received for the first time; collect the reactions
-      reactions(id, v, reacts)
+      reactions(id, v, reacts, this :: trace)
     }
   }
 
@@ -315,9 +379,9 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
   /*
    * Reaction to the referenced event
    */
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
     // transform v to f(v)
-    reactions(id, f(v), reacts)
+    reactions(id, f(v), reacts, this :: trace)
   }
 
   /*
@@ -346,10 +410,10 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
   /*
    * Reaction to the referenced event
    */
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
     // filter the event by f(v)
     if (f(v)) {
-      reactions(id, v, reacts)
+      reactions(id, v, reacts, this :: trace)
     }
   }
 
@@ -398,8 +462,8 @@ class EventNodeRef[T, U](target: Variable[T], evf: T => Event[U]) extends EventN
   /*
    * Reaction to the currently referenced event
    */
-  lazy val onEvt = (id: Int, v: U, reacts: ListBuffer[() => Unit]) => {
-    reactions(id, v, reacts)
+  lazy val onEvt = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
+    reactions(id, v, reacts, this :: trace)
   }
   
   /*
@@ -444,8 +508,8 @@ class EventNodeExists[T, U](list: VarList[T], evf: T => Event[U]) extends EventN
   /*
    * Reaction to the observed events
    */
-  lazy val onEvt = (id: Int, v: U, reacts: ListBuffer[() => Unit]) => {
-    reactions(id, v, reacts)
+  lazy val onEvt = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)], trace: Trace) => {
+    reactions(id, v, reacts, this :: trace)
   }
 
   /*
