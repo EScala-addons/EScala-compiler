@@ -4,6 +4,8 @@ import scala.collection.mutable.{ListBuffer,Stack}
 
 trait IntervalEvent[+Start, +Stop] {
 
+  type Trace = List[Event[_]]
+
   def start: Event[Start]
   def end: Event[Stop]
 
@@ -18,11 +20,11 @@ trait IntervalEvent[+Start, +Stop] {
   protected[this] def startCondition(v: Start) = true
   protected[this] def endCondition(v: Stop) = true
 
-  protected[this] lazy val started = (id: Int, v: Start, reacts: ListBuffer[() => Unit]) => {
+  protected[this] lazy val started = (id: Int, v: Start, reacts: ListBuffer[(() => Unit, Trace)]) => {
     _active = true
   }
 
-  protected[this] lazy val ended = (id: Int, v: Stop, reacts: ListBuffer[() => Unit]) => {
+  protected[this] lazy val ended = (id: Int, v: Stop, reacts: ListBuffer[(() => Unit, Trace)]) => {
     _active = false
   }
 
