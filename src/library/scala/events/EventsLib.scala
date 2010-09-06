@@ -242,12 +242,12 @@ class ImperativeEvent[T] extends EventNode[T] {
     val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
 
     eventTrace.withValue(this :: eventTrace.value) {
-      reactions(EventIds.newId(), v, reacts, eventTrace.value)
+      reactions(EventIds.newId(), v, reacts)
       // once reactions are collected, we are after the triggering
       afterTrigger(v)
       // execute the collected reactions
       reacts.foreach(
-        (react: () => Unit) => {
+        (react: () => Unit, trace: Trace) => {
           eventTrace.withValue(trace) {
             react()
           }
@@ -295,7 +295,7 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
       // event2 is not received yet; save the data of the event1
       this.id = id
       this.v1 = v1
-      this.currentTrace = trace
+      this.currentTrace = eventTrace.value
     }
   }
 
@@ -313,7 +313,7 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
       // event1 is not received yet; save the data of the event2
       this.id = id
       this.v2 = v2
-      this.currentTrace = trace
+      this.currentTrace = eventTrace.value
     }
   }
 
@@ -330,7 +330,7 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
   */
   protected override def undeploy {
     ev1 -= onEvt1
-    ev2 -= onEvt2:w
+    ev2 -= onEvt2
 
   }
 
@@ -554,7 +554,7 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
   /*
   * Reaction to event1
   */
-  lazy val onEvt1 = (id: Int, v1: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt1 = (id: Int, v1: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     // ignore consecutive occurrences of event1
     if (this.id == -1) {
       // save the data of event1
@@ -566,7 +566,7 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
   /*
    * Reaction to event2
    */
-  lazy val onEvt2 = (id: Int, v2: U, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt2 = (id: Int, v2: U, reacts: ListBuffer[(() => Unit, Trace)]) => {
     // react to event2 only if event1 was already received;
     // also ensure that event2 is different from event1 by comparing the ids
     if (this.id != -1 && this.id != id) {
@@ -599,11 +599,11 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
 
 class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
   
-  private val myReacts = new ListBuffer[() => Unit]
+  private val myReacts = new ListBuffer[(() => Unit, Trace)]
   
   private var id = -1
   
-  lazy val onAccepted = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onAccepted = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     myReacts.clear
     // if the id is already set, the except event was received
     if(this.id != id) {
@@ -612,7 +612,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
     }
   }
   
-  lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     // the except event is received, set the id to
     if(this.id != id) {
       this.id = id
@@ -623,11 +623,13 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
     }
   }
   
-  override def reactions(id: Int, v: T, reacts: ListBuffer[() => Unit]) {
+  override def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
     // collect the reactions of this event
-    _reactions.foreach(react => myReacts += (() => react(v)))
+    _reactions.foreach(react => myReacts += (() => react(v), eventTrace.value))
     // collect the reactions of the sinks
-    sinks.foreach(sink => sink(id, v, myReacts))
+    eventTrace.withValue(this :: eventTrace.value) {
+      sinks.foreach(sink => sink(id, v, myReacts))
+    }
     // add my reactions and my sinks reactions to the global reactions
     reacts ++= myReacts
   }
@@ -645,7 +647,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
 
 class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) extends EventNode[T] {
 
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     if(itp())
       reactions(id, v, reacts)
   }
