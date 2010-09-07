@@ -6,6 +6,8 @@ package object events {
 
   def within[T,U](ie: IntervalEvent[T,U]) = new WithinEvent(ie)
 
+  def causedBy[T](e: Event[T]) = (_: Any) => eventTrace.value.contains(e)
+
 }
 
 // vim: set ts=2 sw=2 et:
