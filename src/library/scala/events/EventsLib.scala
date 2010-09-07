@@ -50,7 +50,7 @@ trait Event[+T] {
   /**
    * Event filtered with a predicate
    */
-  def &&[U >: T](pred: U => Boolean) = new EventNodeFilter[U](this, pred)
+  def &&[U >: T, V >: T <: U](pred: U => Boolean) = new EventNodeFilter[V](this, pred)
   
   /**
    * Event filtered with a boolean variable
