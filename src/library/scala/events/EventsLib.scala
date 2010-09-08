@@ -153,7 +153,7 @@ abstract class EventNode[T] extends Event[T] {
   /** Collects the reactions registered with this event and associates the current event trace.
    *  It then propagates to sinks.
    */
-  def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
+  protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
     // collect the reactions registered with this event
     _reactions.foreach(react => reacts += ((() => react(v)) -> eventTrace.value))
     // propagate to sinks adding this event to the event trace
