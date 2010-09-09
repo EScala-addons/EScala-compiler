@@ -15,8 +15,7 @@ trait EventSequencer {
     object cache extends HashMap[Event[_], SequencedEvent[_]]
 
     def apply[T](ev: Event[T]): Event[T] = synchronized {
-      //cache.getOrElseUpdate(ev, new SequencedEvent(ev)).asInstanceOf[SequencedEvent[T]]
-      new SequencedEvent(ev)
+      cache.getOrElseUpdate(ev, new SequencedEvent(ev)).asInstanceOf[SequencedEvent[T]]
     }
 
     def act {
