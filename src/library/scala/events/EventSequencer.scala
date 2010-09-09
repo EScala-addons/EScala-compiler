@@ -4,22 +4,37 @@ import scala.actors._
 import scala.collection.mutable.{HashMap, ListBuffer}
 
 trait EventSequencer {
+
+  type Trace = List[Event[_]]
+
   /**  The events are cached by the sequencer to allow to unregister reactions and sinks. */
-  object async extends Actor {
+  object async extends DaemonActor {
 
     // TODO improve typing with dependent type
     // see http://scala-programming-language.1934581.n4.nabble.com/scala-Real-dependent-typing-in-Scala-td1998734.html
     object cache extends HashMap[Event[_], SequencedEvent[_]]
 
     def apply[T](ev: Event[T]): Event[T] = synchronized {
-      cache.getOrElseUpdate(ev, new SequencedEvent(ev)).asInstanceOf[SequencedEvent[T]]
+      //cache.getOrElseUpdate(ev, new SequencedEvent(ev)).asInstanceOf[SequencedEvent[T]]
+      new SequencedEvent(ev)
     }
 
     def act {
       loop {
         react {
-          case OnEvent(ev, id, v, reacts) =>
-            ev.reactions(id, v, reacts)
+          case OnEvent(truie, id, v, trace) =>
+            val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
+            eventTrace.withValue(trace) {
+              truie.reactions(id, v, reacts)
+              // execute the collected reactions
+              reacts.foreach(
+                (react: () => Unit, trace: Trace) => {
+                  eventTrace.withValue(trace) {
+                    react()
+                  }
+                }
+              )
+            }
         }
       }
     }
@@ -36,7 +51,7 @@ trait EventSequencer {
 
     lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
       // simply asynchronously delegate
-      async ! OnEvent(ev, id, v, reacts)
+      async ! OnEvent(this, id, v, eventTrace.value)
     }
 
     def deploy {
@@ -48,8 +63,7 @@ trait EventSequencer {
     }
   }
 
-  type Trace = List[Event[_]]
-  case class OnEvent[T](ev: Event[T], id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)])
+  case class OnEvent[T](ev: SequencedEvent[T], id: Int, v: T, currentTrace: Trace)
 
 }
 
