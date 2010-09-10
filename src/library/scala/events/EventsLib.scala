@@ -51,7 +51,7 @@ trait Event[+T] {
    * Event filtered with a predicate
    */
   def &&[U >: T, V >: T <: U](pred: U => Boolean) = new EventNodeFilter[V](this, pred)
-  
+
   /**
    * Event filtered with a boolean variable
    */
@@ -661,6 +661,11 @@ class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) exte
     event -= onEvt
     itp.undeploy
   }
+}
+
+class CausedByFilter(e: Event[_]) extends Function0[Boolean] {
+  def apply() = eventTrace.value.contains(e)
+  def unary_! = () => !eventTrace.value.contains(e)
 }
 
 /*
