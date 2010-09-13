@@ -102,13 +102,17 @@ abstract class ObservableInstrumentation extends Transform
       val sym = tree.symbol
       tree match {
         case pd: PackageDef =>
+          val oldNamer = namer
           namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
-          super.transform(tree)
+          val res = super.transform(tree)
+          namer = oldNamer
+          res
         case cd: ClassDef => 
           synthesized = List()
           clazz = cd
 
           // transform the class body
+          val oldNamer = namer
           namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
           val tclazz = super.transform(cd).asInstanceOf[ClassDef]
 
@@ -116,6 +120,8 @@ abstract class ObservableInstrumentation extends Transform
           var template = tclazz.impl
           template = treeCopy.Template(template, template.parents,
                      template.self, synthesized ::: template.body)
+
+          namer = oldNamer
 
           // switch the implementation
           treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
