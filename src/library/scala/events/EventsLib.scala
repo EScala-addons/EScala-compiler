@@ -449,7 +449,7 @@ class EventNodeRef[T, U](target: Variable[T], evf: T => Event[U]) extends EventN
   /*
   * Currently referenced event
   */
-  private var ev: Event[U] = evf(target.value)
+  private var ev: Event[U] = if(target.value != null) evf(target.value) else emptyevent
 
   import EventsLibConversions._
   
@@ -460,7 +460,10 @@ class EventNodeRef[T, U](target: Variable[T], evf: T => Event[U]) extends EventN
     // unregister from the current event
     ev -= onEvt
     // retrieve and save the new event
-    ev = evf(newTarget)
+    if(newTarget != null)
+      ev = evf(newTarget)
+    else 
+      ev = emptyevent
     // register to the new event
     ev += onEvt
   })
