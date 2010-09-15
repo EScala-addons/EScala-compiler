@@ -86,6 +86,16 @@ trait Symbols { self: Universe =>
     def addChild(sym: Symbol)        { throw new UnsupportedOperationException("addChild inapplicable for " + this) }
     def addAnnotation(annot: AnnotationInfo) { throw new UnsupportedOperationException("addAnnotation inapplicable for " + this) }
 
+    // @ESCALA
+    private var implMeth: Symbol = null
+    def implementedMethod_=(sym: Symbol) {
+      if(!this.isImplementationMethod)
+        throw new UnsupportedOperationException("implementedMethod_= inapplicable for " + this)
+      this.implMeth = sym
+    }
+    def implementedMethod = implMeth
+    // END @ESCALA
+
     /** For a module class its linked class, for a plain class
      *  the module class of its linked module.
      *  For instance
@@ -141,6 +151,7 @@ trait Symbols { self: Universe =>
     final def isEvent = hasFlag(EVENT)
     final def isObservable = isMethod && hasFlag(OBSERVABLE)
     final def isInstrumented = isMethod && hasFlag(INSTRUMENTED)
+    final def isImplementationMethod = isMethod && hasFlag(IMPLEMENTATION)
     // @ESCALA END
     final def isModule = isTerm && hasFlag(MODULE)
     final def isModuleClass = isClass && hasFlag(MODULE)
