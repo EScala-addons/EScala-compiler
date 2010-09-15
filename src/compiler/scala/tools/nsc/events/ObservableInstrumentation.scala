@@ -48,7 +48,6 @@ abstract class ObservableInstrumentation extends Transform
     
     private var clazz: ClassDef = null
     private var synthesized: List[Tree] = null
-    private var meth: DefDef = null
     
     object duplicator extends {
       val global: ObservableInstrumentation.this.global.type = ObservableInstrumentation.this.global
@@ -141,17 +140,12 @@ abstract class ObservableInstrumentation extends Transform
             val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
             
             // the flags for the implementation method
-            var implMod = Modifiers(PROTECTED | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
+            var implMod = Modifiers(PROTECTED | IMPLEMENTATION | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
             if (overrideInstr && sym.isOverride) {
               implMod = implMod | OVERRIDE  
             }
             if (mods.isDeferred) {
               implMod = implMod | DEFERRED  
-            }
-            
-            if(overrideInstr) {
-              // the observable method
-              meth = dd
             }
             
             // enter and type the implementation method
@@ -167,6 +161,8 @@ abstract class ObservableInstrumentation extends Transform
                 tparamsImpl, vparamsImpl, retType.copyAttrs(retType), transform(body)))
 
             namer.enterSyntheticSym(impl)
+            // set the implemented method symbol
+            impl.symbol.implementedMethod = sym
 
             // retype the method
             impl = duplicator.retyped(localTyper.context1.asInstanceOf[duplicator.Context], impl, clazz.symbol, clazz.symbol, scala.collection.immutable.Map.empty[Symbol,Type]).asInstanceOf[DefDef]
@@ -349,38 +345,9 @@ abstract class ObservableInstrumentation extends Transform
             // return the implementation
             
                                 
-            // we are now out of an observable method
-            meth = null
-            
             // the result
             impl
                 
-        case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
-          // super call in an observable method
-          // call to the super observable method must be replaced 
-          // with call to the super implementation method
-          
-          val pos = sym.pos
-            
-          // the current observable method
-          val obsSym = meth.symbol
-          
-          // the super called method
-          val called = app.symbol
-          
-          // get the overridden symbol
-          val overridden = obsSym.overriddenSymbol(called.owner)
-
-          if(overridden == called && called.isInstrumented) {
-            // replace super call
-            // get the super implementation method
-            val superName = buildImplMethodName(sym)
-            val superMeth = called.owner.info.decls.lookup(superName)
-              
-            atPos(pos)(localTyper.typed(Apply(Select(Super(qual, mix), superName), p)))
-          } else 
-            super.transform(tree)
-
         case _ => super.transform(tree)
       }
     }

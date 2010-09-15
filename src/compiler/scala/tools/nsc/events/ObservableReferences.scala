@@ -8,18 +8,22 @@ import util.EventUtil
 import typechecker._
 
 /**
- * Transforms the implicit event references to an acces to the generated event.
+ * Transforms the references which changed due to the observable transformations. This includes:
+ * <ul>
+ *  <li>transform implicit event references to an acces to the generated event.</li>
+ *  <li>transform super references in implementation method to call the super implementation method.</li>
+ * </ul>
  *
  * @author Lucas Satabin
  */
-abstract class ExecEvents extends Transform with TypingTransformers with EventUtil {
+abstract class ObservableReferences extends Transform with TypingTransformers with EventUtil {
   import global._
   import definitions._
 
-  val phaseName: String = "execevents"
+  val phaseName: String = "obsrefs"
 
   def newTransformer(unit: CompilationUnit): Transformer = {
-    new ExecEventsTransformation(unit)
+    new ObservableReferencesTransformation(unit)
   }
 
   /** Create a new phase which applies transformer */
@@ -32,9 +36,20 @@ abstract class ExecEvents extends Transform with TypingTransformers with EventUt
     }
   }
 
-  class ExecEventsTransformation(unit: CompilationUnit) extends TypingTransformer(unit) {
+  class ObservableReferencesTransformation(unit: CompilationUnit) extends TypingTransformer(unit) {
+
+    private var meth: DefDef = null
+
     override def transform(tree: Tree): Tree = {
+      val sym = tree.symbol
+
       tree match {
+        case dd: DefDef if sym.isOverride && sym.isImplementationMethod =>
+          val oldMeth = meth
+          meth = dd
+          val res = super.transform(tree)
+          meth = oldMeth
+          res
         case ee @ ExecEvent(kind, meth) =>
           val methSymbol = meth.symbol
           methSymbol.tpe match {
@@ -62,6 +77,32 @@ abstract class ExecEvents extends Transform with TypingTransformers with EventUt
               unit.error(tree.pos, "a reference to a method is expected")
               EmptyTree
           }
+        case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
+          // super call in an observable method
+          // call to the super observable method must be replaced 
+          // with call to the super implementation method
+          
+          val pos = sym.pos
+            
+          // the current observable method
+          val obsSym = meth.symbol.implementedMethod
+          
+          // the super called method
+          val called = app.symbol
+          
+          // get the overridden symbol
+          val overridden = obsSym.overriddenSymbol(called.owner)
+
+          if(overridden == called && called.isInstrumented) {
+            // replace super call
+            // get the super implementation method
+            val superName = buildImplMethodName(sym)
+            val superMeth = called.owner.info.decls.lookup(superName)
+              
+            atPos(pos)(localTyper.typed(Apply(Select(Super(qual, mix), superName), p)))
+          } else 
+            super.transform(tree)
+
         case _ => super.transform(tree)
       }
     }

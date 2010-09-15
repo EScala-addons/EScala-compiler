@@ -66,6 +66,7 @@ class Flags {
   final val OBSERVABLE    = 0x100000000L  // method is observable
                                           // pre: INSTRUMENTED
   final val IMPERATIVE    = 0x80000000000L// event is imperative
+  final val IMPLEMENTATION= 0x80000000000L// method is an implementation method
   final val EVENT         = 0x200000000L  // the val is an event
   final val INSTRUMENTED  = 0x400000000L  // the method is instrumented
   
