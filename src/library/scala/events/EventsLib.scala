@@ -55,7 +55,7 @@ trait Event[+T] {
   /**
    * Event filtered with a boolean variable
    */
-  def &&[U >: T](pred: => Boolean) = new EventNodeFilter[U](this, _ => pred)
+  def &&[U >: T](pred: () => Boolean) = new EventNodeFilter[U](this, _ => pred())
 
   def &&[U >: T](itp: IntervalEventFilter) = new EventNodeFilterInterval[U](this, itp)
   

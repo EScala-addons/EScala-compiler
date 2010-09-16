@@ -1016,7 +1016,8 @@ abstract class Mixin extends InfoTransform with ast.TreeDSL {
               if (mix == nme.EMPTY.toTypeName && currentOwner.enclClass.isImplClass)
                 assert(false, "illegal super in trait: " + currentOwner.enclClass + " " + tree);
               if (sym.owner hasFlag lateINTERFACE) {
-                if (sym.hasFlag(ACCESSOR)) {
+                // @ESCALA test extended to correctly mix event accessor
+                if (sym.hasFlag(ACCESSOR) && !sym.hasFlag(EVENT)) {
                   assert(args.isEmpty)
                   val sym1 = sym.overridingSymbol(currentOwner.enclClass)
                   typedPos(tree.pos)((transformSuper(qual) DOT sym1)())
