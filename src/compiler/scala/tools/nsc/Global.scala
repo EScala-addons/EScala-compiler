@@ -554,10 +554,12 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     phasesSet += observables                // instrument observable methods
     phasesSet += obsrefs                    // replace exec events references by the generated event and super access to overridden observable method
     // @ESCALA END
-    phasesSet += superAccessors             // add super accessors
-    phasesSet += pickler                    // serialize symbol tables
-    phasesSet += refchecks                  // perform reference and override checking, translate nested objects
-    // phasesSet += devirtualize               // Desugar virtual classes
+    phasesSet += superAccessors			       // add super accessors
+    phasesSet += pickler			       // serialize symbol tables
+    phasesSet += refchecks			       // perform reference and override checking, translate nested objects
+    
+//    if (false && settings.YvirtClasses)
+//	phasesSet += devirtualize		       // Desugar virtual classes4
     
     phasesSet += uncurry                    // uncurry, translate function values to anonymous classes
     phasesSet += tailCalls                  // replace tail calls by jumps
@@ -728,6 +730,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
 
     /** add unit to be compiled in this run */
     private def addUnit(unit: CompilationUnit) {
+//      unit.parseSettings()
       unitbuf += unit
       compiledFiles += unit.source.file.path
     }
