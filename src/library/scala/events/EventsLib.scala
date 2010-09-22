@@ -162,51 +162,7 @@ abstract class EventNode[T] extends Event[T] {
     }
   }
 
-/*  def reactions(id: Int, v: T, reacts: ListBuffer[() => Unit]) {
-    // collect the reactions of this event
-    _reactions.foreach(react => reacts += (() => react(v)))
-    // collect the reactions of the sinks
-    sinks.foreach(sink => sink(id, v, reacts))
-  }*/
-
 }
-
-/** The current tree of triggered events
- *  TODO remove it?
- */
-//protected[events] object eventTrace {
-//
-//  class Node(val parent: Option[Node], val ev: Event[_]) {
-//
-//    parent match {
-//      case Some(n) => n.children = n.children ::: List(this)
-//      case None => // nothing
-//    }
-//
-//    def this(ev: Event[_]) = this(None, ev)
-//    def root_? = parent.isEmpty
-//    var children: List[Node] = Nil
-//    def flatMap[T](f: Node => List[T]): List[T] =
-//      children.flatMap(n => f(n) ::: n.flatMap(f))
-//    def map[T](f: Node => T): List[T] =
-//      children.flatMap(n => f(n) :: n.map(f))
-//  }
-//
-//  private val _current = new DynamicVariable(new Node(emptyevent))
-//  /** the currently pointed node */
-//  def current: Node = _current.value
-//
-//  def up = current.parent match {
-//    case Some(n) => _current.value = n
-//    case None => // nothing
-//  }
-//
-//  def reactions =  current.map(n => n)
-//
-//  /** empties the current tree */
-//  def empty = _current.value = new Node(emptyevent)
-//
-//}
 
 protected[events] object eventTrace extends DynamicVariable[List[Event[_]]](Nil)
 
@@ -237,11 +193,10 @@ class ImperativeEvent[T] extends EventNode[T] {
     beforeTrigger(v)
     // does something only if the event is deployed, i.e. if some reactions or sinks
     // are registered
-    //if(deployed) {
-    // collect matching reactions
-    val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
+    if(deployed) {
+      // collect matching reactions
+      val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
 
-    //eventTrace.withValue(this :: eventTrace.value) {
       reactions(EventIds.newId(), v, reacts)
       // once reactions are collected, we are after the triggering
       afterTrigger(v)
@@ -249,19 +204,20 @@ class ImperativeEvent[T] extends EventNode[T] {
       reacts.foreach(
         (react: () => Unit, trace: Trace) => {
           eventTrace.withValue(trace) {
-            try {
+            //try {
               react()
-            } catch {
+            /*} catch {
               case e => 
                 println("Event trace:")
                 println(eventTrace.value.mkString("", "\n", "\n"))
                 throw e
-            }
+            }*/
           }
         }
       )
-    //}
-    //}
+    } else {
+      afterTrigger(v)
+    }
   }
 
   protected[events] def beforeTrigger(v: T) {}
@@ -634,10 +590,10 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
   }
   
   override def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
-    // collect the reactions of this event
-    _reactions.foreach(react => myReacts += (() => react(v), eventTrace.value))
-    // collect the reactions of the sinks
     eventTrace.withValue(this :: eventTrace.value) {
+      // collect the reactions of this event
+      _reactions.foreach(react => myReacts += (() => react(v), eventTrace.value))
+      // collect the reactions of the sinks
       sinks.foreach(sink => sink(id, v, myReacts))
     }
     // add my reactions and my sinks reactions to the global reactions
