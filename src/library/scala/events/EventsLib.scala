@@ -241,7 +241,7 @@ class ImperativeEvent[T] extends EventNode[T] {
     // collect matching reactions
     val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
 
-    eventTrace.withValue(this :: eventTrace.value) {
+    //eventTrace.withValue(this :: eventTrace.value) {
       reactions(EventIds.newId(), v, reacts)
       // once reactions are collected, we are after the triggering
       afterTrigger(v)
@@ -249,11 +249,18 @@ class ImperativeEvent[T] extends EventNode[T] {
       reacts.foreach(
         (react: () => Unit, trace: Trace) => {
           eventTrace.withValue(trace) {
-            react()
+            try {
+              react()
+            } catch {
+              case e => 
+                println("Event trace:")
+                println(eventTrace.value.mkString("", "\n", "\n"))
+                throw e
+            }
           }
         }
       )
-    }
+    //}
     //}
   }
 
