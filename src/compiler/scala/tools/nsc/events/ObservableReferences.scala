@@ -84,20 +84,15 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
           
           val pos = sym.pos
             
-          // the current observable method
-          val obsSym = meth.symbol.implementedMethod
-          
           // the super called method
           val called = app.symbol
-          
-          // get the overridden symbol
-          val overridden = obsSym.overriddenSymbol(called.owner)
+          val calledImplName = buildImplMethodName(called)
 
-          if(overridden == called && called.isInstrumented) {
+          if(calledImplName.decode == meth.symbol.name.decode && called.isInstrumented) {
             // replace super call
             // get the super implementation method
             val superName = buildImplMethodName(sym)
-            val superMeth = called.owner.info.decls.lookup(superName)
+            //val superMeth = called.owner.info.decls.lookup(superName)
               
             atPos(pos)(localTyper.typed(Apply(Select(Super(qual, mix), superName), p)))
           } else 
