@@ -7,7 +7,7 @@ class EventNodeListExists[T, U](list: List[T], evf: T => Event[U]) extends Event
   /*
    * Reaction to the observed events
    */
-  def onEvt (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)]) {
+  def onEvt (id: Int, v: U, reacts: ListBuffer[() => Unit]) {
     reactions(id, v, reacts)
   }
 
