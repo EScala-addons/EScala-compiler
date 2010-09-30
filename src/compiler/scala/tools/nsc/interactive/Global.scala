@@ -208,11 +208,13 @@ self =>
   // ----------------- The Background Runner Thread -----------------------
 
   /** The current presentation compiler runner */
-  private var compileRunner = newRunnerThread
+  protected var compileRunner = newRunnerThread
+
+  private var threadId = 1
 
   /** Create a new presentation compiler runner.
    */
-  def newRunnerThread: Thread = new Thread("Scala Presentation Compiler") {
+  def newRunnerThread: Thread = new Thread("Scala Presentation Compiler V"+threadId) {
     override def run() {
       try {
         while (true) {
@@ -240,6 +242,7 @@ self =>
           }
       }
     }
+    threadId += 1
     start()
   }
 
@@ -296,7 +299,7 @@ self =>
       activeLocks = 0
       currentTyperRun.typeCheck(unit)
       unit.status = currentRunId
-      syncTopLevelSyms(unit)
+      if (!unit.isJava) syncTopLevelSyms(unit)
     }
   }
 

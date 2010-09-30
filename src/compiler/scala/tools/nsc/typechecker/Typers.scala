@@ -842,7 +842,8 @@ trait Typers { self: Analyzer =>
                     // as we would get ambiguity errors otherwise. Example
                     // Looking for a manifest of Nil: This mas many potential types,
                     // so we need to instantiate to minimal type List[Nothing].
-                    false) // false: retract Nothing's that indicate failure, ambiguities in manifests are dealt with in manifestOfType
+                    keepNothings = false, // retract Nothing's that indicate failure, ambiguities in manifests are dealt with in manifestOfType
+                    checkCompat = isWeaklyCompatible) // #3808
         }
 
         val typer1 = constrTyperIf(treeInfo.isSelfOrSuperConstrCall(tree))
@@ -1037,7 +1038,7 @@ trait Typers { self: Analyzer =>
      *  @return     ...
      */
     def instantiate(tree: Tree, mode: Int, pt: Type): Tree = {
-      inferExprInstance(tree, context.extractUndetparams(), pt, true)
+      inferExprInstance(tree, context.extractUndetparams(), pt)
       adapt(tree, mode, pt)
     }
 
@@ -1940,11 +1941,8 @@ trait Typers { self: Analyzer =>
       }
     }
 
-    private def isLoopHeaderLabel(name: Name): Boolean =
-      name.startsWith("while$") || name.startsWith("doWhile$")
-
     def typedLabelDef(ldef: LabelDef): LabelDef = {
-      if (!isLoopHeaderLabel(ldef.symbol.name) || phase.id > currentRun.typerPhase.id) {
+      if (!nme.isLoopHeaderLabel(ldef.symbol.name) || phase.id > currentRun.typerPhase.id) {
         val restpe = ldef.symbol.tpe.resultType
         val rhs1 = typed(ldef.rhs, restpe)
         ldef.params foreach (param => param.tpe = param.symbol.tpe)
@@ -2563,7 +2561,7 @@ trait Typers { self: Analyzer =>
 
             } else if (needsInstantiation(tparams, formals, args)) {
               //println("needs inst "+fun+" "+tparams+"/"+(tparams map (_.info)))
-              inferExprInstance(fun, tparams, WildcardType, true)
+              inferExprInstance(fun, tparams)
               doTypedApply(tree, fun, args, mode, pt)
             } else {
               assert((mode & PATTERNmode) == 0) // this case cannot arise for patterns
@@ -3106,10 +3104,9 @@ trait Typers { self: Analyzer =>
         errorTree(tree, treeSymTypeMsg(fun)+" does not take type parameters.")
     }
 
-    private[this] var typingIndent: String = ""
-    @inline final def deindentTyping() = if (printTypings) typingIndent = typingIndent.substring(0, typingIndent.length() - 2)
-    @inline final def indentTyping() = if (printTypings) typingIndent += "  "
-    @inline final def printTyping(s: => String) = if (printTypings) println(typingIndent+s)
+    @inline final def deindentTyping() = if (printTypings) context.typingIndent = context.typingIndent.substring(0, context.typingIndent.length() - 2)
+    @inline final def indentTyping() = if (printTypings) context.typingIndent += "  "
+    @inline final def printTyping(s: => String) = if (printTypings) println(context.typingIndent+s)
 
     /**
      *  @param tree ...
@@ -3677,7 +3674,14 @@ trait Typers { self: Analyzer =>
             if (tree1 != EmptyTree) return typed1(tree1, mode, pt)
           }
             
-          if (settings.debug.value) Console.err.println("qual = "+qual+":"+qual.tpe+"\nSymbol="+qual.tpe.termSymbol+"\nsymbol-info = "+qual.tpe.termSymbol.info+"\nscope-id = "+qual.tpe.termSymbol.info.decls.hashCode()+"\nmembers = "+qual.tpe.members+"\nname = "+name+"\nfound = "+sym+"\nowner = "+context.enclClass.owner)
+          if (settings.debug.value) {
+            log(
+              "qual = "+qual+":"+qual.tpe+
+              "\nSymbol="+qual.tpe.termSymbol+"\nsymbol-info = "+qual.tpe.termSymbol.info+
+              "\nscope-id = "+qual.tpe.termSymbol.info.decls.hashCode()+"\nmembers = "+qual.tpe.members+
+              "\nname = "+name+"\nfound = "+sym+"\nowner = "+context.enclClass.owner
+            )
+          }
           
           def makeErrorTree = {
             val tree1 = tree match {
@@ -4279,7 +4283,8 @@ trait Typers { self: Analyzer =>
      def typed(tree: Tree, mode: Int, pt: Type): Tree = { indentTyping()
       def dropExistential(tp: Type): Type = tp match {
         case ExistentialType(tparams, tpe) => 
-          if (settings.debug.value) println("drop ex "+tree+" "+tp)
+          if (settings.debug.value)
+            log("Dropping existential: " + tree + " " + tp)
           new SubstWildcardMap(tparams).apply(tp)
         case TypeRef(_, sym, _) if sym.isAliasType =>
           val tp0 = tp.normalize

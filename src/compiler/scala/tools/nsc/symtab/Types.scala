@@ -2656,6 +2656,7 @@ A type's typeSymbol should never be inspected directly.
       case RefinedType(parents, decls) => RefinedType(parents map (appliedType(_, args)), decls) // MO to AM: please check
       case TypeBounds(lo, hi) => TypeBounds(appliedType(lo, args), appliedType(hi, args))
       case tv@TypeVar(_, constr) => tv.applyArgs(args)
+      case AnnotatedType(annots, underlying, self) => AnnotatedType(annots, appliedType(underlying, args), self)
       case ErrorType => tycon
       case WildcardType => tycon // needed for neg/t0226
       case _ => abort(debugString(tycon))
@@ -3493,85 +3494,26 @@ A type's typeSymbol should never be inspected directly.
       else mapOver(tp)
   }
 
-/*
-  /** Most of the implementation for MethodType.resultType.  The
-   *  caller also needs to existentially quantify over the
-   *  variables in existentialsNeeded.
-   */
-  class InstantiateDeBruijnMap(actuals: List[Type]) extends TypeMap {
-    def apply(tp: Type): Type = tp match {
-      case DeBruijnIndex(level, pid) =>
-        if (level == 1) 
-          if (pid < actuals.length) actuals(pid) else tp
-        else DeBruijnIndex(level - 1, pid)
-      case _ =>
-        mapOver(tp)
-    }
-
+  class InstantiateDependentMap(params: List[Symbol], actuals: List[Type]) extends TypeMap {
     override val dropNonConstraintAnnotations = true
 
-    private var existSyms = immutable.Map.empty[Int, Symbol]
-    def existentialsNeeded: List[Symbol] = existSyms.values.toList
-
-    /* Return the type symbol for referencing a parameter index 
-     * inside the existential quantifier.  */
-    def existSymFor(actualIdx: Int, oldSym: Symbol) =
-      if (existSyms.isDefinedAt(actualIdx))
-        existSyms(actualIdx)
-      else {
-        val symowner = oldSym.owner // what should be used??
-        val bound = singletonBounds(actuals(actualIdx))
-
-        val sym = symowner.newExistential(oldSym.pos, oldSym.name+".type")
-        sym.setInfo(bound)
-        sym.setFlag(oldSym.flags)
-
-        existSyms = existSyms + (actualIdx -> sym)
-        sym
+    object ParamWithActual {
+      def unapply(sym: Symbol): Option[Type] = {
+        val pid = params indexOf sym
+        if(pid != -1) Some(actuals(pid)) else None
       }
-    
-    override def mapOver(arg: Tree, giveup: ()=>Nothing): Tree = {
-      object treeTrans extends TypeMapTransformer {
-        override def transform(tree: Tree): Tree =
-          tree match {
-            case Ident(name) =>
-              tree.tpe.withoutAnnotations match {
-                case DeBruijnIndex(level, pid) =>
-                  if (level == 1) {
-                    if (actuals(pid).isStable)
-                      mkAttributedQualifier(actuals(pid), tree.symbol)
-                    else {
-                      val sym = existSymFor(pid, tree.symbol)
-                      (Ident(tree.symbol.name)
-                       copyAttrs tree
-                       setType typeRef(NoPrefix, sym, Nil))
-                    }
-                  } else
-                    Ident(name)
-                      .setPos(tree.pos)
-                      .setSymbol(tree.symbol)
-                      .setType(DeBruijnIndex(level-1, pid))
-                case _ => 
-                  super.transform(tree)
+    }
 
-              }
-            case _ => super.transform(tree)
-          }
+    def apply(tp: Type): Type =
+      mapOver(tp) match {
+        case SingleType(NoPrefix, ParamWithActual(arg)) if arg isStable => arg // unsound to replace args by unstable actual #3873
+        // (soundly) expand type alias selections on implicit arguments, see depmet_implicit_oopsla* test cases -- typically, `param.isImplicit`
+        case tp1@TypeRef(SingleType(NoPrefix, param@ParamWithActual(arg)), sym, targs) =>
+          val res = typeRef(arg, sym, targs)
+          if(res.typeSymbolDirect isAliasType) res.dealias
+          else tp1
+        case tp1 => tp1 // don't return the original `tp`, which may be different from `tp1`, due to `dropNonConstraintAnnotations`
       }
-
-      treeTrans.transform(arg)
-    }
-  }
-*/
-
-  class InstantiateDependentMap(params: List[Symbol], actuals: List[Type]) extends SubstTypeMap(params, actuals) {
-    override protected def renameBoundSyms(tp: Type): Type = tp match {
-      case MethodType(ps, restp) => tp // the whole point of this substitution is to instantiate these args
-      case _ => super.renameBoundSyms(tp)
-    }
-    // TODO: should we optimise this? only need to consider singletontypes
-
-    override val dropNonConstraintAnnotations = true
 
     def existentialsNeeded: List[Symbol] = existSyms.filter(_ ne null).toList
 
@@ -3764,10 +3706,7 @@ A type's typeSymbol should never be inspected directly.
   object adaptToNewRunMap extends TypeMap {
     private def adaptToNewRun(pre: Type, sym: Symbol): Symbol = {
       if (sym.isModuleClass && !phase.flatClasses) {
-        if (!sym.owner.isPackageClass)
-          sym // Nested lazy object
-        else
-          adaptToNewRun(pre, sym.sourceModule).moduleClass
+        adaptToNewRun(pre, sym.sourceModule).moduleClass
       } else if ((pre eq NoPrefix) || (pre eq NoType) || sym.owner.isPackageClass) {
         sym
       } else {
@@ -3781,17 +3720,26 @@ A type's typeSymbol should never be inspected directly.
         def corresponds(sym1: Symbol, sym2: Symbol): Boolean =
           sym1.name == sym2.name && (sym1.isPackageClass || corresponds(sym1.owner, sym2.owner))
         if (!corresponds(sym.owner, rebind0.owner)) {
-          if (settings.debug.value) Console.println("ADAPT1 pre = "+pre+", sym = "+sym+sym.locationString+", rebind = "+rebind0+rebind0.locationString)
+          if (settings.debug.value)
+            log("ADAPT1 pre = "+pre+", sym = "+sym+sym.locationString+", rebind = "+rebind0+rebind0.locationString)
           val bcs = pre.baseClasses.dropWhile(bc => !corresponds(bc, sym.owner));
           if (bcs.isEmpty)
             assert(pre.typeSymbol.isRefinementClass, pre) // if pre is a refinementclass it might be a structural type => OK to leave it in.
           else 
             rebind0 = pre.baseType(bcs.head).member(sym.name)
-          if (settings.debug.value) Console.println("ADAPT2 pre = "+pre+", bcs.head = "+bcs.head+", sym = "+sym+sym.locationString+", rebind = "+rebind0+(if (rebind0 == NoSymbol) "" else rebind0.locationString))
+          if (settings.debug.value) log(
+            "ADAPT2 pre = " + pre +
+            ", bcs.head = " + bcs.head +
+            ", sym = " + sym+sym.locationString +
+            ", rebind = " + rebind0 + (
+              if (rebind0 == NoSymbol) ""
+              else rebind0.locationString
+            )
+          )
         }
         val rebind = rebind0.suchThat(sym => sym.isType || sym.isStable)
         if (rebind == NoSymbol) {
-          if (settings.debug.value) Console.println("" + phase + " " +phase.flatClasses+sym.owner+sym.name+" "+sym.isType)
+          if (settings.debug.value) log("" + phase + " " +phase.flatClasses+sym.owner+sym.name+" "+sym.isType)
           throw new MalformedType(pre, sym.nameString)
         }
         rebind
@@ -4398,11 +4346,10 @@ A type's typeSymbol should never be inspected directly.
     ||
     tp2.typeSymbol == AnyClass // @M Any and Nothing are super-type resp. subtype of every well-kinded type
     || // @M! normalize reduces higher-kinded case to PolyType's
-    ((tp1.normalize, tp2.normalize) match {
+    ((tp1.normalize.withoutAnnotations , tp2.normalize.withoutAnnotations) match {
       case (PolyType(tparams1, res1), PolyType(tparams2, res2)) => // @assume tp1.isHigherKinded && tp2.isHigherKinded (as they were both normalized to PolyType)
         tparams1.length == tparams2.length && {
-          if (tparams1.isEmpty) res1 <:< res2 // fast-path: monomorphic nullary method type
-          else if (tparams1.head.owner.isMethod) {  // fast-path: polymorphic method type -- type params cannot be captured
+          if (tparams1.head.owner.isMethod) {  // fast-path: polymorphic method type -- type params cannot be captured
             (tparams1 corresponds tparams2)((p1, p2) => p2.info.substSym(tparams2, tparams1) <:< p1.info) &&
             res1 <:< res2.substSym(tparams2, tparams1)
           } else { // normalized higher-kinded type
@@ -4421,7 +4368,7 @@ A type's typeSymbol should never be inspected directly.
             // val tpsFresh = tparams1 map (_.cloneSymbol)
             // for (tpFresh <- tpsFresh) tpFresh.setInfo(tpFresh.info.substSym(tparams1, tpsFresh))
         }
-      }
+      } && annotationsConform(tp1.normalize, tp2.normalize)
       case (_, _) => false // @assume !tp1.isHigherKinded || !tp2.isHigherKinded 
       // --> thus, cannot be subtypes (Any/Nothing has already been checked)
     }))
@@ -4646,7 +4593,7 @@ A type's typeSymbol should never be inspected directly.
   def specializesSym(tp: Type, sym: Symbol): Boolean =
     tp.typeSymbol == NothingClass ||
     tp.typeSymbol == NullClass && (sym.owner isSubClass ObjectClass) ||
-    (tp.member(sym.name).alternatives exists
+    (tp.nonPrivateMember(sym.name).alternatives exists
       (alt => sym == alt || specializesSym(tp.narrow, alt, sym.owner.thisType, sym)))
 
   /** Does member `sym1' of `tp1' have a stronger type
@@ -5445,13 +5392,13 @@ A type's typeSymbol should never be inspected directly.
       // @M sometimes hkargs != arg.typeParams, the symbol and the type may have very different type parameters
       val hkparams = param.typeParams
 
-      if(settings.debug.value) {
-        println("checkKindBoundsHK expected: "+ param +" with params "+ hkparams +" by definition in "+ paramowner)
-        println("checkKindBoundsHK supplied: "+ arg +" with params "+ hkargs +" from "+ owner)
-        println("checkKindBoundsHK under params: "+ underHKParams +" with args "+ withHKArgs)
+      if (settings.debug.value) {
+        log("checkKindBoundsHK expected: "+ param +" with params "+ hkparams +" by definition in "+ paramowner)
+        log("checkKindBoundsHK supplied: "+ arg +" with params "+ hkargs +" from "+ owner)
+        log("checkKindBoundsHK under params: "+ underHKParams +" with args "+ withHKArgs)
       }
 
-      if(hkargs.length != hkparams.length) {
+      if (hkargs.length != hkparams.length) {
         if(arg == AnyClass || arg == NothingClass) (Nil, Nil, Nil) // Any and Nothing are kind-overloaded
         else {error = true; (List((arg, param)), Nil, Nil)} // shortcut: always set error, whether explainTypesOrNot
       } else {
@@ -5476,12 +5423,12 @@ A type's typeSymbol should never be inspected directly.
             if (!(bindHKParams(transformedBounds(hkparam, paramowner)) <:< transform(hkarg.info.bounds, owner)))
               stricterBound(hkarg, hkparam)
 
-            if(settings.debug.value) {
-              println("checkKindBoundsHK base case: "+ hkparam +" declared bounds: "+ transformedBounds(hkparam, paramowner) +" after instantiating earlier hkparams: "+ bindHKParams(transformedBounds(hkparam, paramowner)))
-              println("checkKindBoundsHK base case: "+ hkarg +" has bounds: "+ transform(hkarg.info.bounds, owner))
+            if (settings.debug.value) {
+              log("checkKindBoundsHK base case: "+ hkparam +" declared bounds: "+ transformedBounds(hkparam, paramowner) +" after instantiating earlier hkparams: "+ bindHKParams(transformedBounds(hkparam, paramowner)))
+              log("checkKindBoundsHK base case: "+ hkarg +" has bounds: "+ transform(hkarg.info.bounds, owner))
             }
           } else {
-            if(settings.debug.value) println("checkKindBoundsHK recursing to compare params of "+ hkparam +" with "+ hkarg)
+            if(settings.debug.value) log("checkKindBoundsHK recursing to compare params of "+ hkparam +" with "+ hkarg)
             val (am, vm, sb) = checkKindBoundsHK(hkarg.typeParams, hkarg, hkparam, paramowner, underHKParams ++ hkparam.typeParams, withHKArgs ++ hkarg.typeParams)
             arityMismatches(am)
             varianceMismatches(vm)

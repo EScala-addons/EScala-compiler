@@ -62,6 +62,7 @@ self =>
   }
   
   trait SeqBench extends IterableBench {
+    def seqcollAsSeq = seqcoll.asInstanceOf[Seq[T]]
     override def createSequential(sz: Int, p: Int) = self.createSequential(sz, p)
   }
   
@@ -179,7 +180,7 @@ self =>
     def runseqview = this.seqview.map(operators.mapper).foreach(operators.eachFun)
     def companion = IterationM
   }
-
+  
   object IterationA extends SeqBenchCompanion {
     override def defaultSize = 50000
     def benchName = "iter-a"
@@ -200,6 +201,45 @@ self =>
     def companion = IterationA
   }
   
+  object IterationZ extends SeqBenchCompanion {
+    override def defaultSize = 50000
+    def benchName = "iter-z"
+    def apply(sz: Int, p: Int, w: String) = new IterationZ(sz, p, w)
+  }
+  
+  class IterationZ(val size: Int, val parallelism: Int, val runWhat: String)
+  extends SeqBench with SeqViewBench {
+    val zipped = operators.sequence(size)
+    def comparisonMap = collection.Map("seqview" -> runseqview _)
+    def runseq = {
+      val withzip = this.seqcoll.zip(zipped)
+      withzip.foreach(operators.eachPairFun)
+    }
+    def runpar = this.parcoll.zip(zipped).foreach(operators.eachPairFun)
+    def runseqview = this.seqview.zip(zipped).foreach(operators.eachPairFun)
+    def companion = IterationZ
+  }
+  
+  object IterationP extends SeqBenchCompanion {
+    override def defaultSize = 50000
+    def benchName = "iter-p"
+    def apply(sz: Int, p: Int, w: String) = new IterationP(sz, p, w)
+  }
+  
+  class IterationP(val size: Int, val parallelism: Int, val runWhat: String)
+  extends SeqBench with SeqViewBench {
+    val patch = operators.sequence(size / 4)
+    val sqpatch = patch.toSeq
+    def comparisonMap = collection.Map("seqview" -> runseqview _)
+    def runseq = {
+      val withpatch = this.seqcollAsSeq.patch(size / 4, sqpatch, size / 2)
+      withpatch.foreach(operators.eachFun)
+    }
+    def runpar = this.parcoll.patch(size / 4, patch, size / 2).foreach(operators.eachFun)
+    def runseqview = this.seqview.patch(size / 4, patch, size / 2).foreach(operators.eachFun)
+    def companion = IterationP
+  }
+    
   object Reduce extends SeqBenchCompanion {
     override def defaultSize = 50000
     def benchName = "reduce";

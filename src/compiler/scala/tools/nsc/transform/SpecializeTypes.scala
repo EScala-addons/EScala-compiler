@@ -103,6 +103,13 @@ abstract class SpecializeTypes extends InfoTransform with TypingTransformers {
     override def toString: String =
       "specialized overload " + sym + " in " + env
   } 
+
+
+  /** Just to mark uncheckable */
+  override def newPhase(prev: scala.tools.nsc.Phase): StdPhase = new SpecializationPhase(prev)
+  class SpecializationPhase(prev: scala.tools.nsc.Phase) extends super.Phase(prev) {
+    override def checkable = false
+  }
     
   protected def newTransformer(unit: CompilationUnit): Transformer =
     new SpecializationTransformer(unit)
@@ -1186,7 +1193,7 @@ abstract class SpecializeTypes extends InfoTransform with TypingTransformers {
               val tree1 = addBody(ddef, target)
               (new ChangeOwnerTraverser(target, tree1.symbol))(tree1.rhs)
               if (settings.debug.value)
-                println("changed owners, now: " + tree1)
+                log("changed owners, now: " + tree1)
               val DefDef(mods, name, tparams, vparamss, tpt, rhs) = tree1
               treeCopy.DefDef(tree1, mods, name, tparams, vparamss, tpt, transform(rhs))
 
