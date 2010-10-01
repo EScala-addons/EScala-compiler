@@ -10,7 +10,6 @@ trait Event[+T] {
    * the reactions represt
    */
   type Sink = (Int, T, ListBuffer[() => Unit]) => Unit
-  type Trace = List[Event[_]]
 
   /*
    * Register a sink function to the event (used for propagation of events)
