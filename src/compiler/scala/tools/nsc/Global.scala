@@ -26,7 +26,7 @@ import transform._
 // @ESCALA
 import events._
 
-import backend.icode.{ ICodes, GenICode, Checkers }
+import backend.icode.{ ICodes, GenICode, ICodeCheckers }
 import backend.{ ScalaPrimitives, Platform, MSILPlatform, JavaPlatform }
 import backend.jvm.GenJVM
 import backend.opt.{ Inliners, ClosureElimination, DeadCodeElimination }
@@ -80,11 +80,6 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val global: Global.this.type = Global.this
   } with ConstantFolder
 
-  /** Tree checker (used for testing and debugging) */
-  object checker extends {
-    val global: Global.this.type = Global.this
-  } with TreeCheckers
-
   /** ICode generator */
   object icodes extends {
     val global: Global.this.type = Global.this
@@ -99,11 +94,6 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   object copyPropagation extends {
     val global: Global.this.type = Global.this
   } with CopyPropagation
-
-  /** Icode verification */
-  object checkers extends {
-    val global: Global.this.type = Global.this
-  } with Checkers
 
   /** Some statistics (normally disabled) */
   object statistics extends {
@@ -273,6 +263,8 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     override def devirtualized: Boolean = isDevirtualized  // (part of DEVIRTUALIZE)
     private val isSpecialized = prev.name == "specialize" || prev.specialized
     override def specialized: Boolean = isSpecialized
+    private val isRefChecked = prev.name == "refchecks" || prev.refChecked
+    override def refChecked: Boolean = isRefChecked
 
     /** Is current phase cancelled on this unit? */
     def cancelled(unit: CompilationUnit) = {
@@ -542,7 +534,21 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val runsRightAfter = None
   } with SampleTransform
  
-  object icodeChecker extends checkers.ICodeChecker()
+  /** The checkers are for validating the compiler data structures
+   *  at phase boundaries.
+   */
+
+  /** Tree checker */
+  object treeChecker extends {
+    val global: Global.this.type = Global.this
+  } with TreeCheckers
+
+  /** Icode verification */
+  object icodeCheckers extends {
+    val global: Global.this.type = Global.this
+  } with ICodeCheckers
+
+  object icodeChecker extends icodeCheckers.ICodeChecker()
 
   object typer extends analyzer.Typer(
     analyzer.NoContext.make(EmptyTree, Global.this.definitions.RootClass, new Scope))
@@ -810,7 +816,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
             phase = globalPhase
             inform("[Now checking: " + phase.prev.name + "]")
             if (globalPhase.id >= icodePhase.id) icodeChecker.checkICodes
-            else checker.checkTrees
+            else treeChecker.checkTrees
           } 
           else inform("[Not checkable: " + globalPhase.prev.name + "]")
         }
