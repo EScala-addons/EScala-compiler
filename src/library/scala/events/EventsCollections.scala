@@ -1,6 +1,6 @@
 package scala.events
 
-import collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
 
 class EventNodeListExists[T, U](list: List[T], evf: T => Event[U]) extends EventNode[U] {
 

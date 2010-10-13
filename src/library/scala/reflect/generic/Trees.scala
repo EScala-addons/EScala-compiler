@@ -23,33 +23,6 @@ trait Trees { self: Universe =>
    *    <strong>Note:</strong> the typechecker drops these annotations,
    *    use the AnnotationInfo's (Symbol.annotations) in later phases. 
    */  
-<<<<<<< HEAD:src/library/scala/reflect/generic/Trees.scala
-  case class Modifiers(flags: Long, privateWithin: Name, annotations: List[Tree], positions: Map[Long, Position]) {
-    def isAbstract      = hasFlag(ABSTRACT )
-    def isAccessor      = hasFlag(ACCESSOR )
-    def isArgument      = hasFlag(PARAM    )
-    def isCase          = hasFlag(CASE     )
-    def isContravariant = hasFlag(CONTRAVARIANT)  // marked with `-'
-    def isCovariant     = hasFlag(COVARIANT    )  // marked with `+'
-    def isDeferred      = hasFlag(DEFERRED )
-    def isFinal         = hasFlag(FINAL    )
-    def isImplicit      = hasFlag(IMPLICIT )
-    def isLazy          = hasFlag(LAZY     )
-    def isOverride      = hasFlag(OVERRIDE )
-    def isPrivate       = hasFlag(PRIVATE  )
-    def isProtected     = hasFlag(PROTECTED)
-    def isPublic        = !isPrivate && !isProtected
-    def isSealed        = hasFlag(SEALED   )
-    def isSynthetic     = hasFlag(SYNTHETIC)
-    def isTrait         = hasFlag(TRAIT    )
-    def isVariable      = hasFlag(MUTABLE  )
-    // @ESCALA
-    def isImperative    = hasFlag(IMPERATIVE )
-    def isObservable    = hasFlag(OBSERVABLE )
-    def isEvent         = hasFlag(EVENT      )
-    // @ESCALA END
-    
-=======
   case class Modifiers(flags: Long, privateWithin: Name, annotations: List[Tree], positions: Map[Long, Position]) extends HasFlags {
     /* Abstract types from HasFlags. */
     type FlagsType          = Long
@@ -60,7 +33,6 @@ trait Trees { self: Universe =>
 
     def hasAccessBoundary = privateWithin != emptyTypeName
     def hasAllFlags(mask: Long): Boolean = (flags & mask) == mask
->>>>>>> 87ff57cea01fefa9fd1de95f94e4420f0c2ca6ee:src/library/scala/reflect/generic/Trees.scala
     def hasFlag(flag: Long) = (flag & flags) != 0L
     def hasFlagsToString(mask: Long): String = flagsToString(
       flags & mask,

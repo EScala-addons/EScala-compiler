@@ -148,6 +148,11 @@ trait HasFlags {
   def isPrivate       = hasFlag(PRIVATE  )
   def isProtected     = hasFlag(PROTECTED)
   def isSynthetic     = hasFlag(SYNTHETIC)
+  // @ESCALA
+  def isImperative    = hasFlag(IMPERATIVE )
+  //def isObservable    = hasFlag(OBSERVABLE )
+  def isEvent         = hasFlag(EVENT      )
+  // @ESCALA END
   
   // Newly introduced based on having a reasonably obvious clean translation.
   def isPrivateLocal   = isPrivate && hasFlag(LOCAL)

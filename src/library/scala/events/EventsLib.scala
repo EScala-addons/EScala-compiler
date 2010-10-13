@@ -1,6 +1,6 @@
 package scala.events
 
-import collection.mutable.{ListBuffer,Stack}
+import scala.collection.mutable.{ListBuffer,Stack}
 import scala.util.DynamicVariable
 
 trait Event[+T] {
@@ -77,7 +77,7 @@ trait Event[+T] {
   /**
    * Transform the event parameter
    */
-  def map[U, S >: T](mapping: S => U) = new EventNodeMap[S, U](this, mapping)
+  def map[U, S >: T, V >: S](mapping: V => U) = new EventNodeMap[S, U](this, mapping)
 
   /**
    * Event is triggered if the first event was already triggered but not the second one yet
@@ -88,7 +88,7 @@ trait Event[+T] {
   /**
    * Drop the event parameter; equivalent to map((_: Any) => ())
    */
-  def dropParam[S >: T] = new EventNodeMap[S, Unit](this, (_: Any) => ())
+  def dropParam[S >: T] = new EventNodeMap[S, Unit](this, _ => ())
 
 }
 

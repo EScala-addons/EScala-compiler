@@ -153,7 +153,7 @@ trait Symbols { self: Universe =>
     final def isLazyAccessor = isLazy && lazyAccessor != NoSymbol
     final def isMethod = isTerm && hasFlag(METHOD)
     // @ESCALA
-    final def isEvent = hasFlag(EVENT)
+    //final def isEvent = hasFlag(EVENT)
     final def isObservable = isMethod && hasFlag(OBSERVABLE)
     final def isInstrumented = isMethod && hasFlag(INSTRUMENTED)
     final def isImplementationMethod = isMethod && hasFlag(IMPLEMENTATION)

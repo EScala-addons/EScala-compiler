@@ -34,6 +34,11 @@ class ModifierFlags {
                                           //   parameters (no matter if it's a 'val' parameter or not)
                                           // for parameters of a primary constructor ('val' or not)
                                           // for the accessor methods generated for 'val' or 'var' parameters
+  // @ESCALA
+  final val OBSERVABLE    = 0x100000000L  // method is observable
+                                          // pre: INSTRUMENTED
+  final val IMPERATIVE    = 0x80000000000L// event is imperative
+  // END @ESCALA
   final val LAZY          = 0x80000000L   // symbol is a lazy val. can't have MUTABLE unless transformed by typer  
   final val PRESUPER      = 0x2000000000L // value is evaluated before super call
   final val DEFAULTINIT   = 0x20000000000L// symbol is initialized to the default value: used by -Xcheckinit
@@ -63,9 +68,6 @@ class Flags extends ModifierFlags {
   final val SYNTHETICMETH = 0x40000000    // for methods: synthetic method, but without SYNTHETIC flag
 
   // @ESCALA
-  final val OBSERVABLE    = 0x100000000L  // method is observable
-                                          // pre: INSTRUMENTED
-  final val IMPERATIVE    = 0x80000000000L// event is imperative
   final val IMPLEMENTATION= 0x80000000000L// method is an implementation method
   final val EVENT         = 0x200000000L  // the val is an event
   final val INSTRUMENTED  = 0x400000000L  // the method is instrumented
@@ -192,9 +194,9 @@ class Flags extends ModifierFlags {
     case         DEFAULTINIT => "<defaultinit>"                       // (1L << 41)
     case             VBRIDGE => "<vbridge>"                           // (1L << 42)
     case      0x80000000000L => ""                                    // (1L << 43)
-    case     0x100000000000L => ""                                    // (1L << 44)
-    case     0x200000000000L => ""                                    // (1L << 45)
-    case     0x400000000000L => ""                                    // (1L << 46)
+//    case     0x100000000000L => ""                                    // (1L << 44)
+//    case     0x200000000000L => ""                                    // (1L << 45)
+//    case     0x400000000000L => ""                                    // (1L << 46)
     case     0x800000000000L => ""                                    // (1L << 47)
     case    0x1000000000000L => ""                                    // (1L << 48)
     case    0x2000000000000L => ""                                    // (1L << 49)
