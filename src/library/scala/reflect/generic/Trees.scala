@@ -1,7 +1,7 @@
 package scala.reflect
 package generic
 
-import java.io.{PrintWriter, StringWriter}
+import java.io.{ PrintWriter, StringWriter }
 import Flags._
 
 trait Trees { self: Universe =>
@@ -14,6 +14,8 @@ trait Trees { self: Universe =>
   def newTreePrinter(out: PrintWriter): AbsTreePrinter
 
   private[scala] var nodeCount = 0
+  
+  protected def flagsIntoString(flags: Long, privateWithin: String): String
 
   /** @param privateWithin the qualifier for a private (a type name)
    *    or nme.EMPTY.toTypeName, if none is given.
@@ -21,6 +23,7 @@ trait Trees { self: Universe =>
    *    <strong>Note:</strong> the typechecker drops these annotations,
    *    use the AnnotationInfo's (Symbol.annotations) in later phases. 
    */  
+<<<<<<< HEAD:src/library/scala/reflect/generic/Trees.scala
   case class Modifiers(flags: Long, privateWithin: Name, annotations: List[Tree], positions: Map[Long, Position]) {
     def isAbstract      = hasFlag(ABSTRACT )
     def isAccessor      = hasFlag(ACCESSOR )
@@ -46,7 +49,23 @@ trait Trees { self: Universe =>
     def isEvent         = hasFlag(EVENT      )
     // @ESCALA END
     
+=======
+  case class Modifiers(flags: Long, privateWithin: Name, annotations: List[Tree], positions: Map[Long, Position]) extends HasFlags {
+    /* Abstract types from HasFlags. */
+    type FlagsType          = Long
+    type AccessBoundaryType = Name
+    type AnnotationType     = Tree
+
+    private val emptyTypeName = mkTypeName(nme.EMPTY)
+
+    def hasAccessBoundary = privateWithin != emptyTypeName
+    def hasAllFlags(mask: Long): Boolean = (flags & mask) == mask
+>>>>>>> 87ff57cea01fefa9fd1de95f94e4420f0c2ca6ee:src/library/scala/reflect/generic/Trees.scala
     def hasFlag(flag: Long) = (flag & flags) != 0L
+    def hasFlagsToString(mask: Long): String = flagsToString(
+      flags & mask,
+      if (hasAccessBoundary) privateWithin.toString else ""
+    )
     def & (flag: Long): Modifiers = {
       val flags1 = flags & flag
       if (flags1 == flags) this
@@ -67,6 +86,8 @@ trait Trees { self: Universe =>
       else copy(annotations = annotations ::: annots)
     def withPosition(flag: Long, position: Position) =
       copy(positions = positions + (flag -> position))
+    
+    override def toString = "Modifiers(%s, %s, %s)".format(hasFlagsToString(-1L), annotations mkString ", ", positions)
   }
 
   def Modifiers(flags: Long, privateWithin: Name): Modifiers = Modifiers(flags, privateWithin, List(), Map.empty)
@@ -105,6 +126,8 @@ trait Trees { self: Universe =>
     def hasSymbol = false
     def isDef = false
     def isEmpty = false
+    
+    def hasSymbolWhich(f: Symbol => Boolean) = hasSymbol && f(symbol)
 
     /** The direct child trees of this tree
      *  EmptyTrees are always omitted. Lists are collapsed.
@@ -186,14 +209,14 @@ trait Trees { self: Universe =>
     def mods: Modifiers
     def keyword: String = this match {
       case TypeDef(_, _, _, _)      => "type"
-      case ClassDef(mods, _, _, _)  => if (mods.isTrait) "trait" else "class"
+      case ClassDef(mods, _, _, _)  => if (mods hasFlag TRAIT) "trait" else "class"
       case DefDef(_, _, _, _, _, _) => "def"
       case ModuleDef(_, _, _)       => "object"
       case PackageDef(_, _)         => "package"
-      case ValDef(mods, _, _, _)    => if (mods.isVariable) "var" /* @ESCALA */ else if(mods.isEvent) "evt" else "val"
+      case ValDef(mods, _, _, _)    => if (mods.isMutable) "var" /* @ESCALA */ else if(mods.isEvent) "evt" else "val"
       case _ => ""
     }
-    final def hasFlag(mask: Long): Boolean = (mods.flags & mask) != 0L
+    // final def hasFlag(mask: Long): Boolean = mods hasFlag mask
   }
 
   /** Package clause
