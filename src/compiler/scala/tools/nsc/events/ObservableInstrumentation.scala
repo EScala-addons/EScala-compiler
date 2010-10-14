@@ -107,7 +107,9 @@ abstract class ObservableInstrumentation extends Transform
           namer = oldNamer
           res
         case cd: ClassDef => 
+          val oldsynthesized = synthesized
           synthesized = List()
+          val oldclazz = clazz
           clazz = cd
 
           // transform the class body
@@ -123,8 +125,11 @@ abstract class ObservableInstrumentation extends Transform
           namer = oldNamer
 
           // switch the implementation
-          treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
+          val result = treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
                        tclazz.tparams, template)
+          clazz = oldclazz
+          synthesized = oldsynthesized
+          result
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
               if sym.isInstrumented =>
                               
