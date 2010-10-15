@@ -9,7 +9,7 @@ package ast
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.symtab.SymbolTable
 import scala.tools.nsc.symtab.Flags._
-import scala.tools.nsc.util.{FreshNameCreator, HashSet, SourceFile}
+import scala.tools.nsc.util.{ FreshNameCreator, HashSet, SourceFile }
 
 trait Trees extends reflect.generic.Trees { self: SymbolTable =>
 
@@ -262,8 +262,7 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
             DefDef(NoMods, nme.MIXIN_CONSTRUCTOR, List(), List(List()), TypeTree(), Block(lvdefs, Literal(())))))
       } else {
         // convert (implicit ... ) to ()(implicit ... ) if its the only parameter section
-        if (vparamss1.isEmpty ||
-            !vparamss1.head.isEmpty && (vparamss1.head.head.mods.flags & IMPLICIT) != 0L) 
+        if (vparamss1.isEmpty || !vparamss1.head.isEmpty && vparamss1.head.head.mods.isImplicit)
           vparamss1 = List() :: vparamss1;
         val superRef: Tree = atPos(superPos) {
           Select(Super(nme.EMPTY.toTypeName, nme.EMPTY.toTypeName), nme.CONSTRUCTOR)

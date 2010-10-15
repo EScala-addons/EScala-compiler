@@ -114,7 +114,7 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
     }
 
     private[Types] def record(tv: TypeVar) = {log = (tv, tv.constr.cloneInternal) :: log}
-    private[Types] def clear {log = List()}
+    private[Types] def clear() { log = List() } // TODO: what's the point of this method? -- we roll back the log (using undoTo) in the combinators below anyway, see comments at clear() calls below
 
     // `block` should not affect constraints on typevars
     def undo[T](block: => T): T = {
@@ -2309,23 +2309,28 @@ A type's typeSymbol should never be inspected directly.
       // only one of them is in the set of tvars that need to be solved, but
       // they share the same TypeConstraint instance
 
-
+    // <region name="constraint mutators + undoLog">
+    // invariant: before mutating constr, save old state in undoLog (undoLog is used to reset constraints to avoid piling up unrelated ones)
     def setInst(tp: Type) {
 //      assert(!(tp containsTp this), this)
+      undoLog record this
       constr.inst = tp
     }
 
     def addLoBound(tp: Type, numBound: Boolean = false) {
       assert(tp != this) // implies there is a cycle somewhere (?)
       //println("addLoBound: "+(safeToString, debugString(tp))) //DEBUG
+      undoLog record this
       constr.addLoBound(tp, numBound)
     }
 
     def addHiBound(tp: Type, numBound: Boolean = false) {
       // assert(tp != this)
       //println("addHiBound: "+(safeToString, debugString(tp))) //DEBUG
+      undoLog record this
       constr.addHiBound(tp, numBound)
     }
+    // </region>
 
     // ignore subtyping&equality checks while true -- see findMember
     private[TypeVar] var suspended = false
@@ -2342,8 +2347,6 @@ A type's typeSymbol should never be inspected directly.
     def registerBound(tp: Type, isLowerBound: Boolean, numBound: Boolean = false): Boolean = { //println("regBound: "+(safeToString, debugString(tp), isLowerBound)) //@MDEBUG
       if(isLowerBound) assert(tp != this)
 
-      undoLog record this
-      
       def checkSubtype(tp1: Type, tp2: Type) = 
         if (numBound)
           if (isLowerBound) tp1 weak_<:< tp2 
@@ -2365,20 +2368,25 @@ A type's typeSymbol should never be inspected directly.
       if (suspended) checkSubtype(tp, origin)
       else if (constr.instValid) // type var is already set
         checkSubtype(tp, constr.inst)
-      else isRelatable(tp) && { 
+      else isRelatable(tp) && {
         if(params.isEmpty) { // type var has kind *
           addBound(tp)
           true
         } else { // higher-kinded type var with same arity as tp
+          // needed because HK unification is limited to constraints of the shape TC1[T1,..., TN] <: TC2[T'1,...,T'N], which precludes e.g., Nothing <: ?TC[?T]
+          def isKindPolymorphic(tp: Type) = tp.typeSymbol == NothingClass || tp.typeSymbol == AnyClass
+          // TODO: fancier unification, maybe rewrite constraint as follows?
+            // val sym = constr.hiBounds map {_.typeSymbol} find { _.typeParams.length == typeArgs.length}
+            // this <: tp.baseType(sym)
           def unifyHK(tp: Type) =
-            (typeArgs.length == tp.typeArgs.length) && {
+            (typeArgs.length == tp.typeArgs.length || isKindPolymorphic(tp)) && {
               // register type constructor (the type without its type arguments) as bound
               addBound(tp.typeConstructor)
               // check subtyping of higher-order type vars
               // use variances as defined in the type parameter that we're trying to infer (the result is sanity-checked later)
-              checkArgs(tp.typeArgs, typeArgs, params)
+              isKindPolymorphic(tp) || checkArgs(tp.typeArgs, typeArgs, params)
             }
-          unifyHK(tp) || unifyHK(tp.dealias)
+            unifyHK(tp) || unifyHK(tp.dealias)
         }
       }
     }
@@ -2391,8 +2399,6 @@ A type's typeSymbol should never be inspected directly.
       if (suspended) tp =:= origin
       else if (constr.instValid) checkIsSameType(tp)
       else isRelatable(tp) && {
-        undoLog record this
-
         val newInst = wildcardToTypeVarMap(tp)
         if (constr.isWithinBounds(newInst)) {
           setInst(tp)
@@ -2444,7 +2450,7 @@ A type's typeSymbol should never be inspected directly.
                           origin+
                           (if(typeArgs.isEmpty) "" else (typeArgs map (_.safeToString)).mkString("[ ", ", ", " ]")) // +"#"+tid //DEBUG
       if (constr.inst eq null) "<null " + origin + ">"
-      else if (settings.debug.value) varString+"(@"+constr.## +")"+constr.toString
+      // else if (settings.debug.value) varString+"(@"+constr.## +")"+constr.toString
       else if (constr.inst eq NoType) varString
       else constr.inst.toString
     }
@@ -4027,7 +4033,9 @@ A type's typeSymbol should never be inspected directly.
     }
   } finally {
     subsametypeRecursions -= 1
-    if (subsametypeRecursions == 0) undoLog.clear
+    // XXX AM TODO: figure out when it is safe and needed to clear the log -- the commented approach below is too eager (it breaks #3281, #3866)
+    // it doesn't help to keep separate recursion counts for the three methods that now share it
+    // if (subsametypeRecursions == 0) undoLog.clear()
   }
 
   def isDifferentType(tp1: Type, tp2: Type): Boolean = try {
@@ -4037,7 +4045,9 @@ A type's typeSymbol should never be inspected directly.
     }
   } finally {
     subsametypeRecursions -= 1
-    if (subsametypeRecursions == 0) undoLog.clear
+    // XXX AM TODO: figure out when it is safe and needed to clear the log -- the commented approach below is too eager (it breaks #3281, #3866)
+    // it doesn't help to keep separate recursion counts for the three methods that now share it
+    // if (subsametypeRecursions == 0) undoLog.clear()
   }
 
   def isDifferentTypeConstructor(tp1: Type, tp2: Type): Boolean = tp1 match {
@@ -4366,7 +4376,9 @@ A type's typeSymbol should never be inspected directly.
     }
   } finally {
     subsametypeRecursions -= 1
-    if (subsametypeRecursions == 0) undoLog clear
+    // XXX AM TODO: figure out when it is safe and needed to clear the log -- the commented approach below is too eager (it breaks #3281, #3866)
+    // it doesn't help to keep separate recursion counts for the three methods that now share it
+    // if (subsametypeRecursions == 0) undoLog.clear()
   }
 
   /** Does this type have a prefix that begins with a type variable,
@@ -5182,7 +5194,7 @@ A type's typeSymbol should never be inspected directly.
 
   /** The greatest lower bound wrt <:< of a list of types */
   private def glb(ts: List[Type], depth: Int): Type = {
-    def glb0(ts0: List[Type]): Type = elimSuper(ts0 map (_.deconst)) match {// todo: deconst needed?
+    def glb0(ts0: List[Type]): Type = elimSuper(ts0) match {
       case List() => AnyClass.tpe
       case List(t) => t
       case ts @ PolyType(tparams, _) :: _ =>
