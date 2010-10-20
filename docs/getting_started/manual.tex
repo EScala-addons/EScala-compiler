@@ -1,0 +1,357 @@
+\documentclass{article}
+
+%
+% a collection of remarks , tips , etc
+%
+
+
+\usepackage{listings}
+\usepackage{multirow}
+
+\newcommand{\escala}[0]{EScala }
+
+\title{Getting started with EScala}
+\author{Jurgen Van Ham}
+
+\lstset{
+  numbers=left,
+  frame=single,
+  morekeywords={evt,def,class,map,any,beforeExec,afterExec}
+}
+
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Target}
+The aim of this text is just to collect some useful info to get 
+started with \escala. Not to explain all about the normal scala
+Also it can help when trying to find problems that might be 
+encountered before. The small snippets of code are intended as 
+practical examples.
+
+It will just start as a collection of useful tips, I felt to be 
+helpful to write some simple applications with EScala. 
+
+There is also some information from the slides of Lucas, and other 
+sources (like remarks, etc ) which helped in understanding or getting 
+an overview of the possibilities  and the future features.
+
+\section{Examples}
+Since examples can be very useful to understand thennddyo language and its
+mechanisms, there are at this moment 2 different implementations of an
+example of a world with plants and animals (\escala and scala with 
+observers) and also a very simple simulation of atoms, this last 
+indicates a need for some pattern to avoid 'loops'.
+
+\section{Declaring events}
+
+\subsection{Different types}
+The real types are not really what a programmers use, but it is
+a good start to understand what the real picture is.
+
+There are primitive and composite types. In the group of primitive
+types there are two diffenent types which are not so different after
+all. On the one hand there are the \emph{imperative} events (declared
+with the {\tt imperative} keyword) that are controlled explicit by 
+the code. On the other hand there are the \emph{implicit}
+events that decribe events that happen when executing the program.
+
+\begin{tabular}{|c|c|}
+\hline
+\multirow{2}{*}{primitive}  & imperative \\
+                            & primitive  \\
+\hline
+composite  & declarative \\
+\hline
+\end{tabular}
+
+\subsubsection{Primitive}
+Althought the imperative and implicit don't seem very alike, when
+definining a method with a empty body and {\tt Unit} as return type
+and the desired parameters (for the event) this method could be called 
+in the code. Then a {\tt beforeExec} of that method will result to 
+the same as an {\tt imperative} event.
+
+\subsubsection{Declarative}
+The only way to use the implicit events is via the declarative events.
+
+\subsubsection{Programmers Views}
+For the programmer there are after considering the ideas above, there
+are two different groups of  events, which are declared and
+used in a different way. The \emph{imperative} events are the most 
+obvious since they are in a way similar to what the Observer pattern
+offers. The \emph{declarative} events are what makes \escala a different
+language from the C\# approach. In the set of declarative events there are also the 
+\emph{implicit} events that act like a bridge to AOP.
+
+\begin{description}
+\item [imperative] triggered from the code and look similar to a method call (via the apply from Scala)
+\item [declarative] they are specified in function of other events. The other events can be also not defined by the programmer eg {\tt afterExec} or {\tt beforeExec}
+\end{description}
+
+\subsection{Imperative events}
+They are declared with the keyword {\tt imperative} then the keyword 
+{\tt evt} followed by a name with an optional argument.
+
+To trigger the events the name of the event is used similar to a method
+call. Since handlers in \escala have {\tt Unit} as a return type, this
+'method call' will not have a return value.
+
+The leads to declarations like shown below:
+\begin{lstlisting}
+class MyClass {
+  imperative evt somehingHappend[Unit]
+  imperative evt dropped[MyClass]
+  
+  def something = { somethingHappened() }
+  def drop() : Unit = { dropped(this) }
+}
+\end{lstlisting}
+
+\subsection{Declarative Events}
+These are constructed from other events. In the most simple form these
+other events can be \emph{imperative} events described above or a
+(combination of) expressions of other events.
+
+\begin{lstlisting}
+evt somethingReallyHappened=somethingHappened
+evt disjunctionOfEvents = movedUp || movedDown
+evt conjunctionOfEvents = moved && changedColor
+evt filteredEvent = someEvent && boolFunction 
+\end{lstlisting}
+
+
+\subsection{Event expressions}
+
+The expressions for a declarative can use the constructions shown
+here. The disjunctiona and the filtering are probably the most
+obvious. Transforming an events also gets very useful with using
+the implicit\footnote{beforeExec and afterExec} events. If $e_1$
+and $e_2$ are event expressions or just events new events can
+be constructed in the way shown below.
+
+\begin{description}
+\item [ $e_1 \&\& e_2$ ] Conjunction of events
+\item [ $e_1 || e_2$] Disjunction of events
+\item [ $e_1 \backslash e_2$ ] Difference of events
+\item [ $ e \&\& f $] Events filtered by a boolean function
+\item [ e.map(f) ] Transforming the parameters of an event with a function 'f'
+\end{description}
+
+\subsection{Implicit Events}
+It is also possible to use \emph{implicit} events in an AOP style, for this
+there are the keywords {\tt beforeExec} {\tt afterExec} that can be used 
+as an event before or after executing a method. In the future there will
+be an {\tt afterSet} keyword added that refers the an event that occurs
+after setting a field of an object. For now there exists a {\tt Variable[T]}
+class that helps to get a similar effect. This idea could probably also lead 
+to other events when a variable is accessed in another way.
+
+The arguments for these events are the arguments of the method in the 
+case for the {\tt beforeExec}, for the {\tt afterExec} there can be and extra 
+parameter for the return value. 
+
+This looks nice in the first place, but most of the time these arguments
+will need to be transformed by using {\tt map} with a function to extract
+the required information. 
+
+\begin{lstlisting}
+class MyClass {
+  def aMethod(a : Int) : Float = { .. }
+
+  evt willDo[Int] = 
+    beforeExec(aMethod)
+
+  evt hasDone[Float] = 
+    afterExec(aMethod) map ((_:Int,r:Float) => r)
+}
+\end{lstlisting}
+
+\subsection{Observable methods}
+The \emph{implicit} events are only available inside the scope of an object,
+the reason for this is that knowledge to use these implicit events
+is only available for the people who designed this class. This
+encapsulation also allows to change the implementation of a class
+without affecting 'external' uses of its implicit events.
+
+It is possible to expose these implicit events by marking method with 
+the keyword {\tt observable}.  This allows the implicit events for this
+methods to be used in other objects. This way the programmer has
+control about which methods are exposed for this.
+
+
+\subsection{Filtering events with a boolean function}
+
+When defining declarative events it is possible to add conditions
+to filter on the occurences of the event. This can be even on the 
+arguments of a beforeExec or afterExec. This allow to limit events 
+to those that are really interesting.
+
+\begin{lstlisting}
+def aMethod(a :Int) : Unit = { .. }
+evt callEven = 
+    beforeExec(aMethod) && 
+    ((arg : Int) => arg%2==0)
+\end{lstlisting}
+
+\subsection{Transforming arguments}
+For declarative events it is possible to transform the arguments
+via the {\tt map} operator. This allow to have only useful information
+in the arguments of an event. Probably in many cases only the sender of
+the event is interesting. This can be done like this.
+
+\begin{lstlisting}
+evt preHandler[MyClass]=
+   beforeExec(handle) map ((_:Any) => this)
+\end{lstlisting}
+
+\subsection{Varlist}
+The {\tt scala.events.VarList[T]} can be used to combine many objects
+of a type and react to an event sent by one of those objects. For this 
+there is an operator {\tt any} that allows a function to select an 
+event from those elements.
+
+The result is a disjunction on the selected event from a set of objects.
+
+\begin{lstlisting}
+class OthClass {
+  imperative evt myEvent 
+}
+class myClass {
+  val lst=new scala.events.VarList[OthClass]
+  for (i <- 1 to 10) {lst += new OthClass }
+  evt anEvent=lst.any(oc => oc.myEvent)
+}
+\end{lstlisting}
+
+In the example above the {\tt anEvent} will occur when the myEvent
+ occurs in an element of the {\tt lst}.
+
+
+\subsection{Variable[T]}
+This class helps to observe a variable until there are implicit events
+for this like the {\tt afterSet} mentioned before. This variable sends 
+a {\tt changed} event with 2 parametes, the first is the old value
+and the second the new value.
+
+Assignign a value to such variable can be done with the {\tt:=}-operator.
+Since the apply method read the value just using the variable as
+a normal one will return the value of it.
+
+\begin{lstlisting}
+class MyClass {
+   def changedTo(old:Int, new:Int) : Unit = { 
+     println("T changed "+old+" -> "+new);
+   }
+
+   val t=new Variable[Int](5)
+   evt aChange=t.changed
+   aChange += changedTo _
+
+   t := 6
+   println("T is now "+t)
+}
+\end{lstlisting}
+
+
+
+\subsection{Inheritance and Overriding} 
+When a subclass overrides an event of its superclass, the subclass could
+refer to the event of the superclass with the keyword {\tt super}
+this allows to add a filter to such event.
+
+\begin{lstlisting}
+class SuperClass {
+  var nmbr : Int =5
+  evt someEvent 
+  ...
+}
+class SubClass extends SuperClass{
+  override evt someEvent = super.someEvent && super.nmbr%2==0
+}
+\end{lstlisting}
+
+
+When not specifying an expression for a declarative event
+(no imperative keyword) it will be abstract similar to a method without 
+a body. It is possible to have handler for such an event that will 
+be refined in a subclass.
+
+\section{Handlers}
+ A handler must have always an argument list between parenthesis,
+even when this is an empty list. Since when there are no parenthesis 
+the compiler handles this method in a different way. 
+
+The signature of such a handler method must match the one from the
+event it will handle. This allows to read the parameters of the
+event via the parameters of the method that handles the event.
+
+A handler also must have the return type {\tt Unit} 
+
+\section{Registering a handler}
+
+And event can 'register' many handlers, to add a handler to the
+set of handlers of an event, use the {\tt +=} operator. In a similar
+way the {\tt -=} operator can remove a registered handler again. 
+
+The handlers are scala functions, in most cases after the name of 
+the handler an underscore is  needed to make it 
+a {\tt partially applied function} for the underlying Scala. 
+Althought there are other constructions possible.
+
+
+This means for pratical purposes that such a partially applied 
+function can be called with only its arguments and it already 
+contains the object where the methods will be called from.
+
+\begin{lstlisting}
+evt myEvent
+
+def handler() : Unit = { ..}
+
+myEvent += handler _
+\end{lstlisting}
+
+\section{Known causes of problems}
+
+This is just a list of the problems that took me some
+time to get solved. It is probably the most growing part
+of the text. But I hope it will save time when using \escala.
+
+\subsection{Type of Handler}
+A handler should have parenthesis even without arguments and
+a return type of Unit. Failing to do so can result in a situation
+where the number of handlers grows, because 
+unregistering\footnote{event -= handler} doesn't work
+
+\subsection{Not unregistering handlers}
+When handlers are not unregistered the number can grow which leads to
+a decrease in speed. Especially when an application does register and
+unregister a lot. An annoying side effect when handlers are not unregistered
+is that the objects that contain the handlers will always stay reachable
+via the event. This leads to a 'memory leak' that the garbage collector
+can't solve. Since via the registered handlers in the event objects 
+could still be reachable event they is no other way anymore.
+
+
+\subsubsection{An easy solution, or not yet}
+A solution could be to unregister in some automatic way. The problem
+is that at this moment no possible way is known for this.  A weak
+reference to a partial applied function would not protect this partial
+function, when it is a normal (strong) reference, the object to which
+this partial applied function belows will be protected from the
+garbage collection process during the time it is registered.
+
+\subsubsection{What is possible at this moment}
+A practical approach could be to count the number of reactions by
+modifying the {\tt EventsLib.scala} before compiling it by adding
+a method to {\tt EventNode[T]} that returns the size of the variable
+{\tt \_reactions}. This will need some interpretation, but when this
+numbers always increases, it is worth to look into the unregistering
+of events.
+
+
+\end{document}
