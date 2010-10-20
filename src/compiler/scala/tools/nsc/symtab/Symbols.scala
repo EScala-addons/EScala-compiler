@@ -217,7 +217,6 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       sym setFlag (STABLE | SYNTHETIC)
       if (isTrait) sym setFlag DEFERRED
       sym.expandName(this)
-      // todo: stop depending on compiler bug (ticket #3871) to set referenced.
       sym.referenced = this
       sym
     }
@@ -629,11 +628,15 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       def next = { val r = current; current = current.owner; r }
     }
 
-    // same as ownerChain contains sym, but more efficient
-    def hasTransOwner(sym: Symbol) = {
+    /** same as ownerChain contains sym, but more efficient, and 
+     *  with a twist for refinement classes. A refinement class
+     *  has a transowner X if an of its parents has transowner X.
+     */
+    def hasTransOwner(sym: Symbol): Boolean = {
       var o = this
       while ((o ne sym) && (o ne NoSymbol)) o = o.owner
-      o eq sym
+      (o eq sym) ||
+      isRefinementClass && (info.parents exists (_.typeSymbol.hasTransOwner(sym)))
     }
 
     def name: Name = rawname
@@ -1665,7 +1668,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
 
     privateWithin = NoSymbol
 
-    protected var referenced: Symbol = NoSymbol
+    var referenced: Symbol = NoSymbol
 
     def cloneSymbolImpl(owner: Symbol): Symbol = 
       new TermSymbol(owner, pos, name).copyAttrsFrom(this)
