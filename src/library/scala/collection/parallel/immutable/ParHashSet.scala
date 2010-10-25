@@ -11,6 +11,7 @@ import scala.collection.parallel.ParSetLike
 import scala.collection.parallel.Combiner
 import scala.collection.parallel.ParIterableIterator
 import scala.collection.parallel.EnvironmentPassingCombiner
+import scala.collection.parallel.Unrolled
 import scala.collection.generic.ParSetFactory
 import scala.collection.generic.CanCombineFrom
 import scala.collection.generic.GenericParTemplate
@@ -101,22 +102,15 @@ object ParHashSet extends ParSetFactory[ParHashSet] {
 }
 
 
-private[immutable] trait HashSetCombiner[T]
-extends Combiner[T, ParHashSet[T]] {
+private[immutable] abstract class HashSetCombiner[T]
+extends collection.parallel.BucketCombiner[T, ParHashSet[T], Any, HashSetCombiner[T]](HashSetCombiner.rootsize) {
 self: EnvironmentPassingCombiner[T, ParHashSet[T]] =>
   import HashSetCombiner._
-  var heads = new Array[Unrolled[Any]](rootsize)
-  var lasts = new Array[Unrolled[Any]](rootsize)
-  var size: Int = 0
-  
-  def clear = {
-    heads = new Array[Unrolled[Any]](rootsize)
-    lasts = new Array[Unrolled[Any]](rootsize)
-  }
+  val emptyTrie = HashSet.empty[T]
   
   def +=(elem: T) = {
-    size += 1
-    val hc = elem.##
+    sz += 1
+    val hc = emptyTrie.computeHash(elem)
     val pos = hc & 0x1f
     if (lasts(pos) eq null) {
       // initialize bucket
@@ -128,30 +122,11 @@ self: EnvironmentPassingCombiner[T, ParHashSet[T]] =>
     this
   }
   
-  def combine[N <: T, NewTo >: ParHashSet[T]](other: Combiner[N, NewTo]): Combiner[N, NewTo] = if (this ne other) {
-    if (other.isInstanceOf[HashSetCombiner[_]]) {
-      val that = other.asInstanceOf[HashSetCombiner[T]]
-      var i = 0
-      while (i < rootsize) {
-        if (lasts(i) eq null) {
-          heads(i) = that.heads(i)
-          lasts(i) = that.lasts(i)
-        } else {
-          lasts(i).next = that.heads(i)
-          if (that.lasts(i) ne null) lasts(i) = that.lasts(i)
-        }
-        i += 1
-      }
-      size = size + that.size
-      this
-    } else error("Unexpected combiner type.")
-  } else this
-  
   def result = {
     val buckets = heads.filter(_ != null)
     val root = new Array[HashSet[T]](buckets.length)
     
-    executeAndWait(new CreateTrie(buckets, root, 0, buckets.length))
+    executeAndWaitResult(new CreateTrie(buckets, root, 0, buckets.length))
     
     var bitmap = 0
     var i = 0
@@ -171,7 +146,8 @@ self: EnvironmentPassingCombiner[T, ParHashSet[T]] =>
   
   /* tasks */
   
-  class CreateTrie(buckets: Array[Unrolled[Any]], root: Array[HashSet[T]], offset: Int, howmany: Int) extends super.Task[Unit, CreateTrie] {
+  class CreateTrie(buckets: Array[Unrolled[Any]], root: Array[HashSet[T]], offset: Int, howmany: Int)
+  extends super.Task[Unit, CreateTrie] {
     var result = ()
     def leaf(prev: Option[Unit]) = {
       var i = offset
@@ -191,7 +167,7 @@ self: EnvironmentPassingCombiner[T, ParHashSet[T]] =>
         val chunksz = unrolled.size
         while (i < chunksz) {
           val v = chunkarr(i).asInstanceOf[T]
-          val hc = v.##
+          val hc = trie.computeHash(v)
           trie = trie.updated0(v, hc, rootbits)
           i += 1
         }
@@ -217,9 +193,6 @@ object HashSetCombiner {
   private[immutable] val rootbits = 5
   private[immutable] val rootsize = 1 << 5
 }
-
-
-
 
 
 

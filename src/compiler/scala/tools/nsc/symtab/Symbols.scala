@@ -707,6 +707,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
      *  ensuring that symbol is initialized (i.e. type is completed).
      */
     override def info: Type = try {
+      // Eugene: insert same thread assertion here
       var cnt = 0 
       while (validTo == NoPeriod) {
         //if (settings.debug.value) System.out.println("completing " + this);//DEBUG
@@ -1264,7 +1265,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       * symbol has already been checked to be a class (using `isClass`).
       * After refchecks nested objects get transformed to lazy vals so we filter on LAZY flag*/
     private final def companionModule0: Symbol = {
-      val f = if (phase.refChecked && isNestedClass) LAZY else MODULE
+      val f = if (phase.refChecked && isNestedClass && !forMSIL) LAZY else MODULE
       flatOwnerInfo.decl(name.toTermName).suchThat(
         sym => (sym hasFlag f) && (sym isCoDefinedWith this))
     }

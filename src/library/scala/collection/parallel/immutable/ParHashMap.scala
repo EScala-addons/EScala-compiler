@@ -11,6 +11,7 @@ import scala.collection.parallel.ParMapLike
 import scala.collection.parallel.Combiner
 import scala.collection.parallel.ParIterableIterator
 import scala.collection.parallel.EnvironmentPassingCombiner
+import scala.collection.parallel.Unrolled
 import scala.collection.generic.ParMapFactory
 import scala.collection.generic.CanCombineFrom
 import scala.collection.generic.GenericParMapTemplate
@@ -38,6 +39,8 @@ self =>
   override def mapCompanion: GenericParMapCompanion[ParHashMap] = ParHashMap
   
   override def empty: ParHashMap[K, V] = new ParHashMap[K, V]
+  
+  protected[this] override def newCombiner = HashMapCombiner[K, V]
   
   def parallelIterator: ParIterableIterator[(K, V)] = new ParHashMapIterator(trie.iterator, trie.size) with SCPI
   
@@ -79,12 +82,28 @@ self =>
     }
     def next: (K, V) = {
       i += 1
-      triter.next
+      val r = triter.next
+      r
     }
     def hasNext: Boolean = {
       i < sz
     }
     def remaining = sz - i
+  }
+
+  private[parallel] def printDebugInfo {
+    println("Parallel hash trie")
+    println("Top level inner trie type: " + trie.getClass)
+    trie match {
+      case hm: HashMap.HashMap1[k, v] =>
+        println("single node type")
+        println("key stored: " + hm.getKey)
+        println("hash of key: " + hm.getHash)
+        println("computed hash of " + hm.getKey + ": " + hm.computeHashFor(hm.getKey))
+        println("trie.get(key): " + hm.get(hm.getKey))
+      case _ =>
+        println("other kind of node")
+    }
   }
   
 }
@@ -105,22 +124,15 @@ object ParHashMap extends ParMapFactory[ParHashMap] {
 }
 
 
-private[immutable] trait HashMapCombiner[K, V]
-extends Combiner[(K, V), ParHashMap[K, V]] {
+private[immutable] abstract class HashMapCombiner[K, V]
+extends collection.parallel.BucketCombiner[(K, V), ParHashMap[K, V], (K, V), HashMapCombiner[K, V]](HashMapCombiner.rootsize) {
 self: EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] =>
   import HashMapCombiner._
-  var heads = new Array[Unrolled[(K, V)]](rootsize)
-  var lasts = new Array[Unrolled[(K, V)]](rootsize)
-  var size: Int = 0
-  
-  def clear = {
-    heads = new Array[Unrolled[(K, V)]](rootsize)
-    lasts = new Array[Unrolled[(K, V)]](rootsize)
-  }
+  val emptyTrie = HashMap.empty[K, V]
   
   def +=(elem: (K, V)) = {
-    size += 1
-    val hc = elem._1.##
+    sz += 1
+    val hc = emptyTrie.computeHash(elem._1)
     val pos = hc & 0x1f
     if (lasts(pos) eq null) {
       // initialize bucket
@@ -132,31 +144,11 @@ self: EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] =>
     this
   }
   
-  def combine[N <: (K, V), NewTo >: ParHashMap[K, V]](other: Combiner[N, NewTo]): Combiner[N, NewTo] = if (this ne other) {
-    // ParHashMap.totalcombines.incrementAndGet
-    if (other.isInstanceOf[HashMapCombiner[_, _]]) {
-      val that = other.asInstanceOf[HashMapCombiner[K, V]]
-      var i = 0
-      while (i < rootsize) {
-        if (lasts(i) eq null) {
-          heads(i) = that.heads(i)
-          lasts(i) = that.lasts(i)
-        } else {
-          lasts(i).next = that.heads(i)
-          if (that.lasts(i) ne null) lasts(i) = that.lasts(i)
-        }
-        i += 1
-      }
-      size = size + that.size
-      this
-    } else error("Unexpected combiner type.")
-  } else this
-  
   def result = {
     val buckets = heads.filter(_ != null)
     val root = new Array[HashMap[K, V]](buckets.length)
     
-    executeAndWait(new CreateTrie(buckets, root, 0, buckets.length))
+    executeAndWaitResult(new CreateTrie(buckets, root, 0, buckets.length))
     
     var bitmap = 0
     var i = 0
@@ -172,6 +164,10 @@ self: EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] =>
       val trie = new HashMap.HashTrieMap(bitmap, root, sz)
       new ParHashMap[K, V](trie)
     }
+  }
+  
+  override def toString = {
+    "HashTrieCombiner(buckets:\n\t" + heads.filter(_ != null).mkString("\n\t") + ")\n"
   }
   
   /* tasks */
@@ -196,7 +192,7 @@ self: EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] =>
         val chunksz = unrolled.size
         while (i < chunksz) {
           val kv = chunkarr(i)
-          val hc = kv._1.##
+          val hc = trie.computeHash(kv._1)
           trie = trie.updated0(kv._1, hc, rootbits, kv._2, kv, null)
           i += 1
         }
@@ -216,8 +212,8 @@ self: EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] =>
 }
 
 
-object HashMapCombiner {
-  def apply[K, V] = new HashMapCombiner[K, V] with EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]] {}
+private[parallel] object HashMapCombiner {
+  def apply[K, V] = new HashMapCombiner[K, V] with EnvironmentPassingCombiner[(K, V), ParHashMap[K, V]]
   
   private[immutable] val rootbits = 5
   private[immutable] val rootsize = 1 << 5
