@@ -23,9 +23,9 @@ abstract class ObservableInstrumentation extends Transform
   val phaseName: String = "observables"
 
   // the Observable class represents the instrumented method
-  private var namer: analyzer.Namer = null
+  protected var namer: analyzer.Namer = null
 
-  private var toInstrument: List[Symbol] = Nil
+  protected var toInstrument: List[Symbol] = Nil
     
   def newTransformer(unit: CompilationUnit): Transformer = {
     new ObservablesLift(unit)
@@ -127,6 +127,12 @@ abstract class ObservableInstrumentation extends Transform
           // switch the implementation
           val result = treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
                        tclazz.tparams, template)
+
+          if(!synthesized.isEmpty) {
+            // the class has now concrete element, reset the <interface> flag if it was set
+            clazz.symbol.resetFlag(INTERFACE)
+          }
+
           clazz = oldclazz
           synthesized = oldsynthesized
           result
