@@ -295,12 +295,12 @@ object Predef extends LowPriorityImplicits {
   //implicit def fromVariable[T](v: Variable[T]) = v()
 
   /* the empty event never triggered */
-  object emptyevent extends scala.events.Event[Nothing] {
-    def +=(sink: Sink) { /* do nothing */ }
-    def -=(sink: Sink) { /* do nothing */ }
-    def +=(react: Nothing => Unit) { /* do nothing */ }
-    def -=(react: Nothing => Unit) { /* do nothing */ }
-  }
+  //object emptyevent extends scala.events.Event[Nothing] {
+  //  def +=(sink: Sink) { /* do nothing */ }
+  //  def -=(sink: Sink) { /* do nothing */ }
+  //  def +=(react: Nothing => Unit) { /* do nothing */ }
+  //  def -=(react: Nothing => Unit) { /* do nothing */ }
+  //}
   // @ESCALA END
 
   // Primitive Widenings --------------------------------------------------------------

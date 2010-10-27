@@ -1,6 +1,6 @@
 package scala.events
 
-object empty extends Event[Nothing] {
+object emptyevent extends Event[Nothing] {
   def +=(sink: Sink) { /* do nothing */ }
   def -=(sink: Sink) { /* do nothing */ }
   def +=(react: Nothing => Unit) { /* do nothing */ }

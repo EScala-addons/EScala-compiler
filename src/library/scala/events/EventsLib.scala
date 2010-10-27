@@ -563,6 +563,27 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
 
 }
 
+class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
+
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+    reactions(id, v, reacts)
+  }
+
+  private def getEvent(ev: =>Event[T]): Event[T] =
+    try {
+      event
+    } catch {
+      case _: NullPointerException => emptyevent
+    }
+
+  override def deploy {
+    getEvent(event) += onEvt
+  }
+  override def undeploy {
+    getEvent(event) -= onEvt
+  }
+}
+
 class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
