@@ -121,7 +121,7 @@ abstract class GenICode extends SubComponent  {
         addMethodParams(ctx1, vparamss)
         m.native = m.symbol.hasAnnotation(definitions.NativeAttr)
 
-        if (!m.isDeferred && !m.native) {
+        if (!m.isAbstractMethod && !m.native) {
           ctx1 = genLoad(rhs, ctx1, m.returnType);
 
           // reverse the order of the local variables, to match the source-order
@@ -1233,22 +1233,6 @@ abstract class GenICode extends SubComponent  {
     def genCast(from: TypeKind, to: TypeKind, ctx: Context, cast: Boolean) =
       ctx.bb.emit(if (cast) CHECK_CAST(to) else IS_INSTANCE(to))
 
-    def zeroOf(k: TypeKind): Tree = k match {
-      case UNIT            => Literal(())
-      case BOOL            => Literal(false)
-      case BYTE            => Literal(0: Byte)
-      case SHORT           => Literal(0: Short)
-      case CHAR            => Literal(0: Char)
-      case INT             => Literal(0: Int)
-      case LONG            => Literal(0: Long)
-      case FLOAT           => Literal(0.0f)
-      case DOUBLE          => Literal(0.0d)
-      case REFERENCE(cls)  => Literal(null: Any)
-      case ARRAY(elem)     => Literal(null: Any)
-      case BOXED(_)        => Literal(null: Any)
-      case ConcatClass     => abort("no zero of ConcatClass")
-    }
-
     def getZeroOf(k: TypeKind): Instruction = k match {
       case UNIT            => CONSTANT(Constant(()))
       case BOOL            => CONSTANT(Constant(false))
@@ -1524,13 +1508,10 @@ abstract class GenICode extends SubComponent  {
      * @param elseCtx target context if the comparison yields false
      */
     def genEqEqPrimitive(l: Tree, r: Tree, ctx: Context)(thenCtx: Context, elseCtx: Context): Unit = {
-      
-      def eqEqTempName: Name = "eqEqTemp$"
-
-      def getTempLocal: Local = ctx.method.lookupLocal(eqEqTempName) match {
+      def getTempLocal: Local = ctx.method.lookupLocal(nme.EQEQ_LOCAL_VAR) match {
         case Some(local) => local
         case None =>
-          val local = ctx.makeLocal(l.pos, AnyRefClass.typeConstructor, eqEqTempName.toString)
+          val local = ctx.makeLocal(l.pos, AnyRefClass.typeConstructor, nme.EQEQ_LOCAL_VAR)
           //assert(!l.pos.source.isEmpty, "bad position, unit = "+unit+", tree = "+l+", pos = "+l.pos.source)
           // Note - I commented these out because they were crashing the test case in ticket #2426
           // (and I have also had to comment them out at various times while working on equality.)

@@ -353,10 +353,6 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val runsRightAfter = None
   } with RefChecks
 
-//  object devirtualize extends {
-//    val global: Global.this.type = Global.this
-//  } with DeVirtualize
-
   // phaseName = "liftcode"
   object liftcode extends {
     val global: Global.this.type = Global.this
@@ -414,13 +410,6 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val runsRightAfter = None
   } with LambdaLift
 
-  // phaseName = "detach"
-//  object detach extends {
-//    val global: Global.this.type = Global.this
-//    val runsAfter = List("lambdalift")
-//    val runsRightAfter = Some("lambdalift")
-//  } with Detach
-
   // phaseName = "constructors"
   object constructors extends {
     val global: Global.this.type = Global.this
@@ -455,10 +444,6 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val runsAfter = List[String]("cleanup")
     val runsRightAfter = None
   } with GenICode
-
-// object icodePrinter extends backend.icode.Printers {
-//   val global: Global.this.type = Global.this
-// }
 
   // phaseName = "???"
   object scalaPrimitives extends {
@@ -567,20 +552,13 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     phasesSet += superAccessors			       // add super accessors
     phasesSet += pickler			       // serialize symbol tables
     phasesSet += refchecks			       // perform reference and override checking, translate nested objects
-    
-//    if (false && settings.YvirtClasses)
-//	phasesSet += devirtualize		       // Desugar virtual classes4
-    
     phasesSet += uncurry                    // uncurry, translate function values to anonymous classes
     phasesSet += tailCalls                  // replace tail calls by jumps
     phasesSet += specializeTypes
     phasesSet += explicitOuter              // replace C.this by explicit outer pointers, eliminate pattern matching
     phasesSet += erasure                    // erase types, add interfaces for traits
     phasesSet += lazyVals
-    phasesSet += lambdaLift                 // move nested functions to top level
-    // if (forJVM && settings.Xdetach.value)
-    //   phasesSet += detach                // convert detached closures
-   
+    phasesSet += lambdaLift                 // move nested functions to top level   
     phasesSet += constructors               // move field definitions into constructors
     phasesSet += mixer                      // do mixin composition
     phasesSet += cleanup                    // some platform-specific cleanups
@@ -786,9 +764,8 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     def compileSources(_sources: List[SourceFile]) {
       val depSources = dependencyAnalysis.filter(_sources.distinct) // bug #1268, scalac confused by duplicated filenames
       val sources = coreClassesFirst(depSources)
-      if (reporter.hasErrors)
-        return  // there is a problem already, e.g. a
-                // plugin was passed a bad option
+      if (reporter.hasErrors) // there is a problem already, e.g. a plugin was passed a bad option
+        return
       val startTime = currentTime
       reporter.reset
       for (source <- sources) addUnit(new CompilationUnit(source))
@@ -834,8 +811,8 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
           sym.reset(new loaders.SourcefileLoader(file))
           if (sym.isTerm) sym.moduleClass.reset(loaders.moduleClassLoader)
         }
-      } else {
-        //assert(symData.isEmpty || !settings.stop.value.isEmpty || !settings.skip.value.isEmpty, symData)
+      }
+      else {
         if (deprecationWarnings) {
           warning("there were deprecation warnings; re-run with " + settings.deprecation.name + " for details")
         }
@@ -843,7 +820,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
           warning("there were unchecked warnings; re-run with " + settings.unchecked.name + " for details")
         }
       }
-      for ((sym, file) <- symSource.iterator) resetPackageClass(sym.owner)
+      symSource.keys foreach (x => resetPackageClass(x.owner))
       informTime("total", startTime)
 
       if (!dependencyAnalysis.off) {
@@ -887,11 +864,11 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
      */
     def compileLate(file: AbstractFile) {
       if (compiledFiles eq null) {
-        val msg = "No class file for " + file +
-                  " was found\n(This file cannot be loaded as a source file)"
+        val msg = "No class file for " + file + " was found\n(This file cannot be loaded as a source file)"
         inform(msg)
         throw new FatalError(msg)
-      } else if (!(compiledFiles contains file.path)) {
+      } 
+      else if (!(compiledFiles contains file.path)) {
         compileLate(new CompilationUnit(getSourceFile(file)))
       }
     }
@@ -978,9 +955,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
 
   def printAllUnits() {
     print("[[syntax trees at end of " + phase + "]]")
-    atPhase(phase.next) {
-      for (unit <- currentRun.units) treePrinter.print(unit)
-    }
+    atPhase(phase.next) { currentRun.units foreach (treePrinter print _) }
   }
 
   def showDef(name: Name, module: Boolean) {
@@ -1019,7 +994,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   private def writeICode() {
     val printer = new icodes.TextPrinter(null, icodes.linearizer)
     icodes.classes.values.foreach((cls) => {
-      val suffix = if (cls.symbol hasFlag Flags.MODULE) "$.icode" else ".icode"
+      val suffix = if (cls.symbol.hasModuleFlag) "$.icode" else ".icode"
       var file = getFile(cls.symbol, suffix)
 //      if (file.exists())
 //        file = new File(file.getParentFile(), file.getName() + "1")

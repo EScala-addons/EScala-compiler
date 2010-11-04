@@ -229,6 +229,22 @@ abstract class TreeGen {
 
   /** Builds a list with given head and tail. */
   def mkNil: Tree = mkAttributedRef(NilModule)
+  
+  /** Builds a tree representing an undefined local, as in
+   *    var x: T = _
+   *  which is appropriate to the given Type.
+   */
+  def mkZero(tp: Type): Tree = {
+    val sym = tp.typeSymbol
+    val tree =
+      if (sym == UnitClass) Literal(())
+      else if (sym == BooleanClass) Literal(false)
+      else if (isValueClass(sym)) Literal(0)
+      else if (NullClass.tpe <:< tp) Literal(null: Any)
+      else abort("Cannot determine zero for " + tp)
+    
+    tree setType tp
+  }
 
   /** Builds a tuple */
   def mkTuple(elems: List[Tree]): Tree =
@@ -277,10 +293,8 @@ abstract class TreeGen {
   def mkCachedModuleAccessDef(accessor: Symbol, mvar: Symbol) =
     DefDef(accessor, mkCached(mvar, newModule(accessor, mvar.tpe)))
 
-  // def m: T = new tpe(...)
-  // where (...) are eventual outer accessors
-  def mkModuleAccessDef(accessor: Symbol, tpe: Type) =
-    DefDef(accessor, newModule(accessor, tpe))
+  def mkModuleAccessDef(accessor: Symbol, msym: Symbol) =
+    DefDef(accessor, Select(This(msym.owner), msym))
 
   def newModule(accessor: Symbol, tpe: Type) =
     New(TypeTree(tpe), 
@@ -302,7 +316,7 @@ abstract class TreeGen {
     Apply(Select(monitor, Object_synchronized), List(body))
 
   def wildcardStar(tree: Tree) =
-    atPos(tree.pos) { Typed(tree, Ident(nme.WILDCARD_STAR.toTypeName)) }
+    atPos(tree.pos) { Typed(tree, Ident(nme.WILDCARD_STAR)) }
 
   def paramToArg(vparam: Symbol) = {
     val arg = Ident(vparam)

@@ -110,7 +110,7 @@ trait ParallelMatching extends ast.TreeDSL
       // tests
       def isDefined   = sym ne NoSymbol
       def isSimple    = tpe.isByte || tpe.isShort || tpe.isChar || tpe.isInt
-      def isCaseClass = tpe.typeSymbol hasFlag Flags.CASE
+      def isCaseClass = tpe.typeSymbol.isCase
 
       // sequences
       def seqType         = tpe.widen baseType SeqClass
@@ -885,7 +885,6 @@ trait ParallelMatching extends ast.TreeDSL
           case ConstantType(Constant(value))          => scrutTree MEMBER_== Literal(value)
           case SingleType(NoPrefix, sym)              => genEquals(sym)
           case SingleType(pre, sym) if sym.isModule   => genEquals(sym)
-          case ThisType(sym) if sym.isAnonymousClass  => cunit.error(sym.pos, "self type test in anonymous class forbidden by implementation.") ; EmptyTree
           case ThisType(sym) if sym.isModule          => genEquals(sym)
           case _ if isMatchUnlessNull                 => scrutTree OBJ_NE NULL
           case _                                      => scrutTree IS tpe
