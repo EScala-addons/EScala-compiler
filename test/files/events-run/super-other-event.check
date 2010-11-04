@@ -1,0 +1,11 @@
+on c1
+m called
+m
+e1()
+on c2
+m called
+e2()
+m
+e2()
+imperative e1
+e1()
