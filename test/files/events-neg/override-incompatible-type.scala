@@ -1,3 +1,4 @@
+import scala.events._
 class C1 {
   evt e[Unit] = emptyevent
 }

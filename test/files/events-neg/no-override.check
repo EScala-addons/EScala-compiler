@@ -1,4 +1,4 @@
-no-override.scala:5: error: overriding lazy value e in class C of type scala.events.Event[Unit];
+no-override.scala:6: error: overriding lazy value e in class C of type scala.events.Event[Unit];
  lazy value e needs `override' modifier
   evt e[Unit] = emptyevent
       ^
