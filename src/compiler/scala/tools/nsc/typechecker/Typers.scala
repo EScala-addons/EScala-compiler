@@ -681,14 +681,16 @@ trait Typers { self: Analyzer =>
     }
 
     /** The member with given name of given qualifier tree */
-    def member(qual: Tree, name: Name) = qual.tpe match {
-      case ThisType(clazz) if (context.enclClass.owner.hasTransOwner(clazz)) =>
-        // println("member "+qual.tpe+" . "+name+" "+qual.tpe.getClass)
-        qual.tpe.member(name)
-      case _  =>
-        if (phase.next.erasedTypes) qual.tpe.member(name)
-        else qual.tpe.nonLocalMember(name)
-    }      
+    def member(qual: Tree, name: Name) = {
+      def callSiteWithinClass(clazz: Symbol) = context.enclClass.owner hasTransOwner clazz
+      val includeLocals = qual.tpe match {
+        case ThisType(clazz) if callSiteWithinClass(clazz)                => true
+        case SuperType(clazz, _) if callSiteWithinClass(clazz.typeSymbol) => true
+        case _                                                            => phase.next.erasedTypes
+      }
+      if (includeLocals) qual.tpe member name
+      else qual.tpe nonLocalMember name
+    }
 
     def silent[T](op: Typer => T,
                   reportAmbiguousErrors: Boolean = context.reportAmbiguousErrors,
@@ -4000,7 +4002,7 @@ trait Typers { self: Analyzer =>
             val params = for (i <- List.range(0, arity)) yield 
               atPos(tree.pos.focusStart) {
                 ValDef(Modifiers(PARAM | SYNTHETIC), 
-                       unit.fresh.newName(tree.pos, "x" + i + "$"), TypeTree(), EmptyTree)
+                       unit.fresh.newName("x" + i + "$"), TypeTree(), EmptyTree)
               }
             val ids = for (p <- params) yield Ident(p.name)
             val selector1 = atPos(tree.pos.focusStart) { if (arity == 1) ids.head else gen.mkTuple(ids) }
