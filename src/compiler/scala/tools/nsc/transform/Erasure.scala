@@ -131,6 +131,7 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
             !(psyms exists (qsym => (psym ne qsym) && (qsym isNonBottomSubClass psym)))
           val cs = parents.iterator.filter { p => // isUnshadowed is a bit expensive, so try classes first
             val psym = p.typeSymbol
+            psym.initialize
             psym.isClass && !psym.isTrait && isUnshadowed(psym)
           }
           (if (cs.hasNext) cs else parents.iterator.filter(p => isUnshadowed(p.typeSymbol))).next()
@@ -249,9 +250,7 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
             else ARRAY_TAG.toString+(args map jsig).mkString
           else if (sym.isTypeParameterOrSkolem &&
                   // only refer to type params that will actually make it into the sig, this excludes:
-                  !sym.owner.isTypeParameterOrSkolem && // higher-order type parameters (!sym.owner.isTypeParameterOrSkolem), and parameters of methods
-                  (!sym0.isClass || sym.owner.isClass) // if we're generating the sig for a class, type params must be owned by a class (not a method -- #3249)
-                  )
+                  !sym.owner.isTypeParameterOrSkolem) // higher-order type parameters (!sym.owner.isTypeParameterOrSkolem), and parameters of methods
             TVAR_TAG.toString+sym.name+";"
           else if (sym == AnyClass || sym == AnyValClass || sym == SingletonClass) 
             jsig(ObjectClass.tpe)

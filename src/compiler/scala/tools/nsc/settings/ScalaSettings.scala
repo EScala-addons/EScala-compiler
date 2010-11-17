@@ -39,7 +39,7 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val defines       = DefinesSetting()
   val optimise      = BooleanSetting    ("-optimise", "Generates faster bytecode by applying optimisations to the program") . 
                                             withAbbreviation("-optimize") .
-                                            withPostSetHook(_ => List(inline, Xcloselim, Xdce) foreach (_.value = true))
+                                            withPostSetHook(set => List(inline, Xcloselim, Xdce) foreach (_.value = set.value))
   val nospecialization = BooleanSetting    ("-no-specialization", "Ignore @specialize annotations.")
 
 
@@ -88,7 +88,7 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   
   // Experimental Extensions
   val Xexperimental = BooleanSetting    ("-Xexperimental", "Enable experimental extensions") .
-                          withPostSetHook(_ => List(YdepMethTpes, YmethodInfer) foreach (_.value = true)) //YvirtClasses, 
+                          withPostSetHook(set => List(YdepMethTpes, YmethodInfer) foreach (_.value = set.value)) //YvirtClasses, 
   val YdepMethTpes  = BooleanSetting    ("-Ydependent-method-types", "Allow dependent method types")
   val YmethodInfer  = BooleanSetting    ("-Yinfer-argument-types", "Infer types for arguments of overriden methods")
   val YvirtClasses  = false // too embryonic to even expose as a -Y //BooleanSetting    ("-Yvirtual-classes", "Support virtual classes")
@@ -125,6 +125,8 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val Ynogenericsig = BooleanSetting    ("-Yno-generic-signatures", "Suppress generation of generic signatures for Java")
   val noimports     = BooleanSetting    ("-Yno-imports", "Compile without any implicit imports")
   val nopredefs     = BooleanSetting    ("-Yno-predefs", "Compile without any implicit predefined values")
+  val Yprofile      = PhasesSetting     ("-Yprofile", "Profile the given phase. Needs yjpagent to run.")
+  val YprofileClass = StringSetting     ("-Yprofile-class", "class", "Name of profiler class", "scala.tools.util.YourkitProfiling")
   val Yrecursion    = IntSetting        ("-Yrecursion", "Recursion depth used when locking symbols", 0, Some(0, Int.MaxValue), (_: String) => None)
   val selfInAnnots  = BooleanSetting    ("-Yself-in-annots", "Include a \"self\" identifier inside of annotations")
   val Xshowtrees    = BooleanSetting    ("-Yshow-trees", "Show detailed trees when used in connection with -Xprint:<phase>")
@@ -132,13 +134,14 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val Xsqueeze      = ChoiceSetting     ("-Ysqueeze", "if on, creates compact code in matching", List("on","off"), "on") .
                                           withHelpSyntax("-Ysqueeze:<enabled>")
   val Ystatistics   = BooleanSetting    ("-Ystatistics", "Print compiler statistics") .
-                                          withPostSetHook(_ => util.Statistics.enabled = true)
+                                          withPostSetHook(set => util.Statistics.enabled = set.value)
   val stop          = PhasesSetting     ("-Ystop", "Stop after phase")
   val refinementMethodDispatch =
                       ChoiceSetting     ("-Ystruct-dispatch", "Selects dispatch method for structural refinement method calls",
                         List("no-cache", "mono-cache", "poly-cache", "invoke-dynamic"), "poly-cache") .
                         withHelpSyntax("-Ystruct-dispatch:<method>")
   val Yrangepos     = BooleanSetting    ("-Yrangepos", "Use range positions for syntax trees.")
+  val YrichExes     = BooleanSetting    ("-Yrich-exceptions", "More revealing exceptions.  Set SOURCEPATH to java/scala source jars.")
   val Yidedebug     = BooleanSetting    ("-Yide-debug", "Generate, validate and output trees using the interactive compiler.")
   val Ybuilderdebug = ChoiceSetting     ("-Ybuilder-debug", "Compile using the specified build manager", List("none", "refined", "simple"), "none") .
                         withHelpSyntax("-Ybuilder-debug:<method>")
