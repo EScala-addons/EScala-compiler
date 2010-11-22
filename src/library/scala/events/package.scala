@@ -2,7 +2,12 @@ package scala
 
 package object events {
 
-  def between[T,U](start: Event[T], end: Event[U]) = new BetweenEvent(start, end)
+  def between[T,U](start: Event[T], end: Event[U]) = {
+	  val bet = new BetweenEvent(start, end)
+	   bet.deploy
+	   bet
+  
+  }
 
   def within[T,U](ie: IntervalEvent[T,U]) = new WithinEvent(ie)
 
