@@ -2372,44 +2372,60 @@ self =>
         )
 
       atPos(start, if (name == nme.ERROR) start else nameOffset) {
-        val types: Option[List[Tree]] =
-          if(in.token == LBRACKET)  
-            Some(surround(LBRACKET, RBRACKET)(commaSeparated(simpleType(false)),
-              List(errorTermTree)))
-          else 
-            None
+        if(in.token == LPAREN) {
+          // parse new syntax
+          val types: List[Tree] =
+            surround(LPAREN, RPAREN)(commaSeparated(simpleType(false)),
+              List(errorTermTree))
 
-        val tpt =
-          if(types.isDefined && !newmods.hasFlag(Flags.IMPERATIVE))
-            makeEventType(types.get, "Event")
-          else if(types.isDefined && newmods.hasFlag(Flags.IMPERATIVE))
-            makeEventType(types.get, "ImperativeEvent")
-          else TypeTree()
-
-        val rhs = 
-          if (in.token == EQUALS) {
-            if(newmods hasFlag Flags.IMPERATIVE) {
-              syntaxError("imperative events may not have definition declaration", false)
-              EmptyTree
-            } else {
+          val rhs = {
               accept(EQUALS)
               expr()
-            }
-          } else if(!types.isDefined) {
-            syntaxError("abstract and imperative events must have type declaration", false)
-            EmptyTree
-          } else if(!newmods.hasFlag(Flags.IMPERATIVE)) {
-            newmods = (newmods | Flags.DEFERRED) & ~Flags.LAZY
-            EmptyTree
-          } else { 
-            newmods = (newmods | Flags.FINAL) & ~Flags.IMPERATIVE
-            makeExplicitEvent(types.get)
           }
-        //EventDef(newmods, name, types, rhs)
-        // TODO by making a value of an event at this point, we operate as a kind of preprocessor for
-        // events and we can not later generate good error messages. However we avoid to redefine how an
-        // event is typed as far as it behaves exactly like a lazy val.
-        ValDef(newmods, name, tpt, rhs)
+          
+          EventDef(newmods, name, types, rhs)
+
+        } else {
+          // parse old syntax
+          val types: Option[List[Tree]] =
+            if(in.token == LBRACKET)  
+              Some(surround(LBRACKET, RBRACKET)(commaSeparated(simpleType(false)),
+                List(errorTermTree)))
+            else 
+              None
+
+          val tpt =
+            if(types.isDefined && !newmods.hasFlag(Flags.IMPERATIVE))
+              makeEventType(types.get, "Event")
+            else if(types.isDefined && newmods.hasFlag(Flags.IMPERATIVE))
+              makeEventType(types.get, "ImperativeEvent")
+            else TypeTree()
+
+          val rhs = 
+            if (in.token == EQUALS) {
+              if(newmods hasFlag Flags.IMPERATIVE) {
+                syntaxError("imperative events may not have definition declaration", false)
+                EmptyTree
+              } else {
+                accept(EQUALS)
+                expr()
+              }
+            } else if(!types.isDefined) {
+              syntaxError("abstract and imperative events must have type declaration", false)
+              EmptyTree
+            } else if(!newmods.hasFlag(Flags.IMPERATIVE)) {
+              newmods = (newmods | Flags.DEFERRED) & ~Flags.LAZY
+              EmptyTree
+            } else { 
+              newmods = (newmods | Flags.FINAL) & ~Flags.IMPERATIVE
+              makeExplicitEvent(types.get)
+            }
+          //EventDef(newmods, name, types, rhs)
+          // TODO by making a value of an event at this point, we operate as a kind of preprocessor for
+          // events and we can not later generate good error messages. However we avoid to redefine how an
+          // event is typed as far as it behaves exactly like a lazy val.
+          ValDef(newmods, name, tpt, rhs)
+        }
       }
     }
 
