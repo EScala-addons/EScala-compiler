@@ -5,6 +5,7 @@ package object events {
   def between[T, U](start: Event[T], end: Event[U]) = new BetweenEvent(start, end)
 
   private[events] def within[T](e: Event[T], ie: IntervalEvent[_, _]): Event[T] = (e && ie.active _) || (e.and(ie.before, (t : T, s : Any )  => t))
+	   bet
 
   private[events] def not_within(e: Event[_], ie: IntervalEvent[_,_]) = (e && (() => ! ie.active)) \ ie.complement.after
   private[events] def strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && ie.active _) \ ie.complement.before
