@@ -202,10 +202,10 @@ class ImperativeEvent[T] extends EventNode[T] {
       afterTrigger(v)
       // execute the collected reactions
       reacts.foreach(
-        (react: () => Unit, trace: Trace) => {
-          eventTrace.withValue(trace) {
+        react => {
+          eventTrace.withValue(react._2 ) {
             //try {
-              react()
+              react._1()
             /*} catch {
               case e => 
                 println("Event trace:")
