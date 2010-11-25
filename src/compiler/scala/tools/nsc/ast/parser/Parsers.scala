@@ -2242,8 +2242,10 @@ self =>
       // @ESCALA
       if((mods hasFlag Flags.IMPERATIVE) && in.token != EVENT)
         syntaxError("imperative not allowed here. Only evts can be imperative", false)
-      if((mods hasFlag Flags.OBSERVABLE) && in.token != DEF)
-        syntaxError("observable not allowed here. Only defs can be observable", false)
+      if((mods hasFlag Flags.OBSERVABLE) && in.token != DEF
+                                         && in.token != CLASS)
+          // TODO : What about case classes ?
+        syntaxError("observable not allowed here. Only defs and classes can be observable", false)
       // @ESCALA END
       in.token match {
         case VAL =>

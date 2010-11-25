@@ -107,6 +107,9 @@ abstract class ObservableInstrumentation extends Transform
           namer = oldNamer
           res
         case cd: ClassDef => 
+          if (sym.isInstrumented && settings.Yeventsdebug.value) {
+            println("reached an <instrumented> class: " + sym.name)
+          }
           val oldsynthesized = synthesized
           synthesized = List()
           val oldclazz = clazz

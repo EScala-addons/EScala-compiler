@@ -150,8 +150,8 @@ trait Symbols { self: Universe =>
     final def isMethod = isTerm && hasFlag(METHOD)
     // @ESCALA
     //final def isEvent = hasFlag(EVENT)
-    final def isObservable = isMethod && hasFlag(OBSERVABLE)
-    final def isInstrumented = isMethod && hasFlag(INSTRUMENTED)
+    final def isObservable = (isMethod || isClass) && hasFlag(OBSERVABLE)
+    final def isInstrumented = (isMethod || isClass) && hasFlag(INSTRUMENTED)
     final def isImplementationMethod = isMethod && hasFlag(IMPLEMENTATION)
     // @ESCALA END
     final def isVarargsMethod = isMethod && hasFlag(VARARGS)
