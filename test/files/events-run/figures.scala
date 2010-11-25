@@ -50,7 +50,7 @@ abstract class Figure extends IFigure {
     def setColor(c : Int) { color = c }
 }
 
-class RectangleFigure (var rect : Rectangle) extends Figure {
+observable class RectangleFigure (var rect : Rectangle) extends Figure {
     override evt resized[Unit] = afterExec(resize) || afterExec(setBounds)
     override evt moved[Unit] = super.moved || afterExec(setBounds)
     
