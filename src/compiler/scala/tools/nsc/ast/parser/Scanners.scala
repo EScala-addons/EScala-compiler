@@ -973,6 +973,9 @@ trait Scanners {
     enterKeyword(nme.AFTERkw, AFTER)
     enterKeyword(nme.EXECUTIONkw, EXECUTION)
     enterKeyword(nme.IMPERATIVEkw, IMPERATIVE)
+    
+    enterKeyword(nme.BEFORESETkw, BEFORESET)
+    enterKeyword(nme.AFTERSETkw, AFTERSET)
     // @ESCALA END
   }
 

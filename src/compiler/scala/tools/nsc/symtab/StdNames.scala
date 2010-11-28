@@ -108,6 +108,9 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
     val AFTERkw = newTermName("afterExec")
     val EXECUTIONkw = newTermName("execution")
     val IMPERATIVEkw = newTermName("imperative")
+    
+    val BEFORESETkw = newTermName("beforeSet")
+    val AFTERSETkw = newTermName("afterSet")
     // @ESCALA END
     val INTERPRETER_IMPORT_WRAPPER    = "$iw"
     val INTERPRETER_LINE_PREFIX       = "line"
