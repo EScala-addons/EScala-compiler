@@ -503,7 +503,7 @@ self =>
            STRINGLIT | SYMBOLLIT | TRUE | FALSE | NULL | IDENTIFIER | BACKQUOTED_IDENT |
            THIS | SUPER | IF | FOR | NEW | USCORE | TRY | WHILE |
            // @ESCALA
-           DO | RETURN | THROW | LPAREN | LBRACE | XMLSTART | BEFORE | AFTER => true
+           DO | RETURN | THROW | LPAREN | LBRACE | XMLSTART | BEFORE | AFTER | BEFORESET | AFTERSET => true
       case _ => false
     }
 
