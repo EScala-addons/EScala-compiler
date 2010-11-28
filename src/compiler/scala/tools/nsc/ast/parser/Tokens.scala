@@ -115,6 +115,9 @@ object Tokens extends Tokens {
   final val AFTER = 65
   final val IMPERATIVE = 66
   final val EXECUTION  = 67
+  
+  final val BEFORESET = 68
+  final val AFTERSET = 69
   // @ESCALA END
 
   def isKeyword(code : Int) =
