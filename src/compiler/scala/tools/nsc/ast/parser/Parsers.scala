@@ -1382,6 +1382,14 @@ self =>
             accept(RPAREN)
             exec
           }
+        case AFTERSET =>
+          atPos(in.offset, in.skipToken) {
+            accept(LPAREN)
+            val after = ExecEvent(AfterExec(), simpleExpr())
+            accept(RPAREN)
+            after
+          }
+          
         // @ESCALA END
         case _ =>
           syntaxErrorOrIncomplete("illegal start of simple expression", true)
