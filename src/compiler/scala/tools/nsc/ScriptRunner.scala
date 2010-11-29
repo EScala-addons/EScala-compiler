@@ -19,6 +19,7 @@ import java.util.jar.{ JarEntry, JarOutputStream }
 import util.{ waitingForThreads, addShutdownHook }
 import scala.tools.util.PathResolver
 import scala.tools.nsc.reporters.{Reporter,ConsoleReporter}
+import util.Exceptional.unwrap
 
 /** An object that runs Scala code in script files.
  *
@@ -225,7 +226,7 @@ object ScriptRunner {
         else recompile()                            // jar old - recompile the script.
       }
       // don't use a cache jar at all--just use the class files
-      else compile map (cp => handler(cp.path)) getOrElse false
+      else compile exists (cp => handler(cp.path))
     }
   }
 
@@ -242,7 +243,7 @@ object ScriptRunner {
 	  val classpath = File(compiledLocation).toURL +: pr.asURLs
 
     ObjectRunner.runAndCatch(classpath, scriptMain(settings), scriptArgs) match {
-      case Left(ex) => Console println ex ; false
+      case Left(ex) => ex.printStackTrace() ; false
       case _        => true
     }
   }
@@ -272,10 +273,7 @@ object ScriptRunner {
 		scriptArgs: List[String]): Either[Throwable, Boolean] =
 	{
 	  try Right(runScript(settings, scriptFile, scriptArgs))
-	  catch {
-	    case e: IOException       => Left(e)
-	    case e: SecurityException => Left(e)
-	  }
+	  catch { case e => Left(unwrap(e)) }
   }
 
   /** Run a command 

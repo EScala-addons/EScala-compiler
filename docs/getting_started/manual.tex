@@ -139,6 +139,7 @@ be constructed in the way shown below.
 \item [ $e_1 \backslash e_2$ ] Difference of events
 \item [ $ e \&\& f $] Events filtered by a boolean function
 \item [ e.map(f) ] Transforming the parameters of an event with a function 'f'
+\item [ ? (possiblyNull) ] when an expression could throw a nullpointer exception it could be ignored
 \end{description}
 
 \subsection{Implicit Events}
@@ -192,7 +193,7 @@ to those that are really interesting.
 
 \begin{lstlisting}
 def aMethod(a :Int) : Unit = { .. }
-evt callEven = 
+evt callEvent = 
     beforeExec(aMethod) && 
     ((arg : Int) => arg%2==0)
 \end{lstlisting}
@@ -270,7 +271,8 @@ class SuperClass {
   ...
 }
 class SubClass extends SuperClass{
-  override evt someEvent = super.someEvent && super.nmbr%2==0
+  override evt someEvent = 
+    super.someEvent && super.nmbr%2==0
 }
 \end{lstlisting}
 
@@ -326,6 +328,12 @@ A handler should have parenthesis even without arguments and
 a return type of Unit. Failing to do so can result in a situation
 where the number of handlers grows, because 
 unregistering\footnote{event -= handler} doesn't work
+
+\subsection{Null references}
+When specifying a declarative event based on events in another object
+than can be a null reference (so it causes a null pointer exception)
+the question mark 'function' can handle this situation by considering this
+as an event that doesn't happen at all.
 
 \subsection{Not unregistering handlers}
 When handlers are not unregistered the number can grow which leads to

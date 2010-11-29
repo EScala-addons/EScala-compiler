@@ -154,6 +154,7 @@ trait Symbols { self: Universe =>
     final def isInstrumented = isMethod && hasFlag(INSTRUMENTED)
     final def isImplementationMethod = isMethod && hasFlag(IMPLEMENTATION)
     // @ESCALA END
+    final def isVarargsMethod = isMethod && hasFlag(VARARGS)
     final def isModule = isTerm && hasFlag(MODULE)
     final def isModuleClass = isClass && hasFlag(MODULE)
     final def isOverloaded = hasFlag(OVERLOADED)

@@ -129,6 +129,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val SwitchClass                = getClass("scala.annotation.switch")
     lazy val ElidableMethodClass        = getClass("scala.annotation.elidable")
     lazy val ImplicitNotFoundClass      = getClass("scala.annotation.implicitNotFound")
+    lazy val VarargsClass               = getClass("scala.annotation.varargs")
     lazy val FieldTargetClass           = getClass("scala.annotation.target.field")
     lazy val GetterTargetClass          = getClass("scala.annotation.target.getter")
     lazy val SetterTargetClass          = getClass("scala.annotation.target.setter")
@@ -150,6 +151,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
 
     // fundamental modules
     lazy val PredefModule: Symbol = getModule("scala.Predef")
+    lazy val PredefModuleClass = PredefModule.tpe.typeSymbol
       def Predef_classOf = getMember(PredefModule, nme.classOf)
       def Predef_error    = getMember(PredefModule, nme.error)
       def Predef_identity = getMember(PredefModule, nme.identity)
@@ -232,7 +234,6 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       def Seq_length = getMember(SeqClass, nme.length)
       
     lazy val ListModule   = getModule2("scala.List", "scala.collection.immutable.List")
-      def List_apply = getMember(ListModule, nme.apply)
     lazy val ListClass    = getClass2("scala.List", "scala.collection.immutable.List")
       def List_isEmpty  = getMember(ListClass, nme.isEmpty)
       def List_head     = getMember(ListClass, nme.head)
@@ -384,6 +385,8 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       case _ =>
         false
     }
+    
+    def isSeqType(tp: Type) = cond(tp.normalize) { case TypeRef(_, SeqClass, List(tparam)) => true }
     
     def seqType(arg: Type)   = typeRef(SeqClass.typeConstructor.prefix, SeqClass, List(arg))
     def arrayType(arg: Type) = typeRef(ArrayClass.typeConstructor.prefix, ArrayClass, List(arg))
