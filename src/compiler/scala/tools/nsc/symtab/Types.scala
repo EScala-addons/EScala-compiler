@@ -102,7 +102,7 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
    */
   object undoLog {
     private type UndoLog = List[(TypeVar, TypeConstraint)]
-    private var log: UndoLog = List()
+    private[nsc] var log: UndoLog = List()
 
     /** Undo all changes to constraints to type variables upto `limit'
      */
@@ -115,7 +115,7 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
     }
 
     private[Types] def record(tv: TypeVar) = {log = (tv, tv.constr.cloneInternal) :: log}
-    private[Types] def clear() { log = List() } // TODO: what's the point of this method? -- we roll back the log (using undoTo) in the combinators below anyway, see comments at clear() calls below
+    private[nsc] def clear() { log = List() }
 
     // `block` should not affect constraints on typevars
     def undo[T](block: => T): T = {
@@ -3789,12 +3789,14 @@ A type's typeSymbol should never be inspected directly.
 
   object adaptToNewRunMap extends TypeMap {
     private def adaptToNewRun(pre: Type, sym: Symbol): Symbol = {
-      if (sym.isModuleClass && !phase.flatClasses) {
+      if (phase.flatClasses) {
+	sym
+      } else if (sym.isModuleClass) {
         if (!sym.owner.isPackageClass)
           sym // Nested lazy object
         else
           adaptToNewRun(pre, sym.sourceModule).moduleClass
-      } else if ((pre eq NoPrefix) || (pre eq NoType) || sym.owner.isPackageClass) {
+      } else if ((pre eq NoPrefix) || (pre eq NoType) || sym.isPackageClass) {
         sym
       } else {
         var rebind0 = pre.findMember(sym.name, BRIDGE, 0, true)
@@ -3833,7 +3835,7 @@ A type's typeSymbol should never be inspected directly.
       }
     }
     def apply(tp: Type): Type = tp match {
-      case ThisType(sym) if (sym.isModuleClass) =>
+      case ThisType(sym) =>
         val sym1 = adaptToNewRun(sym.owner.thisType, sym)
         if (sym1 == sym) tp else ThisType(sym1)
       case SingleType(pre, sym) =>

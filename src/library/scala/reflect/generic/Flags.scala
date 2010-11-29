@@ -38,6 +38,8 @@ class ModifierFlags {
   final val OBSERVABLE    = 0x100000000L  // method is observable
                                           // pre: INSTRUMENTED
   final val IMPERATIVE    = 0x80000000000L// event is imperative
+  final val EVENT         = 0x200000000L  // the val is an event
+  final val INSTRUMENTED  = 0x400000000L  // the method is instrumented
   // END @ESCALA
   final val LAZY          = 0x80000000L   // symbol is a lazy val. can't have MUTABLE unless transformed by typer  
   final val PRESUPER      = 0x2000000000L // value is evaluated before super call
@@ -69,8 +71,6 @@ class Flags extends ModifierFlags {
 
   // @ESCALA
   final val IMPLEMENTATION= 0x80000000000L// method is an implementation method
-  final val EVENT         = 0x200000000L  // the val is an event
-  final val INSTRUMENTED  = 0x400000000L  // the method is instrumented
   
   //final val IS_ERROR      = 0x100000000L  // symbol is an error symbol
   //final val OVERLOADED    = 0x200000000L  // symbol is overloaded
