@@ -375,6 +375,7 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     // @ESCALA
     def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree): EventDef
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree): ExecEvent
+    def SetEvent(tree: Tree, kind: ExecEvtKind, field: Tree): SetEvent
     // @ESCALA END
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree): TypeDef
     def LabelDef(tree: Tree, name: Name, params: List[Ident], rhs: Tree): LabelDef
@@ -434,6 +435,8 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
       new EventDef(mods, name, tparams, rhs).copyAttrs(tree)
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = 
       new ExecEvent(kind, meth).copyAttrs(tree)
+    def SetEvent(tree: Tree, kind: ExecEvtKind, field: Tree) = 
+      new SetEvent(kind, field).copyAttrs(tree)
     // @ESCALA END
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =
       new TypeDef(mods, name, tparams, rhs).copyAttrs(tree)
@@ -560,6 +563,10 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = tree match {
       case t @ ExecEvent(kind0, meth0) if (kind0 == kind) && (meth0 == meth) => t
       case _ => treeCopy.ExecEvent(tree, kind, meth)
+    }
+    def SetEvent(tree: Tree, kind: ExecEvtKind, field: Tree) = tree match {
+      case t @ SetEvent(kind0, field0) if (kind0 == kind) && (field0 == field) => t
+      case _ => treeCopy.SetEvent(tree, kind, field)
     }
     // @ESCALA END
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) = tree match {
@@ -892,6 +899,8 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
         }
       case ExecEvent(kind, meth) =>
         treeCopy.ExecEvent(tree, kind, transform(meth))
+      case SetEvent(kind, field) =>
+        treeCopy.SetEvent(tree, kind, transform(field))
       // @ESCALA END
     }
 

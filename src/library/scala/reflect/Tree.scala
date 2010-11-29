@@ -56,6 +56,7 @@ case class BeforeSet extends ExecEvtKind
 
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
 case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends Tree
+case class SetEvent(kind: ExecEvtKind, field: Tree) extends Tree
 // @ESCALA END
 
 //Monomorphic
