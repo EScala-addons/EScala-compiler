@@ -1,0 +1,130 @@
+\documentclass[article,colorback,accentcolor=tud4c]{tudreport}
+\usepackage{ngerman}
+
+\usepackage[stable]{footmisc}
+\usepackage[ngerman]{hyperref}
+
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{booktabs}
+
+\hypersetup{%
+  pdftitle={TUD Corporate-Design f"ur {\LaTeX}},
+  pdfauthor={C. v. Loewenich und J. Werner},
+  pdfsubject={Beispieltext},
+  pdfview=FitH,
+  pdfstartview=FitV
+}
+
+\setcounter{seclinedepth}{1}
+
+%%% Zum Tester der Marginalien %%%
+  \newif\ifTUDmargin\TUDmarginfalse
+  %%% Wird der Folgende Zeile einkommentiert,
+  %%% werden Marginalien gesetzt.
+  % \TUDmargintrue
+  \ifTUDmargin\makeatletter
+    \TUD@setmarginpar{2}
+  \makeatother\fi
+%%% ENDE: Zum Tester der Marginalien %%%
+
+\newlength{\longtablewidth}
+\setlength{\longtablewidth}{0.7\linewidth}
+\addtolength{\longtablewidth}{-\marginparsep}
+\addtolength{\longtablewidth}{-\marginparwidth}
+
+
+% \settitlepicture{tudreport-pic}
+% \printpicturesize
+
+\title{IntervalEvents in EScala: Design}
+\subtitle{Michael Kutschke und Frank Englert}
+%\setinstitutionlogo[width]{TUD_sublogo}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Grundlegende Definitionen}
+Sei before(int) : Event das Ereignis, das den Beginn des Intervalls int angibt und after(int) : Event jenes, welches das Ende von int angibt. Dies kann in unterschiedlicher Form erfolgen:
+\begin{itemize}
+\item einmal before(\_) zu Beginn und einmal after(\_) am Ende (Standard in der jetzigen Fassung)
+\item mehrfaches before(\_) und ein after(\_) am Ende (Use case? Wohl meist nicht erw"unscht)
+\item verschachtelte, paarweise passende before(\_) und after(\_) Ereignisse (Bsp. Exec)
+\item beliebige before(\_) und after(\_) Events innerhalb des Intervals
+\end{itemize}
+Ausserdem gebe active(int) : boolean an, ob das Intervall \"aktiv\"\  ist. In der jetzigen Fassung bedeutet dies einfach, ob man sich zeitlich innerhalb des Intervalls befindet. Das Umschalten wude bisher als Sink realisiert. Dies f"uhrt jedoch zu Indeterminismus, sodass e \&\& within(between(e,e')) beim ersten Vorkommen von e nicht unbedingt immer ausgef"uhrt wird. Dies ist unsch"on und sollte vermieden werden.
+
+Daher sollte active eine andere Semantik erhalten und als reaction aktualisiert werden. So kann sichergestellt werden, dass der Zustand von active zu jedem Zeitpunkt bekannt ist. Die Semantik "andert sich also von [----int----] zu ]-----int---]. Dies ist keine Einschr"ankung, wie im weiteren gezeigt werden wird.
+
+Für alle Intervalle muss gelten, dass active nur bei einem before(\_) oder after(\_) Event umgeschaltet wird, wobei active nur von einem before(\_) Event gesetzt und von einem after(\_) Event zurückgesetzt werden kann. Ausserdem sollten ausserhalb des Intervalls keine isolierten Events auftreten.
+
+\section{Operatoren}
+Im folgenden werden einige Operatoren sowie ihre m"ogliche Imlementierung und evtl. Schw"achen des jeweiligen Ansatzes diskutiert.
+
+Spezielle Operatoren:
+\begin{itemize}
+\item merge(int) : macht ein Intervall zu einem Standard-Intervall
+\end{itemize}
+
+\subsection{Komplement comp(int) : Intervall}
+\begin{itemize}
+\item before(comp(int)) <= after(int)
+\item after(comp(int)) <= before(int) \&\& ! active(int)
+\item active(comp(int)) <= ! active(int)
+\end{itemize}
+Probleme: An den Schnittpunkten ist ein Event laut dieser Definition sowohl in int als auch comp(int). Bei verschachtelten Events gibt es unerw"unschte, isolierte before(comp(int))-Events.
+
+m"ogliche L"osungen: Komplement als Methode von Intervall Event "uberladbar machen, und in Spezialf"allen gesondert behandeln. F"ur das Schnittpunkt-problem gibt es (noch) keine L"osung, ist evtl. auch positiv (siehe Differenz)
+
+Bemerkung: die zus"atzlichen Bedingungen an after und active existieren aufgrund der Nicht-Standard-Intervalle. Die explizite Definition von active ist wichtig damit das Komplement auch anfangs aktiv sein kann.
+
+\subsection{Vereinigung int1 || int2 : Intervall}
+Die Semantik der ||-Vereinigung soll eine Vereinigung der Zeitpunkte von int1 und int2 sein, also w"are, falls int1 ein Exec Event w"are, int1 || int1 ein Standard Intervall.
+\begin{itemize}
+\item before(int1 || int2)  <= (before(int1) || before(int2)) \&\& ! active(int1 || int2)
+\item after(int1 || int2) <= ((before(comp(int1)) \&\& ! active(int2)) || (before(comp(int2)) \&\& ! active(int1)) || (before(comp(int1)) \&\& before(comp(int2)))) \textbackslash before(int1 || int2)
+\end{itemize}
+Anmerkung: statt after(int1) wurde hier before(comp(int1)) verwendet. In der jetzigen Fassung ist dies "aquivalent, allerdings bietet diese Formulierung den Vorteil, dass falls die Probleme f"ur Komplement gel"ost werden, auch zum gr"o\ss ten Teil die Probleme mit Vereinigung verschwinden.
+
+Problem: Verschachtelte Events, "ahnlich wie bei Komplement. Eine L"osung f"ur das Problem mit Komplement l"ost auch dieses Problem.
+
+\subsection{Schnitt int1 \&\& int2 : Intervall}
+\begin{itemize}
+\item before(int1 \&\& int2) <= (((before(int1) \&\& active(int2)) || (before(int2) \&\& active(int1)) || (before(int1) \&\& before(int2))) \textbackslash (after(int1) || after(int2))) \&\& ! active(int1 \&\& int2)
+\item after(int1 \&\& int2) <= before(comp(int1)) || before(comp(int2))
+\item active(int1 \&\& int2) <= active(int1) \&\& active(int2)
+\end{itemize}
+Anmerkungen: zu before(comp(\_)) siehe Anm. zur Vereinigung
+
+\subsection{Differenz int1 \textbackslash\ int2 : Interval}
+Alle Zeitpunkte, die in int1 liegen, nicht aber in int2 (ausser Start bzw. Endzeitpunkt, siehe Anm.). Wegen dieser Einschr"ankung kann es sinnvoll sein, eine Bedingung an einen Zeitpunkt "uber eine Verbindung von within und !within auszudr"ucken.
+
+int1 \textbackslash\ int2 <= int1 \&\& comp(int2)
+
+Anmerkung: Wie bei Komplement erw"ahnt, sind die Eckpunkte von int1 und int2 evtl. f"alschlicherweise mit in int1 \textbackslash\ int2. Dies l"asst sich nicht l"osen, solange keine M"oglichkeit gefunden wird, offene Intervalle zu modellieren (z.B. "uber explizite before-Trigger o."a.). U.U. ist dies aber auch keine schlechte Eigenschaft, so dass ein Wechsel int -> comp(int) atomar zu einem bestimmten Zeitpunkt stattfindet.
+
+\subsection{within(int,e) : Event}
+within(int,e) <= (e \&\& active(int)) || (e \&\& before(int))
+
+\subsection{!within(int,e) : Event}
+!within(int,e) <= (e \&\& ! active(int)) \textbackslash\ before(int)
+
+\subsection{ StrictlyWithin(int,e) : Event}
+StrictlyWithin(int,e) <= (e \&\& active(int)) \textbackslash\ after(int)
+
+Problem: Bei verschachtelten Intervallen werden einzelne Zeitpunkte f"alschlicherweise herausgeschnitten. Deshalb m"oglichst nur auf StandardIntervalle anwenden. z.B. via comp(comp(\_)) oder einen Standard wrapper, siehe unten.
+
+\subsection{ !strictlyWithin(int,e) : Event }
+!strictlyWithin(int,e) <= (e \&\& ! active(int)) || (e \&\& after(int))
+
+Problem: Auch hier werden bei verschachtelten Intervallen multiple after(\_) Events mit aufgenommen.
+
+\subsection{weitere Anmerkungen}
+Eine andere m"ogliche L"osung f"ur das before(comp(int)) Problem w"are es, statt Komplement zu "uberladen, einen Operator std(int) zu definieren, dessen Semantik ist, dass er die Standard-Entsprechung eines Intervalls zur"uckgibt, d.h. dass erf"ullt sein muss, dass before(int) niemals aktiviert wird, wenn das Intervall schon aktiv ist und das active(int) niemals true zur"uckliefert nach einem after(int) und vor einem before(int). So lie\ss e sich Komplement leicht implementieren ( after(std(int)); before(std(int)) ) und entsprechend die anderen Operatoren.
+
+Der Umstand, dass sich int und comp(int) zwei Zeitpunkte teilen, mag unintuitiv erscheinen, allerdings bietet dies nicht nur Nachteile. So ist int || comp(int) wie erwartet immer aktiv, beginnt und endet niemals. int \&\& comp(int) ist niemals aktiv und löst auch niemals before oder after Ereignisse aus.
+
+  \listoffigures\addcontentsline{toc}{section}{\listfigurename}
+\end{document}
