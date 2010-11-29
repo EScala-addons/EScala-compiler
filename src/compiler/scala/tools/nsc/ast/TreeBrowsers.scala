@@ -290,6 +290,13 @@ abstract class TreeBrowsers {
 
       case ExecEvent(kind, meth) =>
         ("ExecEvent", EMPTY)
+        
+      /*  
+      definition for use in TreePrinters.scala???
+      
+     	case SetEvent(kind, field) =>
+     		("SetEvent", EMPTY)
+     	*/
       // @ESCALA END
 
       case TypeDef(mods, name, tparams, rhs) =>

@@ -1386,6 +1386,16 @@ self =>
           atPos(in.offset, in.skipToken) {
             accept(LPAREN)
             val after = ExecEvent(AfterExec(), simpleExpr())
+            // version1 try: embedding AfterSet and BeforSet in ExecEventHandler
+            // value AfterSet unknown...error
+            
+            //val after = ExecEvent(AfterSet(), simpleExpr())
+            
+            
+            // version2 (how it should be): calling AfterSet in own Handler SetEvent (or better FieldSetEvent)...
+            // value SetEvent and AfterSet unknown....error
+            
+            //val after = SetEvent(AfterSet(), simpleExpr())
             accept(RPAREN)
             after
           }
