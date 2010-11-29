@@ -51,6 +51,9 @@ sealed abstract class ExecEvtKind
 case class BeforeExec extends ExecEvtKind
 case class AfterExec extends ExecEvtKind
 case class Execution extends ExecEvtKind
+case class AfterSet extends ExecEvtKind
+case class BeforeSet extends ExecEvtKind
+
 /** This type is required by the compiler and <b>should not be used in client code</b>. */
 case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends Tree
 // @ESCALA END

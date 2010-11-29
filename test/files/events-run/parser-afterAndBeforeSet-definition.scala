@@ -4,6 +4,7 @@ object Test
 		var field1 = "test"
 		
 		evt testAfter = afterSet(field1)
+		evt testBefore = beforeSet(field1)
 	}
 	
 }

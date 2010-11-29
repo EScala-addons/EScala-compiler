@@ -240,6 +240,8 @@ trait Trees { self: Universe =>
   case class BeforeExec extends ExecEvtKind  
   case class AfterExec extends ExecEvtKind
   case class Execution extends ExecEvtKind
+  case class AfterSet extends ExecEvtKind
+  case class BeforeSet extends ExecEvtKind
   
   /**
    * Event expression referencing points before or after method execution

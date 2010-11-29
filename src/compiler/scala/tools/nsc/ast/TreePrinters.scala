@@ -213,12 +213,8 @@ trait TreePrinters { trees: SymbolTable =>
             case BeforeExec() => print("beforeExec(")
             case AfterExec() => print("afterExec(")
             case Execution() => print("execution(")
-            /*
-            	values BeforeSet and AfterSet unknown...where to define????
-            	
-            	case BeforeSet() => print("beforeSet(")
-           		case AfterSet() => print("afterSet(")
-           	*/
+            case AfterSet() => print("afterSet(")
+            case BeforeSet() => print("beforeSet(")
           }
           print(meth)
           print(")")
