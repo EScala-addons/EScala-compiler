@@ -219,10 +219,6 @@ trait TreePrinters { trees: SymbolTable =>
           print(meth)
           print(")")
           
-        /*  
-        	value SetEvent unknown...error
-        	started defining in TreeBrowsers.scala...Trees.scala edit TODO??
-        	
 	       case SetEvent(kind, field) =>
 	       	kind match
 	       	{
@@ -231,7 +227,7 @@ trait TreePrinters { trees: SymbolTable =>
 	       	}
 	       	print(field)
 	       	print(")") 
-       	*/
+       	
           
           
         // @ESCALA END

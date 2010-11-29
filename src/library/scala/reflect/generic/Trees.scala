@@ -247,6 +247,7 @@ trait Trees { self: Universe =>
    * Event expression referencing points before or after method execution
    */
   case class ExecEvent(kind: ExecEvtKind, meth: Tree) extends TermTree
+  case class SetEvent(kind: ExecEvtKind, field: Tree) extends TermTree
   
   // @ESCALA END
 
@@ -511,6 +512,10 @@ trait Trees { self: Universe =>
       case ExecEvent(kind, meth) =>
         atOwner(tree.symbol) {
           traverse(meth)
+        }      
+      case SetEvent(kind, field) =>
+        atOwner(tree.symbol) {
+          traverse(field)
         }      
       // @ESCALA END
       case TypeDef(mods, name, tparams, rhs) =>
