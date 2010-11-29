@@ -213,9 +213,31 @@ trait TreePrinters { trees: SymbolTable =>
             case BeforeExec() => print("beforeExec(")
             case AfterExec() => print("afterExec(")
             case Execution() => print("execution(")
+            /*
+            	values BeforeSet and AfterSet unknown...where to define????
+            	
+            	case BeforeSet() => print("beforeSet(")
+           		case AfterSet() => print("afterSet(")
+           	*/
           }
           print(meth)
           print(")")
+          
+        /*  
+        	value SetEvent unknown...error
+        	started defining in TreeBrowsers.scala...Trees.scala edit TODO??
+        	
+	       case SetEvent(kind, field) =>
+	       	kind match
+	       	{
+	       		case BeforeSet() => print("beforeSet(")
+	       		case AfterSet() => print("afterSet(")
+	       	}
+	       	print(field)
+	       	print(")") 
+       	*/
+          
+          
         // @ESCALA END
 
         case TypeDef(mods, name, tparams, rhs) =>
