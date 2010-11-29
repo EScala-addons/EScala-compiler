@@ -17,11 +17,18 @@ import mutable.{ Buffer, ListBuffer, ArrayBuffer }
  *  @tparam A    the element type of the collection
  *
  *  @define traversableonceinfo
- *  This trait is composed of those methods which can be implemented
- *  solely in terms of foreach and which do not need access to a Builder.
- *  It represents the implementations common to Iterators and
- *  Traversables, such as folds, conversions, and other operations which
+ *  This trait exists primarily to eliminate code duplication between
+ *  `Iterator` and `Traversable`, and thus implements some of the common
+ *  methods that can be implemented solely in terms of foreach without
+ *  access to a `Builder`. It also includes a number of abstract methods
+ *  whose implementations are provided by `Iterator`, `Traversable`, etc.
+ *  It contains implementations common to `Iterators` and
+ *  `Traversables`, such as folds, conversions, and other operations which
  *  traverse some or all of the elements and return a derived value.
+ *  Directly subclassing `TraversableOnce` is not recommended - instead,
+ *  consider declaring an `Iterator` with a `next` and `hasNext` method,
+ *  creating an `Iterator` with one of the methods on the `Iterator` object,
+ *  or declaring a subclass of `Traversable`.
  *
  *  @author Martin Odersky
  *  @author Paul Phillips
@@ -460,7 +467,41 @@ trait TraversableOnce[+A] {
       b += x
       
     b.result
-  }  
+  }
+  
+  /* The following 4 methods are implemented in a generic way here,
+   * but are specialized further down the hierarchy where possible.
+   * In particular:
+   * 
+   * - all concrete sequential collection classes that can be
+   *   parallelized have their corresponding `toPar*` methods
+   *   overridden (e.g. ArrayBuffer overrides `toParIterable`
+   *   and `toParSeq`)
+   * - ParIterableLike overrides all 4 methods
+   * - ParSeqLike again overrides `toParSeq`
+   * - ParSetLike again overrides `toParSet`
+   * - ParMapLike again overrides `toParMap`
+   */
+  
+  def toParIterable: parallel.ParIterable[A] = toParSeq
+  
+  def toParSeq: parallel.ParSeq[A] = {
+    val cb = parallel.mutable.ParArray.newCombiner[A]
+    for (elem <- this) cb += elem
+    cb.result
+  }
+  
+  def toParSet[B >: A]: parallel.ParSet[B] = {
+    val cb = parallel.mutable.ParHashSet.newCombiner[B]
+    for (elem <- this) cb += elem
+    cb.result
+  }
+  
+  def toParMap[T, U](implicit ev: A <:< (T, U)): parallel.ParMap[T, U] = {
+    val cb = parallel.mutable.ParHashMap.newCombiner[T, U]
+    for (elem <- this) cb += elem
+    cb.result
+  }
   
   /** Displays all elements of this $coll in a string using start, end, and
    *  separator strings.

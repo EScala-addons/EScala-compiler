@@ -302,6 +302,7 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
     val wait_ = newTermName("wait")
     val withFilter = newTermName("withFilter")
     val zip = newTermName("zip")
+    val genericArrayOps = newTermName("genericArrayOps")
 
     val ZAND = encode("&&")
     val ZOR  = encode("||")
