@@ -1663,19 +1663,14 @@ self =>
               }
             case _ =>
           }
-          /* not yet
-           if (in.token == LBRACKET)
-           atPos(in.offset) {
-           val ts = typeArgs(true, false)
-           accept(LPAREN)
-           val ps = if (in.token == RPAREN) List() else patterns(true, false)
-           accept(RPAREN)
-           Apply(TypeApply(convertToTypeId(t), ts), ps)
-           }
-           else */
-          if (in.token == LPAREN)
-            atPos(start, in.offset) { Apply(t, argumentPatterns()) }
-          else t
+          val typeAppliedTree = in.token match {
+            case LBRACKET   => atPos(start, in.offset)(TypeApply(convertToTypeId(t), typeArgs(true, false)))
+            case _          => t
+          }
+          in.token match {
+            case LPAREN   => atPos(start, in.offset)(Apply(typeAppliedTree, argumentPatterns()))
+            case _        => typeAppliedTree
+          }
         case USCORE =>
           in.nextToken()
           atPos(start, start) { Ident(nme.WILDCARD) }
@@ -2634,7 +2629,7 @@ self =>
         parents = parents ::: List(scalaScalaObjectConstr)
       if (parents.isEmpty)
         parents = List(scalaAnyRefConstr)
-      if (mods.isCase) parents = parents ::: List(productConstr)
+      if (mods.isCase) parents = parents ::: List(productConstr, serializableConstr)
       val tstart0 = if (body.isEmpty && in.lastOffset < tstart) in.lastOffset else tstart
       atPos(tstart0) {
         Template(parents, self, constrMods, vparamss, argss, body, o2p(tstart))

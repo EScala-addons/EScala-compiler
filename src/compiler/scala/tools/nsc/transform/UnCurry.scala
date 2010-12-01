@@ -381,8 +381,8 @@ abstract class UnCurry extends InfoTransform with TypingTransformers with ast.Tr
           else
             Nil
         def parents =
-          if (isFunctionType(fun.tpe)) abstractFunctionForFunctionType(fun.tpe) :: namedParent
-          else ObjectClass.tpe :: fun.tpe :: namedParent
+          if (isFunctionType(fun.tpe)) List(abstractFunctionForFunctionType(fun.tpe), SerializableClass.tpe) ::: namedParent
+          else List(ObjectClass.tpe, fun.tpe, SerializableClass.tpe) ::: namedParent
         // @ESCALA END
           
         anonClass setInfo ClassInfoType(parents, new Scope, anonClass)

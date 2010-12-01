@@ -164,15 +164,17 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       def arrayUpdateMethod = getMember(ScalaRunTimeModule, "array_update")
       def arrayLengthMethod = getMember(ScalaRunTimeModule, "array_length")
       def arrayCloneMethod = getMember(ScalaRunTimeModule, "array_clone")
+      def ensureAccessibleMethod = getMember(ScalaRunTimeModule, "ensureAccessible")
       def scalaRuntimeHash = getMember(ScalaRunTimeModule, "hash")
       def scalaRuntimeSameElements = getMember(ScalaRunTimeModule, nme.sameElements)
     
     // classes with special meanings
-    lazy val NotNullClass         = getClass("scala.NotNull")
-    lazy val TypeConstraintClass  = getClass("scala.TypeConstraint")
-    lazy val SingletonClass       = newClass(ScalaPackageClass, nme.Singleton, anyparam) setFlag (ABSTRACT | TRAIT | FINAL)
-    lazy val SerializableClass    = getClass(sn.Serializable)
-    lazy val ComparableClass      = getClass("java.lang.Comparable")
+    lazy val NotNullClass          = getClass("scala.NotNull")
+    lazy val TypeConstraintClass   = getClass("scala.TypeConstraint")
+    lazy val SingletonClass        = newClass(ScalaPackageClass, nme.Singleton, anyparam) setFlag (ABSTRACT | TRAIT | FINAL)
+    lazy val SerializableClass     = getClass("scala.Serializable")
+    lazy val JavaSerializableClass = getClass(sn.JavaSerializable)
+    lazy val ComparableClass       = getClass("java.lang.Comparable")
     
     // @ESCALA
     lazy val EventClass = getClass("scala.events.Event")
@@ -417,7 +419,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       	  (functionType.normalize match {
       	    case TypeRef(_, _, args) =>
       	      (delegateParams.map(pt => {
-                      if (pt == AnyClass.tpe) definitions.ObjectClass.tpe else pt})
+                      if (pt.tpe == AnyClass.tpe) definitions.ObjectClass.tpe else pt})
       	       ::: List(delegateReturn)) == args
       	    case _ => false
       	  })
@@ -491,7 +493,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val ScalaNumberClass: Symbol           = getClass("scala.math.ScalaNumber")
     lazy val ScalaStrictFPAttr: Symbol          = getClass("scala.annotation.strictfp")
     lazy val SerialVersionUIDAttr: Symbol       = getClass("scala.SerialVersionUID")
-    lazy val SerializableAttr: Symbol           = getClass("scala.serializable")
+    lazy val SerializableAttr: Symbol           = getClass("scala.annotation.serializable") // @serializable is deprecated
     lazy val TraitSetterAnnotationClass: Symbol = getClass("scala.runtime.TraitSetter")
     lazy val TransientAttr: Symbol              = getClass("scala.transient")
     lazy val VolatileAttr: Symbol               = getClass("scala.volatile")
@@ -804,12 +806,18 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     /** Is symbol a value class? */
     def isValueClass(sym: Symbol): Boolean =
       (sym eq UnitClass) || (boxedClass contains sym)
+    
+    /** If symbol is a value class or a boxed value class, return the value class: otherwise NoSymbol. */
+    def unboxedValueClass(sym: Symbol): Symbol =
+      if (isValueClass(sym)) sym
+      else if (sym == BoxedUnitClass) sym
+      else boxedClass.map(_.swap).getOrElse(sym, NoSymbol)
 
     /** Is symbol a numeric value class? */
     def isNumericValueClass(sym: Symbol): Boolean =
       numericWeight contains sym
 
-    /** Is symbol a numeric value class? */
+    /** Is type's symbol a numeric value class? */
     def isNumericValueType(tp: Type): Boolean = tp match {
       case TypeRef(_, sym, _) => isNumericValueClass(sym)
       case _ => false

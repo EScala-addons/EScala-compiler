@@ -221,8 +221,7 @@ abstract class CleanUp extends Transform with ast.TreeDSL {
                   if (method != null)
                     return method
                   else {
-                    method = forReceiver.getMethod("xyz", reflParams$Cache)
-                    method.setAccessible(true) // issue #2381
+                    method = ScalaRunTime.ensureAccessible(forReceiver.getMethod("xyz", reflParams$Cache))
                     reflPoly$Cache = new SoftReference(reflPoly$Cache.get.add(forReceiver, method))
                     return method
                   }
@@ -250,8 +249,7 @@ abstract class CleanUp extends Transform with ast.TreeDSL {
                       def methodSymRHS  = ((REF(forReceiverSym) DOT Class_getMethod)(LIT(method), REF(reflParamsCacheSym)))
                       def cacheRHS      = ((getPolyCache DOT methodCache_add)(REF(forReceiverSym), REF(methodSym)))
                       BLOCK(
-                        REF(methodSym)        === methodSymRHS,
-                        (REF(methodSym) DOT methodClass_setAccessible)(LIT(true)),
+                        REF(methodSym)        === (REF(ensureAccessibleMethod) APPLY (methodSymRHS)),
                         REF(reflPolyCacheSym) === gen.mkSoftRef(cacheRHS),
                         Return(REF(methodSym))
                       )
@@ -562,19 +560,6 @@ abstract class CleanUp extends Transform with ast.TreeDSL {
         val newTry      = Try(newBlock, newCatches, super.transform(finalizer))
                 
         typedWithPos(theTry.pos)(BLOCK(VAL(tempVar) === EmptyTree, newTry, Ident(tempVar)))
-        
-      /* Adds @serializable annotation to anonymous function classes */
-      case cdef @ ClassDef(mods, name, tparams, impl) =>
-        /** XXX This check is overly specific and bound to break if it hasn't already. */
-        if (settings.target.value == "jvm-1.5") {
-          val sym = cdef.symbol
-          // is this an anonymous function class?
-          if (sym.isAnonymousFunction && !sym.isSerializable) {
-            sym.setSerializable()
-            sym addAnnotation serialVersionUIDAnnotation
-          }
-        }
-        super.transform(tree)
 
      /*
       * This transformation should identify Scala symbol invocations in the tree and replace them
