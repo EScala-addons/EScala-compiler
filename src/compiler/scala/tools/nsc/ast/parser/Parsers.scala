@@ -2376,16 +2376,45 @@ self =>
       atPos(start, if (name == nme.ERROR) start else nameOffset) {
         if(in.token == LPAREN) {
           // parse new syntax
-          val types: List[Tree] =
-            surround(LPAREN, RPAREN)(commaSeparated(simpleType(false)),
-              List(errorTermTree))
+          def param(): ValDef = {
+            val implicitmod = 0
+            val start = in.offset
+            val annots = annotations(false, false)
+            var mods = Modifiers(Flags.PARAM)
+//          if (name.isTypeName) {
+//            mods = modifiers() | Flags.PARAMACCESSOR | Flags.PRIVATE | Flags.LOCAL
+//          }
+            val nameOffset = in.offset
+            val name = ident()
+            var bynamemod = 0
+            val tpt = {
+                accept(COLON)
+                paramType()
+              }
+            atPos(start, if (name == nme.ERROR) start else nameOffset) {
+              ValDef((mods | implicitmod | bynamemod) withAnnotations annots, name, tpt, EmptyTree)
+            }
+          }
+          
+          def paramClause(): List[ValDef] = {
+            val params = new ListBuffer[ValDef]
+            params += param()
+            while (in.token == COMMA) {
+              in.nextToken(); params += param()
+            }
+            params.toList
+          }
+
+          val contextBoundBuf = new ListBuffer[Tree]  
+          val vparamss = paramClauses(name, contextBoundBuf.toList, false)
+          val vparams = vparamss.head
 
           val rhs = {
               accept(EQUALS)
               expr()
           }
           
-          EventDef(newmods, name, types, rhs)
+          EventDef(newmods, name, vparams, rhs)
 
         } else {
           // parse old syntax
