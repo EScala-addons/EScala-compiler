@@ -388,11 +388,19 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     val runsRightAfter = None
   } with ObservableReferences
 
+  // phaseName = "observableclass"
+  object observableclass extends {
+    val global: Global.this.type = Global.this
+    val runsAfter = List[String]("obsrefs")
+    val runsRightAfter = None
+  } with ObservableClass
+
+
   // phaseName = "superaccessors"
   object superAccessors extends {
     val global: Global.this.type = Global.this
     //@ESCALA val runsAfter = List[String]("typer")
-    val runsAfter = List[String]("obsrefs")
+    val runsAfter = List[String]("observableclass")
     val runsRightAfter = None
   } with SuperAccessors
   // @ESCALA END
@@ -601,6 +609,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
       markerPhases.instrumentMarker    -> "marks the methods that must be instrumented",
       observables                      -> "instrument observable methods",
       obsrefs                          -> "replace exec events references by the generated event and super access to overridden observable method",
+      observableclass                  -> "observable classes",
       // @ESCALA END
       superAccessors          -> "add super accessors in traits and nested classes",
       pickler                 -> "serialize symbol tables",

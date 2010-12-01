@@ -1,6 +1,9 @@
 import scala.events.VarList
 
-class Transaction {
+observable class Transaction {
+//class Transaction {
+
+    Transaction.all += this
 
     observable def credit() {
         System.out.println("Credit")
@@ -14,17 +17,17 @@ class Transaction {
 class TransactionManager {
 
 //    evt e_bcredit = BeforeExec(Transaction.credit)
-    //evt e_bcredit = TransactionList.all.any(e => beforeExec(e.credit)) => Marche pô :(
-    evt e_bcredit[Unit] = TransactionList.all.any(e => beforeExec(e.credit))
+    evt e_bcredit = Transaction.all.any(e => beforeExec(e.credit)) 
+//    evt e_bcredit[Unit] = Transaction.all.any(e => beforeExec(e.credit))
     
-    e_bcredit += BeforeCredit
+    e_bcredit += BeforeCredit _
 
     def BeforeCredit() {
         System.out.println("Be prepared to receive money")
     }
 }
 
-object TransactionList {
+object Transaction {
     var all = new VarList[Transaction]
 }
 
@@ -33,9 +36,7 @@ object Test {
         var t = new TransactionManager
 
         var t1 = new Transaction
-        TransactionList.all += t1
         var t2 = new Transaction
-        TransactionList.all += t2
         t1.credit
         t2.debit
     }

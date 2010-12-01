@@ -1,4 +1,0 @@
-#! /bin/zsh
-
-export PATH=$PATH:/home/alexandre/src/escala/build/pack/bin
-rehash
