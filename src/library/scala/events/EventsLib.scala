@@ -544,7 +544,7 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
 
 class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
 
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[() => Unit]) => {
     reactions(id, v, reacts)
   }
 
