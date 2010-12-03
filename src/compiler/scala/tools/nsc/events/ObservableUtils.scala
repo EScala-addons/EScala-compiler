@@ -18,6 +18,8 @@ trait ObservableUtil {
       cnt += 1
       newTermName(prefix + (cnt - 1) + "$")
     }
+    def freshTypeName(prefix: String) = newTypeName(prefix)
+    def freshTermName(prefix: String) = freshName(prefix)
     override def freshName() = freshName("events$")
     def o2p(offset: Int) = NoPosition
     def r2p(start: Int, point: Int, end: Int) = NoPosition

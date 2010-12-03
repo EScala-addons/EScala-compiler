@@ -1150,8 +1150,11 @@ trait Typers { self: Analyzer =>
         treeInfo.firstConstructor(templ.body) match {
           case constr @ DefDef(_, _, _, vparamss, _, cbody @ Block(cstats, cunit)) =>
             // Convert constructor body to block in environment and typecheck it
-            val cstats1: List[Tree] = cstats map (_.duplicate)
-            val scall = if (cstats.isEmpty) EmptyTree else cstats.last
+            val (preSuperStats, rest) = cstats span (!treeInfo.isSuperConstrCall(_))
+            val (scall, upToSuperStats) = 
+              if (rest.isEmpty) (EmptyTree, preSuperStats) 
+              else (rest.head, preSuperStats :+ rest.head)
+            val cstats1: List[Tree] = upToSuperStats map (_.duplicate)
             val cbody1 = scall match {
               case Apply(_, _) =>
                 treeCopy.Block(cbody, cstats1.init, 
@@ -3123,7 +3126,7 @@ trait Typers { self: Analyzer =>
       def typedBind(name: Name, body: Tree) = {
         var vble = tree.symbol
         if (name.isTypeName) {
-          assert(body == EmptyTree)
+          assert(body == EmptyTree, context.unit + " typedBind: " + name.debugString + " " + body + " " + body.getClass)
           if (vble == NoSymbol) 
             vble = 
               if (isFullyDefined(pt))
@@ -3132,7 +3135,7 @@ trait Typers { self: Analyzer =>
                 context.owner.newAbstractType(tree.pos, name) setInfo
                   TypeBounds(NothingClass.tpe, AnyClass.tpe)
           val rawInfo = vble.rawInfo
-          vble = if (vble.name == nme.WILDCARD.toTypeName) context.scope.enter(vble)
+          vble = if (vble.name == tpnme.WILDCARD) context.scope.enter(vble)
                  else namer.enterInScope(vble)
           tree setSymbol vble setType vble.tpe
         } else {
@@ -3980,7 +3983,7 @@ trait Typers { self: Analyzer =>
             val params = for (i <- List.range(0, arity)) yield 
               atPos(tree.pos.focusStart) {
                 ValDef(Modifiers(PARAM | SYNTHETIC), 
-                       unit.fresh.newName("x" + i + "$"), TypeTree(), EmptyTree)
+                       unit.freshTermName("x" + i + "$"), TypeTree(), EmptyTree)
               }
             val ids = for (p <- params) yield Ident(p.name)
             val selector1 = atPos(tree.pos.focusStart) { if (arity == 1) ids.head else gen.mkTuple(ids) }
@@ -4021,7 +4024,7 @@ trait Typers { self: Analyzer =>
         case Typed(expr, Function(List(), EmptyTree)) =>
           typedEta(checkDead(typed1(expr, mode, pt)))
 
-        case Typed(expr, tpt @ Ident(nme.WILDCARD_STAR))  =>
+        case Typed(expr, tpt @ Ident(tpnme.WILDCARD_STAR))  =>
           val expr0 = typed(expr, mode & stickyModes, WildcardType)
           def subArrayType(pt: Type) =
             if (isValueClass(pt.typeSymbol) || !isFullyDefined(pt)) arrayType(pt)
@@ -4158,7 +4161,7 @@ trait Typers { self: Analyzer =>
         case Ident(name) =>
           incCounter(typedIdentCount)
           if ((name == nme.WILDCARD && (mode & (PATTERNmode | FUNmode)) == PATTERNmode) ||
-              (name == nme.WILDCARD.toTypeName && (mode & TYPEmode) != 0))
+              (name == tpnme.WILDCARD && (mode & TYPEmode) != 0))
             tree setType makeFullyDefined(pt)
           else 
             typedIdent(name)
@@ -4242,7 +4245,7 @@ trait Typers { self: Analyzer =>
           tree.tpe = null
           if (tree.hasSymbol) tree.symbol = NoSymbol
         }
-        printTyping("typing "+tree+", pt = "+pt+", undetparams = "+context.undetparams+", implicits-enabled = "+context.implicitsEnabled+", silent = "+context.reportGeneralErrors) //DEBUG
+        printTyping("typing "+tree+", pt = "+pt+", undetparams = "+context.undetparams+", implicits-enabled = "+context.implicitsEnabled+", silent = "+context.reportGeneralErrors+", context.owner = "+context.owner) //DEBUG
 
         var tree1 = if (tree.tpe ne null) tree else typed1(tree, mode, dropExistential(pt))
         printTyping("typed "+tree1+":"+tree1.tpe+(if (isSingleType(tree1.tpe)) " with underlying "+tree1.tpe.widen else "")+", undetparams = "+context.undetparams+", pt = "+pt) //DEBUG
@@ -4416,3 +4419,4 @@ trait Typers { self: Analyzer =>
 */
   }
 }
+

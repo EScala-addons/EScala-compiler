@@ -42,7 +42,7 @@ package symtab
 // 27:        ACCESSOR                          
 // 28:   SUPERACCESSOR                          
 // 29: PARAMACCESSOR/M                          
-// 30:       MODULEVAR SYNTHETICMETH            
+// 30:       MODULEVAR
 // 31:          LAZY/M                          
 // 32:        IS_ERROR                          
 // 33:      OVERLOADED                          
@@ -184,7 +184,7 @@ class Flags extends reflect.generic.Flags {
     case            ACCESSOR => "<accessor>"                          // (1L << 27)
     case       SUPERACCESSOR => "<superaccessor>"                     // (1L << 28)
     case       PARAMACCESSOR => "<paramaccessor>"                     // (1L << 29)
-    case           MODULEVAR => "<modulevar/syntheticmeth>"           // (1L << 30)
+    case           MODULEVAR => "<modulevar>"                         // (1L << 30)
     case                LAZY => "lazy"                                // (1L << 31)
     // @ESCALA
     case          OBSERVABLE => "observable/varargs"
