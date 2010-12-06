@@ -450,7 +450,7 @@ trait Namers { self: Analyzer =>
           //@ESCALA
           case EventDef(mods, name, tparams, _) =>
             tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
-            finishWith(tparams)
+            //finishWith(tparams)
           //@ESCALA END
           case _ =>
         }        
