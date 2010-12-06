@@ -16,7 +16,7 @@ import io.{ Directory, File, Path, PlainFile }
 import java.net.URL
 import java.util.jar.{ JarEntry, JarOutputStream }
 
-import util.{ waitingForThreads, addShutdownHook }
+import util.{ waitingForThreads }
 import scala.tools.util.PathResolver
 import scala.tools.nsc.reporters.{Reporter,ConsoleReporter}
 import util.Exceptional.unwrap
@@ -134,7 +134,7 @@ object ScriptRunner {
       scriptFileIn: String): Boolean =
   {
     val scriptFile        = Path(scriptFileIn).toAbsolute.path
-    val compSettingNames  = new Settings(error).visibleSettings.toList map (_.name)
+    val compSettingNames  = new Settings(system.error).visibleSettings.toList map (_.name)
     val compSettings      = settings.visibleSettings.toList filter (compSettingNames contains _.name)
     val coreCompArgs      = compSettings flatMap (_.unparse)
     val compArgs          = coreCompArgs ::: List("-Xscript", scriptMain(settings), scriptFile)
@@ -178,7 +178,7 @@ object ScriptRunner {
       val compiledPath = Directory makeTemp "scalascript"
 
       // delete the directory after the user code has finished
-      addShutdownHook(compiledPath.deleteRecursively())
+      system.addShutdownHook(compiledPath.deleteRecursively())
 
       settings.outdir.value = compiledPath.path
 
@@ -198,7 +198,7 @@ object ScriptRunner {
       else None  	      
     }
 
-    /** The script runner calls System.exit to communicate a return value, but this must
+    /** The script runner calls system.exit to communicate a return value, but this must
      *  not take place until there are no non-daemon threads running.  Tickets #1955, #2006.
      */
     waitingForThreads {

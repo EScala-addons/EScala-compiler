@@ -26,8 +26,7 @@ import reflect.generic.{ PickleFormat, PickleBuffer }
  *  @version 1.0
  * 
  */
-abstract class GenJVM extends SubComponent {
-  val global: Global
+abstract class GenJVM extends SubComponent with GenJVMUtil with GenAndroid {
   import global._
   import icodes._
   import icodes.opcodes._
@@ -36,7 +35,6 @@ abstract class GenJVM extends SubComponent {
     AnyClass, ObjectClass, ThrowsClass, ThrowableClass, ClassfileAnnotationClass,
     SerializableClass, StringClass, ClassClass, FunctionClass,
     DeprecatedAttr, SerializableAttr, SerialVersionUIDAttr, VolatileAttr,
-    AndroidParcelableInterface, AndroidCreatorClass,
     TransientAttr, CloneableAttr, RemoteAttr,
     getPrimitiveCompanion
   }
@@ -81,7 +79,7 @@ abstract class GenJVM extends SubComponent {
    * Java bytecode generator.
    *
    */
-  class BytecodeGenerator {
+  class BytecodeGenerator extends BytecodeUtil {
     def debugLevel = settings.debuginfo.indexOfChoice
 
     val MIN_SWITCH_DENSITY = 0.7
@@ -206,8 +204,7 @@ abstract class GenJVM extends SubComponent {
       val name    = javaName(c.symbol)
       serialVUID  = None
       isRemoteClass = false
-      isParcelableClass = (AndroidParcelableInterface != NoSymbol) &&
-                          (parents contains AndroidParcelableInterface.tpe)
+      isParcelableClass = isAndroidParcelableClass(c.symbol)
 
       if (parents.isEmpty)
         parents = List(ObjectClass.tpe)
@@ -405,7 +402,7 @@ abstract class GenJVM extends SubComponent {
       (annot.atp.typeSymbol.initialize.isJavaDefined &&
        annot.atp.typeSymbol.isNonBottomSubClass(ClassfileAnnotationClass) &&
        annot.args.isEmpty)
-
+    
     private def emitJavaAnnotations(cpool: JConstantPool, buf: ByteBuffer, annotations: List[AnnotationInfo]): Int = {
       def emitArgument(arg: ClassfileAnnotArg): Unit = arg match {
         case LiteralAnnotArg(const) =>
@@ -804,17 +801,8 @@ abstract class GenJVM extends SubComponent {
             lastBlock emit STORE_FIELD(fieldSymbol, true)
           }
 
-          // add CREATOR code
-          if (isParcelableClass) {
-            val fieldName = "CREATOR"
-            val fieldSymbol = clasz.symbol.newValue(NoPosition, newTermName(fieldName))
-                                .setFlag(Flags.STATIC | Flags.FINAL)
-                                .setInfo(AndroidCreatorClass.tpe)
-            val methodSymbol = definitions.getMember(clasz.symbol.companionModule, "CREATOR")
-            clasz addField new IField(fieldSymbol)
-            lastBlock emit CALL_METHOD(methodSymbol, Static(false))
-            lastBlock emit STORE_FIELD(fieldSymbol, true)
-          }
+          if (isParcelableClass)
+            addCreatorCode(BytecodeGenerator.this, lastBlock)
 
           if (clasz.bootstrapClass.isDefined) {
             // emit bootstrap method install
@@ -848,20 +836,8 @@ abstract class GenJVM extends SubComponent {
         clinit.emitPUTSTATIC(jclass.getName(), fieldName, JType.LONG)
       }
 
-      if (isParcelableClass) {
-        val fieldName = "CREATOR"
-        val creatorType = javaType(AndroidCreatorClass)
-        jclass.addNewField(PublicStaticFinal,
-                           fieldName,
-                           creatorType)
-        val moduleName = javaName(clasz.symbol)+"$"
-        clinit.emitGETSTATIC(moduleName,
-                             nme.MODULE_INSTANCE_FIELD.toString,
-                             new JObjectType(moduleName))
-        clinit.emitINVOKEVIRTUAL(moduleName, "CREATOR",
-                                 new JMethodType(creatorType, Array()))
-        clinit.emitPUTSTATIC(jclass.getName(), fieldName, creatorType)
-      }
+      if (isParcelableClass)
+        legacyAddCreatorCode(BytecodeGenerator.this, clinit)
 
       if (clasz.bootstrapClass.isDefined)
         legacyEmitBootstrapMethodInstall(clinit)
@@ -1001,37 +977,6 @@ abstract class GenJVM extends SubComponent {
 
     var linearization: List[BasicBlock] = Nil
     var isModuleInitialized = false
-
-    private def genConstant(jcode: JExtendedCode, const: Constant) {
-      const.tag match {
-        case UnitTag    => ()
-        case BooleanTag => jcode emitPUSH const.booleanValue
-        case ByteTag    => jcode emitPUSH const.byteValue
-        case ShortTag   => jcode emitPUSH const.shortValue
-        case CharTag    => jcode emitPUSH const.charValue
-        case IntTag     => jcode emitPUSH const.intValue
-        case LongTag    => jcode emitPUSH const.longValue
-        case FloatTag   => jcode emitPUSH const.floatValue
-        case DoubleTag  => jcode emitPUSH const.doubleValue
-        case StringTag  => jcode emitPUSH const.stringValue
-        case NullTag    => jcode.emitACONST_NULL()
-        case ClassTag   =>
-          val kind = toTypeKind(const.typeValue)
-          val toPush =
-            if (kind.isValueType) classLiteral(kind)
-            else javaType(kind).asInstanceOf[JReferenceType]
-          
-          jcode emitPUSH toPush
-
-        case EnumTag   =>
-          val sym = const.symbolValue
-          jcode.emitGETSTATIC(javaName(sym.owner),
-                              javaName(sym),
-                              javaType(sym.tpe.underlying))
-        case _         =>
-          abort("Unknown constant value: " + const)
-      }
-    }
 
     /**
      *  @param m ...
@@ -1732,37 +1677,6 @@ abstract class GenJVM extends SubComponent {
 
     /** For each basic block, the first PC address following it. */
     val endPC = new mutable.HashMap[BasicBlock, Int]
-    val conds = new mutable.HashMap[TestOp, Int]
-
-    conds += (EQ -> JExtendedCode.COND_EQ)
-    conds += (NE -> JExtendedCode.COND_NE)
-    conds += (LT -> JExtendedCode.COND_LT)
-    conds += (GT -> JExtendedCode.COND_GT)
-    conds += (LE -> JExtendedCode.COND_LE)
-    conds += (GE -> JExtendedCode.COND_GE)
-
-    val negate = new mutable.HashMap[TestOp, TestOp]
-
-    negate += (EQ -> NE)
-    negate += (NE -> EQ)
-    negate += (LT -> GE)
-    negate += (GT -> LE)
-    negate += (LE -> GT)
-    negate += (GE -> LT)
-
-    /** Map from type kinds to the Java reference types. It is used for
-     *  loading class constants. @see Predef.classOf. */
-    val classLiteral = immutable.Map[TypeKind, JObjectType](
-      UNIT   -> new JObjectType("java.lang.Void"),
-      BOOL   -> new JObjectType("java.lang.Boolean"),
-      BYTE   -> new JObjectType("java.lang.Byte"),
-      SHORT  -> new JObjectType("java.lang.Short"),
-      CHAR   -> new JObjectType("java.lang.Character"),
-      INT    -> new JObjectType("java.lang.Integer"),
-      LONG   -> new JObjectType("java.lang.Long"),
-      FLOAT  -> new JObjectType("java.lang.Float"),
-      DOUBLE -> new JObjectType("java.lang.Double")
-    )
 
     ////////////////////// local vars ///////////////////////
 
@@ -1804,50 +1718,6 @@ abstract class GenJVM extends SubComponent {
     ////////////////////// Utilities ////////////////////////
 
     /**
-     * <p>
-     *   Return the a name of this symbol that can be used on the Java
-     *   platform. It removes spaces from names.
-     * </p>
-     * <p>
-     *   Special handling: scala.Nothing and <code>scala.Null</code> are
-     *   <em>erased</em> to <code>scala.runtime.Nothing$</code> and
-     *   </code>scala.runtime.Null$</code>. This is needed because they are
-     *   not real classes, and they mean 'abrupt termination upon evaluation
-     *   of that expression' or <code>null</code> respectively. This handling is 
-     *   done already in <a href="../icode/GenIcode.html" target="contentFrame">
-     *   <code>GenICode</code></a>, but here we need to remove references
-     *   from method signatures to these types, because such classes can 
-     *   not exist in the classpath: the type checker will be very confused.
-     * </p>
-     */
-    def javaName(sym: Symbol): String = {
-      val suffix = moduleSuffix(sym)
-
-      if (sym == NothingClass)    javaName(RuntimeNothingClass)
-      else if (sym == NullClass)  javaName(RuntimeNullClass)
-      else getPrimitiveCompanion(sym.companionModule) match {
-        case Some(sym)  => javaName(sym)
-        case _          =>
-          if (sym.isClass && !sym.rawowner.isPackageClass && !sym.isModuleClass)
-            innerClasses = innerClasses + sym
-          
-          val prefix =
-            if (sym.isClass || (sym.isModule && !sym.isMethod)) sym.fullName('/')
-            else sym.simpleName.toString.trim()
-          
-          prefix + suffix
-      }
-    }
-
-    def javaNames(syms: List[Symbol]): Array[String] = {
-      val res = new Array[String](syms.length)
-      var i = 0
-      syms foreach (s => { res(i) = javaName(s); i += 1 })
-      res
-    }
-    private def mkFlags(args: Int*) = args.foldLeft(0)(_ | _)
-
-    /**
      * Return the Java modifiers for the given symbol.
      * Java modifiers for classes:
      *  - public, abstract, final, strictfp (not used)
@@ -1864,6 +1734,7 @@ abstract class GenJVM extends SubComponent {
      *      and they would fail verification after lifted.
      */
     def javaFlags(sym: Symbol): Int = {
+      def mkFlags(args: Int*) = args.foldLeft(0)(_ | _)
       // constructors of module classes should be private
       // PP: why are they only being marked private at this stage and not earlier?
       val isConsideredPrivate =
@@ -1893,38 +1764,6 @@ abstract class GenJVM extends SubComponent {
 
       sym.isInterface ||
       (sym.isJavaDefined && sym.isNonBottomSubClass(ClassfileAnnotationClass))
-    }
-
-
-    def javaType(t: TypeKind): JType = (t: @unchecked) match {
-      case UNIT            => JType.VOID
-      case BOOL            => JType.BOOLEAN
-      case BYTE            => JType.BYTE
-      case SHORT           => JType.SHORT
-      case CHAR            => JType.CHAR
-      case INT             => JType.INT
-      case LONG            => JType.LONG
-      case FLOAT           => JType.FLOAT
-      case DOUBLE          => JType.DOUBLE
-      case REFERENCE(cls)  => new JObjectType(javaName(cls))
-      case ARRAY(elem)     => new JArrayType(javaType(elem))
-    }
-
-    def javaType(t: Type): JType = javaType(toTypeKind(t))
-
-    def javaType(s: Symbol): JType =
-      if (s.isMethod)
-        new JMethodType(
-          if (s.isClassConstructor) JType.VOID else javaType(s.tpe.resultType),
-          s.tpe.paramTypes.map(javaType).toArray)
-      else
-        javaType(s.tpe)
-
-    def javaTypes(ts: List[TypeKind]): Array[JType] = {
-      val res = new Array[JType](ts.length)
-      var i = 0
-      ts foreach ( t => { res(i) = javaType(t); i += 1 } );
-      res
     }
 
     /** Return an abstract file for the given class symbol, with the desired suffix.

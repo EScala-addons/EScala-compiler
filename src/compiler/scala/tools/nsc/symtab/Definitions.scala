@@ -21,16 +21,20 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     // symbols related to packages
     var emptypackagescope: Scope = null //debug
     
+    // This is the package _root_.  The actual root cannot be referenced at
+    // the source level, but _root_ is essentially a function () => <root>.
     lazy val RootPackage: Symbol = {
-      val rp=NoSymbol.newValue(NoPosition, nme.ROOTPKG)
+      val rp = NoSymbol.newValue(NoPosition, nme.ROOTPKG)
         .setFlag(FINAL | MODULE | PACKAGE | JAVA)
         .setInfo(PolyType(List(), RootClass.tpe))
       RootClass.sourceModule = rp
       rp
     }
+    // This is the actual root of everything, including the package _root_.
     lazy val RootClass: ModuleClassSymbol = NoSymbol.newModuleClass(NoPosition, tpnme.ROOT)
           .setFlag(FINAL | MODULE | PACKAGE | JAVA).setInfo(rootLoader)
 
+    // The empty package, which holds all top level types without given packages.
     lazy val EmptyPackage       = RootClass.newPackage(NoPosition, nme.EMPTY_PACKAGE_NAME).setFlag(FINAL)
     lazy val EmptyPackageClass  = EmptyPackage.moduleClass
 
@@ -116,9 +120,9 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val UninitializedErrorClass        = getClass("scala.UninitializedFieldError")
     
     // annotations
-    lazy val AnnotationClass            = getClass("scala.Annotation")
-    lazy val ClassfileAnnotationClass   = getClass("scala.ClassfileAnnotation")
-    lazy val StaticAnnotationClass      = getClass("scala.StaticAnnotation")
+    lazy val AnnotationClass            = getClass("scala.annotation.Annotation")
+    lazy val ClassfileAnnotationClass   = getClass("scala.annotation.ClassfileAnnotation")
+    lazy val StaticAnnotationClass      = getClass("scala.annotation.StaticAnnotation")
     lazy val uncheckedStableClass       = getClass("scala.annotation.unchecked.uncheckedStable") 
     lazy val uncheckedVarianceClass     = getClass("scala.annotation.unchecked.uncheckedVariance")
     lazy val UncheckedClass             = getClass("scala.unchecked")
@@ -142,7 +146,6 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val ScalaObjectClass     = getClass("scala.ScalaObject")
     lazy val PartialFunctionClass = getClass("scala.PartialFunction")
     lazy val SymbolClass          = getClass("scala.Symbol")
-      lazy val Symbol_apply = getMember(SymbolClass.companionModule, nme.apply)
     lazy val StringClass          = getClass(sn.String)
     lazy val ClassClass           = getClass(sn.Class)
       def Class_getMethod = getMember(ClassClass, nme.getMethod_)
@@ -157,6 +160,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val ConsoleModule: Symbol = getModule("scala.Console")
     lazy val ScalaRunTimeModule: Symbol = getModule("scala.runtime.ScalaRunTime")
     lazy val SymbolModule: Symbol = getModule("scala.Symbol") 
+      lazy val Symbol_apply = getMember(SymbolModule, nme.apply)
       def SeqFactory = getMember(ScalaRunTimeModule, nme.Seq)
       def arrayApplyMethod = getMember(ScalaRunTimeModule, "array_apply")
       def arrayUpdateMethod = getMember(ScalaRunTimeModule, "array_update")
@@ -175,7 +179,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       def delayedInitArgVal = EmptyPackageClass.newValue(NoPosition, nme.delayedInitArg)
         .setInfo(UnitClass.tpe)
     
-    lazy val TypeConstraintClass   = getClass("scala.TypeConstraint")
+    lazy val TypeConstraintClass   = getClass("scala.annotation.TypeConstraint")
     lazy val SingletonClass        = newClass(ScalaPackageClass, tpnme.Singleton, anyparam) setFlag (ABSTRACT | TRAIT | FINAL)
     lazy val SerializableClass     = getClass("scala.Serializable")
     lazy val JavaSerializableClass = getClass(sn.JavaSerializable)
@@ -502,15 +506,6 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       attr
     }
 
-    // Android.  I moved it into definitions because it threw an expensive
-    // exception on every repl line.    
-    lazy val AndroidParcelableInterface =
-      try getClass("android.os.Parcelable")
-      catch { case _: FatalError => NoSymbol }
-    lazy val AndroidCreatorClass =
-      if (AndroidParcelableInterface == NoSymbol) NoSymbol
-      else getClass("android.os.Parcelable$Creator")
-
     def getModule(fullname: Name): Symbol =
       getModuleOrClass(fullname.toTermName)
 
@@ -669,7 +664,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       abbrvTag(clazz) = tag
       if (weight > 0) numericWeight(clazz) = weight
 
-      val module = ScalaPackageClass.newModule(NoPosition, name.toTermName)
+      val module = ScalaPackageClass.newModule(NoPosition, name)
       ScalaPackageClass.info.decls.enter(module)
       val mclass = module.moduleClass
       mclass.setInfo(ClassInfoType(List(AnyRefClass.tpe, AnyValCompanionClass.tpe), new Scope, mclass))
@@ -838,19 +833,19 @@ trait Definitions extends reflect.generic.StandardDefinitions {
      *  so for now they're mothballed.
      */
     // def getModule2(name1: Name, name2: Name) = {
-    //   try getModuleOrClass(name1, true)
+    //   try getModuleOrClass(name1.toTermName)
     //   catch { case ex1: FatalError =>
-    //     try getModuleOrClass(name2, true)
+    //     try getModuleOrClass(name2.toTermName)
     //     catch { case ex2: FatalError => throw ex1 }
     //   }
     // }
     // def getClass2(name1: Name, name2: Name) = {
     //   try {
-    //     val result = getModuleOrClass(name1, false)
+    //     val result = getModuleOrClass(name1.toTypeName)
     //     if (result.isAliasType) getClass(name2) else result
     //   }
     //   catch { case ex1: FatalError =>
-    //     try getModuleOrClass(name2, false)
+    //     try getModuleOrClass(name2.toTypeName)
     //     catch { case ex2: FatalError => throw ex1 }
     //   }
     // }
