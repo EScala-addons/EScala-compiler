@@ -62,7 +62,7 @@ trait Event[+T] {
   /**
    * Event is triggered except if the other one is triggered
    */
-  def \[U >: T](other: Event[U]) = new EventNodeExcept[U](this, other)
+  def \[U >: T](other: Event[_]) = new EventNodeExcept[U](this, other)
 
   /**
    * Events conjunction
@@ -89,7 +89,12 @@ trait Event[+T] {
    * Drop the event parameter; equivalent to map((_: Any) => ())
    */
   def dropParam[S >: T] = new EventNodeMap[S, Unit](this, _ => ())
-
+  
+  def within(ie :IntervalEvent[_,_]) = events.within(this,ie)
+  def not_within(ie:IntervalEvent[_,_]) = events.not_within(this, ie)
+  def strictlyWithin(ie:IntervalEvent[_,_]) = events.strictlyWithin(this,ie)
+  def not_strictlyWithin(ie: IntervalEvent[_,_]) = events.not_strictlyWithin(this,ie)
+  
 }
 
 /*
@@ -584,7 +589,7 @@ class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
   }
 }
 
-class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
+class EventNodeExcept[T](accpeted: Event[T], except: Event[_]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
   
