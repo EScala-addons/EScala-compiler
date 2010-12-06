@@ -2,18 +2,16 @@ package scala
 
 package object events {
 
-  def between[T,U](start: Event[T], end: Event[U]) = {
-	  val bet = new BetweenEvent(start, end)
-	   bet.deploy
-	   bet
+  def between[T, U](start: Event[T], end: Event[U]) = new BetweenEvent(start, end)
+
+  def within(e: Event[_], ie: IntervalEvent[_, _]) = (e && ie.active _) || (e and ie.before)
+  def not_within(e: Event[_], ie: IntervalEvent[_,_]) = (e && (() => ! ie.active)) \ ie.before
+  def strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && ie.active _) \ ie.complement.before
+  def not_strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && (() => ! ie.active)) || ie.complement.before
   
-  }
-
-  def within[T,U](ie: IntervalEvent[T,U]) = new WithinEvent(ie)
-
   def causedBy[T](e: Event[T]) = new CausedByFilter(e)
 
-  def ?[T](e: =>Event[T]) = new EventNodeCond(e)
+  def ?[T](e: => Event[T]) = new EventNodeCond(e)
 
 }
 

@@ -13,10 +13,6 @@ abstract class IntervalEventFilter {
   def unary_!() = Negation
 }
 
-class WithinEvent[T,U](protected[this] val ie: IntervalEvent[T,U]) extends IntervalEventFilter {
-  def apply() = ie.active
-}
-
 class FromEvent[T](val start: Event[T]) extends IntervalEvent[T,Nothing] {
 
   val end = emptyevent
