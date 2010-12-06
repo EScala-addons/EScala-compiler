@@ -2397,17 +2397,19 @@ self =>
           }
           
           def paramClause(): List[ValDef] = {
+            accept(LPAREN)
             val params = new ListBuffer[ValDef]
             params += param()
             while (in.token == COMMA) {
               in.nextToken(); params += param()
             }
+            accept(RPAREN)
             params.toList
           }
 
-          val contextBoundBuf = new ListBuffer[Tree]  
-          val vparamss = paramClauses(name, contextBoundBuf.toList, false)
-          val vparams = vparamss.head
+//        val contextBoundBuf = new ListBuffer[Tree]  
+//        val vparamss = paramClauses(name, contextBoundBuf.toList, false)
+          val vparams = paramClause()
 
           val rhs = {
               accept(EQUALS)
