@@ -447,6 +447,11 @@ trait Namers { self: Analyzer =>
             tree.symbol = NoSymbol.newImport(tree.pos)
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
             return context.makeNewImport(imp)
+          //@ESCALA
+          case EventDef(mods, name, tparams, _) =>
+            tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
+            finishWith(tparams)
+          //@ESCALA END
           case _ =>
         }        
       }
