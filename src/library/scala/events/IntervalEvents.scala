@@ -49,6 +49,12 @@ trait IntervalEvent[Start, Stop] {
     def deploy = IntervalEvent.this.deploy
     def undeploy = IntervalEvent.this.undeploy
   }
+  protected[events] def decref {
+    refCount -= 1
+    if (refCount <= 0)
+      undeploy
+
+  }
 
   protected[events] def deploy {
     realStart += started
@@ -91,6 +97,7 @@ trait IntervalEvent[Start, Stop] {
       (realStart || ie.realStart),
       (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
         || (realEnd.and(ie.realEnd, (s: Stop, v: Stop) => s))) \ (realStart || ie.realStart))) {
+      ){
 
       _active = act || act2
 
@@ -149,9 +156,10 @@ class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNo
     punktEv -= react
     ref --
   }
+class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
 }
 
-class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
+class BetweenEvent[+T, +U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
 
 class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
 
