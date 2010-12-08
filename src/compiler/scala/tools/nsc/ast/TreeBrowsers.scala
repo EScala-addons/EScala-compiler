@@ -285,7 +285,7 @@ abstract class TreeBrowsers {
         ("DefDef", name)
         
       // @ESCALA
-      case EventDef(mods, name, tparams, rhs) =>
+      case EventDef(mods, name, vparams, rhs) =>
         ("EventDef", name)
 
       case ExecEvent(kind, meth) =>
@@ -434,8 +434,8 @@ abstract class TreeBrowsers {
         mods.annotations ::: tpe :: rhs :: vparams.flatten ::: tparams
         
       // @ESCALA
-      case EventDef(mods, name, tparams, rhs) =>
-        mods.annotations ::: tparams ::: List(rhs)
+      case EventDef(mods, name, vparams, rhs) =>
+        mods.annotations ::: vparams ::: List(rhs)
 
       case ExecEvent(kind, meth) =>
         List(meth)

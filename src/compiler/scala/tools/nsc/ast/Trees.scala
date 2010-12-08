@@ -165,14 +165,14 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
   }
   
   // @ESCALA
-  def EventDef(sym: Symbol, tparams: List[Tree], rhs: Tree): EventDef =
+  def EventDef(sym: Symbol, vparams: List[ValDef], rhs: Tree): EventDef =
     atPos(sym.pos) {
       EventDef(Modifiers(sym.flags), sym.name,
-          tparams, rhs) setSymbol sym
+          vparams, rhs) setSymbol sym
     }
   
-  def EventDef(sym: Symbol, tparams: List[Tree]): EventDef =
-    EventDef(sym, tparams, EmptyTree)
+  def EventDef(sym: Symbol, vparams: List[ValDef]): EventDef =
+    EventDef(sym, vparams, EmptyTree)
   // @ESCALA END
 
   def DefDef(sym: Symbol, mods: Modifiers, vparamss: List[List[ValDef]], rhs: Tree): DefDef =
@@ -373,7 +373,7 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     def ValDef(tree: Tree, mods: Modifiers, name: Name, tpt: Tree, rhs: Tree): ValDef
     def DefDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree): DefDef
     // @ESCALA
-    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree): EventDef
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, vparams: List[ValDef], rhs: Tree): EventDef
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree): ExecEvent
     // @ESCALA END
     def TypeDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree): TypeDef
@@ -430,8 +430,8 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     def DefDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[TypeDef], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree) =
       new DefDef(mods, name, tparams, vparamss, tpt, rhs).copyAttrs(tree)
     // @ESCALA
-    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree) = 
-      new EventDef(mods, name, tparams, rhs).copyAttrs(tree)
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, vparams: List[ValDef], rhs: Tree) = 
+      new EventDef(mods, name, vparams, rhs).copyAttrs(tree)
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = 
       new ExecEvent(kind, meth).copyAttrs(tree)
     // @ESCALA END
@@ -551,11 +551,11 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
       case _ => treeCopy.DefDef(tree, mods, name, tparams, vparamss, tpt, rhs)
     }
     // @ESCALA
-    def EventDef(tree: Tree, mods: Modifiers, name: Name, tparams: List[Tree], rhs: Tree) = tree match {
-      case t @ EventDef(mods0, name0, tparams0, rhs0)
-      if (mods0 == mods) && (name0 == name) && (tparams0 == tparams) && 
+    def EventDef(tree: Tree, mods: Modifiers, name: Name, vparams: List[ValDef], rhs: Tree) = tree match {
+      case t @ EventDef(mods0, name0, vparams0, rhs0)
+      if (mods0 == mods) && (name0 == name) && (vparams0 == vparams) && 
          (rhs0 == rhs) => t
-      case _ => treeCopy.EventDef(tree, mods, name, tparams, rhs)
+      case _ => treeCopy.EventDef(tree, mods, name, vparams, rhs)
     }
     def ExecEvent(tree: Tree, kind: ExecEvtKind, meth: Tree) = tree match {
       case t @ ExecEvent(kind0, meth0) if (kind0 == kind) && (meth0 == meth) => t
@@ -885,10 +885,10 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
       case SelectFromArray(qualifier, selector, erasure) =>
         treeCopy.SelectFromArray(tree, transform(qualifier), selector, erasure)
       // @ESCALA
-      case EventDef(mods, name, tparams, rhs) =>
+      case EventDef(mods, name, vparams: List[ValDef], rhs) =>
         atOwner(tree.symbol) {
           treeCopy.EventDef(tree, transformModifiers(mods),
-                          name, transformTrees(tparams), transform(rhs))
+                          name, transformValDefs(vparams), transform(rhs))
         }
       case ExecEvent(kind, meth) =>
         treeCopy.ExecEvent(tree, kind, transform(meth))

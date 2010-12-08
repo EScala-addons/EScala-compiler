@@ -2408,8 +2408,6 @@ self =>
             params.toList
           }
 
-//        val contextBoundBuf = new ListBuffer[Tree]  
-//        val vparamss = paramClauses(name, contextBoundBuf.toList, false)
           val vparams = paramClause()
 
           val rhs = {

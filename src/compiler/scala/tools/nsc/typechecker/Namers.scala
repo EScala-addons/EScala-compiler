@@ -448,11 +448,10 @@ trait Namers { self: Analyzer =>
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
             return context.makeNewImport(imp)
           //@ESCALA
-          case EventDef(mods, name, tparams, _) =>
+          case EventDef(mods, name, vparams, _) =>
             tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
             // TODO what value has to be set as info?
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
-            //finishWith(tparams)
           //@ESCALA END
           case _ =>
         }        
@@ -932,9 +931,9 @@ trait Namers { self: Analyzer =>
       })
     }
 
-    private def eventSig(mods: Modifiers, vparams: List[ValDef]) {
+    private def eventSig(mods: Modifiers, vparams: List[ValDef]) = {
       // todo return correct Type
-      ErrorType
+      WildcardType
     }
 
     /**
@@ -1163,7 +1162,7 @@ trait Namers { self: Analyzer =>
               newNamer(context.makeNewScope(tree, sym)).methodSig(mods, tparams, vparamss, tpt, rhs)
              
             // @ESCALA
-            case EventDef(mods, _, vparams, _) =>
+            case EventDef(mods, _, vparams: List[ValDef], _) =>
               // todo return EventType
               newNamer(context.makeNewScope(tree, sym)).eventSig(mods, vparams)
             // @ESCALA END
