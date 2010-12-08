@@ -152,7 +152,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       newValue(pos, nme.IMPORT)
     //@ESCALA
     final def newEvent(pos: Position, name: Name) =
-      new EventSymbol(this, pos, name)//.setFlag(EVT)
+      new EventSymbol(this, pos, name).setFlag(EVENT)
 
     /** @param pre   type relative to which alternatives are seen.
      *  for instance:

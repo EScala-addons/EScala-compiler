@@ -450,6 +450,8 @@ trait Namers { self: Analyzer =>
           //@ESCALA
           case EventDef(mods, name, tparams, _) =>
             tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
+            // TODO what value has to be set as info?
+            setInfo(sym)(namerOf(sym).typeCompleter(tree))
             //finishWith(tparams)
           //@ESCALA END
           case _ =>
@@ -943,7 +945,7 @@ trait Namers { self: Analyzer =>
     }
 
     //@ESCALA
-    def eventSig(mods: Modifiers, vparams: List[ValDef]) : Type {
+    def private eventSig(mods: Modifiers, vparams: List[ValDef]) : Type {
 
       val evt = context.owner
 
@@ -1186,6 +1188,12 @@ trait Namers { self: Analyzer =>
 
             case DefDef(mods, _, tparams, vparamss, tpt, rhs) =>
               newNamer(context.makeNewScope(tree, sym)).methodSig(mods, tparams, vparamss, tpt, rhs)
+             
+            // @ESCALA
+            case EventDef(mods, _, vparams, _) =>
+              // todo return EventType
+              newNamer(context.makeNewScope(tree, sym)).eventSig(mods, vparams)
+            // @ESCALA END
 
             case vdef @ ValDef(mods, name, tpt, rhs) =>
               val typer1 = typer.constrTyperIf(sym.hasFlag(PARAM | PRESUPER) && !mods.isJavaDefined && sym.owner.isConstructor)
