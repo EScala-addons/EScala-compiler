@@ -639,6 +639,18 @@ trait Namers { self: Analyzer =>
       vparamss.map(_.map(enterValueParam))
     }
 
+    // @ESCALA completely extract 'enterValueParam' to be able to be called globally?
+    def enterValueParam(owner: Symbol, param: ValDef): Symbol = {
+      param.symbol = setInfo(
+        enterInScope{
+          val sym = owner.newValueParameter(param.pos, param.name).
+            setFlag(param.mods.flags & (BYNAMEPARAM | IMPLICIT | DEFAULTPARAM))
+          setPrivateWithin(param, sym, param.mods)
+        })(typeCompleter(param))
+      param.symbol
+    } 
+    //@ESCALA END
+
     private def templateSig(templ: Template): Type = {
       val clazz = context.owner
       def checkParent(tpt: Tree): Type = {
@@ -929,6 +941,26 @@ trait Namers { self: Analyzer =>
         else rt
       })
     }
+
+    //@ESCALA
+    def eventSig(mods: Modifiers, vparams: List[ValDef]) : Type {
+
+      val evt = context.owner
+
+      // since the skolemized tparams are in scope, the TypeRefs in vparamSymss refer to skolemized tparams
+      vparams.map(enterValueParam(evt))
+      // DEPMETTODO: do we need to skolemize value parameter symbols?
+
+      for (vparam <- vparam if vparam.tpt.isEmpty) {
+        context.error(vparam.pos, "missing parameter type")
+        vparam.tpt defineType ErrorType
+      }
+
+      //TODO check dependencies?
+
+      EventType(vparams)
+    }
+    //@ESCALA END
 
     /**
      * For every default argument, insert a method computing that default
