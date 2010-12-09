@@ -11,10 +11,6 @@ package object events {
   private[events] def not_strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && (() => ! ie.active)) || ie.complement.before
   
   implicit def betweenFromTupled[T,U](t : (Event[T],Event[U])) = between(t._1,t._2)
-  def strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && ie.active _) \ ie.complement.before
-  def not_strictlyWithin(e: Event[_], ie: IntervalEvent[_,_]) = (e && (() => ! ie.active)) || ie.complement.before
-  
-  implicit def betweenFromTupled[T,U](t : (Event[T],Event[U])) = between(t._1,t._2)
   
   def causedBy[T](e: Event[T]) = new CausedByFilter(e)
 
