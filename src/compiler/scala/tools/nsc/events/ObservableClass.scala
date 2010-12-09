@@ -42,12 +42,24 @@ abstract class ObservableClass extends Transform
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
       tree match {
-        case cd: ClassDef =>
-              if (sym.isObservable) {
-                  println("Transform of observable class called for :  " + sym.name)
-                }
-              tree
-        case _ => super.transform(tree)
+          case cd @ ClassDef(mods, name, tparams, impl)
+                if sym.isInstrumented =>
+            if (settings.Yeventsdebug.value) {
+                println("Transform of observable class called for :  " + name)
+            }
+
+            val modifiers = (cd.mods & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | FINAL
+
+            val allObjectName = name + "$all"
+            val allObject = genAllObject(cd, modifiers,
+            genAllObjectTpt(/* TODO */ tupledGenericParam), /*TODO*/ body ,pos)
+
+            name.enterSyntheticSym(allObject)
+            allObject = localTyper.typed(allObject).asInstanceOf[ValDef]
+            //... TODO
+
+            tree
+          case _ => super.transform(tree)
        }
     }
 
