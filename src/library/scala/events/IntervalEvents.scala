@@ -28,17 +28,9 @@ trait IntervalEvent[+Start, +Stop] {
     _active = false
   }
 
-  protected[this] var refCount: Int = 0
-  protected[events] def incref {
-    refCount += 1
-    if (refCount == 1)
-      deploy
-  }
-  protected[events] def decref {
-    refCount -= 1
-    if (refCount <= 0)
-      undeploy
-
+  val ref: ReferenceCounting = new ReferenceCounting {
+    def deploy = IntervalEvent.this.deploy
+    def undeploy = IntervalEvent.this.undeploy
   }
 
   protected[events] def deploy {
@@ -55,50 +47,69 @@ trait IntervalEvent[+Start, +Stop] {
 
   protected[events] def _before = realStart
   protected[events] def _after = realEnd
-  lazy val before: Event[Start] = new PunktualNode[Start](_before, incref _, decref _)
-  lazy val after: Event[Stop] = new PunktualNode[Stop](_after, incref _, decref _)
+  lazy val before: Event[Start] = new PunktualNode[Start](_before, ref)
+  lazy val after: Event[Stop] = new PunktualNode[Stop](_after, ref)
 
+  /**
+   * the complementary interval (note that the start and end events are both
+   * within an interval and it's complement)
+   */
   lazy val complement = {
-	  val act = _active
-	  new BetweenEvent[Stop, Start](realEnd, realStart) {
-    _active = ! act
-  }}
-
-  def ||[T >: Start, U >: Stop](ie: IntervalEvent[T, U]) = {
-	  val act = _active
-	  val act2 = ie.active
-	  new BetweenEvent[T, U](
-	(realStart || ie.realStart) ,
-    (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
-      || (realEnd.and(ie.realEnd, (s: Stop, v: U) => s))) \ (realStart || ie.realStart))
-      ){
-  
-	 	  _active = act || act2
-	   
-	   }}
-
-  def &&[T >: Start, U >: Stop](ie: IntervalEvent[T,U]) = new BetweenEvent[T,U](
-		  ((realStart && (_ => ie.active)) || (ie.realStart && (_=>active)) ||
-		  (realStart.and(ie.realStart,(s:Start,u:T) => s))) \ (realEnd || ie.realEnd),
-		  realEnd || ie.realEnd
-  ){
-	  _active = IntervalEvent.this._active && ie.active
+    val act = _active
+    new BetweenEvent[Stop, Start](
+      new PunktualNode[Stop](realEnd, ref),
+      new PunktualNode[Start](realStart, ref)) {
+      _active = !act
+    }
   }
-      
+
+  /**
+   * union of intervals, seen as sets of moments
+   * (needs refinement when it comes to values)
+   */
+  def ||[T >: Start, U >: Stop](ie: IntervalEvent[T, U]) = {
+    val act = _active
+    val act2 = ie.active
+    new BetweenEvent[T, U](
+      (realStart || ie.realStart),
+      (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
+        || (realEnd.and(ie.realEnd, (s: Stop, v: U) => s))) \ (realStart || ie.realStart))) {
+
+      _active = act || act2
+
+    }
+  }
+
+  /**
+   * intersection of intervals, seen as sets of moments
+   * (need refinement for values)
+   */
+  def &&[T >: Start, U >: Stop](ie: IntervalEvent[T, U]) = new BetweenEvent[T, U](
+    ((realStart && (_ => ie.active)) || (ie.realStart && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: T) => s))) \ (realEnd || ie.realEnd),
+    realEnd || ie.realEnd) {
+    _active = IntervalEvent.this._active && ie.active
+  }
+
+  /**
+   * difference of intervals, seen as set of moments 
+   * (note: this may need refining when it comes to values)
+   */
+  def \[T >: Start, U >: Stop](ie: IntervalEvent[U, T]) = this && ie.complement
+
 }
 
-class PunktualNode[T](punktEv: Event[T], incref: (() => Unit), decref: (() => Unit)) extends EventNode[T] {
+class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNode[T] {
 
   lazy val react = reactions _
 
   override def deploy {
     punktEv += react
-    incref()
+    ref ++
   }
 
   override def undeploy {
     punktEv -= react
-    decref()
+    ref --
   }
 }
 
@@ -140,4 +151,25 @@ class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
   override protected[events] def _before = start
   override protected[events] def _after = end
 
+}
+
+protected[events] trait ReferenceCounting {
+  /**
+   * reference counting (for before/after wrappers)
+   */
+  private var refCount: Int = 0
+  final def ++ {
+    refCount += 1
+    if (refCount == 1)
+      deploy
+  }
+  final def -- {
+    refCount -= 1
+    if (refCount <= 0)
+      undeploy
+
+  }
+
+  def deploy
+  def undeploy
 }
