@@ -98,7 +98,7 @@ abstract class ObservableInstrumentation extends Transform
      * </ul>
      */
     override def transform(tree: Tree): Tree = {
-      val sym = tree.symbol
+      val sym = tree.symbol      
       tree match {
         case pd: PackageDef =>
           val oldNamer = namer
@@ -136,28 +136,47 @@ abstract class ObservableInstrumentation extends Transform
           clazz = oldclazz
           synthesized = oldsynthesized
           result
+        
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
-              if sym.isInstrumented =>
+              if (sym.isInstrumented && !sym.isGetter) =>
                               
+println("observInstru: sym: " + sym)
+println("observInstru: tree: " + tree)
+//println("params: " + sym + ", " + mods + ", " + name + ", " + tparams + ", " + vparams + ", " + retType + ", " + body)
+
+/*
+						if(sym.isGetter)
+							println("observInstru: isGetter?: " + sym.isGetter)
+						else 
+						if(sym.isSetter)
+*/
+							println("observInstru: isSetter?: " + sym.isSetter)
+	
+
             val pos = sym.pos
             
             // generate the implementation method
             val newName = buildImplMethodName(sym)
+            println("newName: " + newName)
             
 
             // indicates whether this overrides another observable method
             val overrideObs = isSuperObservable(sym, clazz.symbol)
+            println("override another observable?: " + overrideObs)
             // indicates whether this overrides an instrumented method (not necessary observable)
             val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
             
             // the flags for the implementation method
             var implMod = Modifiers(PROTECTED | IMPLEMENTATION | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
+						println("step1 flag for implementation method: " + implMod)
             if (overrideInstr && sym.isOverride) {
               implMod = implMod | OVERRIDE  
             }
+            println("step2 flag for implementation method: " + implMod)
             if (mods.isDeferred) {
               implMod = implMod | DEFERRED  
             }
+            println("step3 flag for implementation method: " + implMod)
             
             // enter and type the implementation method
             val tparamsImpl = tparams.map(
@@ -358,7 +377,7 @@ abstract class ObservableInstrumentation extends Transform
                                 
             // the result
             impl
-                
+        
         case _ => super.transform(tree)
       }
     }

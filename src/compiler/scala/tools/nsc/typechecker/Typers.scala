@@ -1617,15 +1617,41 @@ trait Typers { self: Analyzer =>
           newTypeName("EmptyEvent")
         )
       }
+    
+   	
+   	def typedSetEvent(ev: SetEvent, mode: Int, pt: Type): Tree = {  
+//println("given event OWN: " + ev.kind + ", " + ev.field)
+   		// Feldreferenzuntersuchung:
+   		val typedRef = typed(ev.field)
+//println("typedRef OWN: " + typedRef)
+   		val typedEvent = treeCopy.SetEvent(ev, ev.kind, typedRef)
+//println("typedEvent OWN: " + typedEvent)
+   		val sym = typedRef.symbol
+//println("sym OWN: " + sym)
+   		
+   		val eventType = 
+          typeRef(ImperativeEventClass.typeConstructor.prefix, 
+                  ImperativeEventClass, List(UnitClass.tpe))
+      
+//println("eventType OWN: " + eventType)
+   		// Tree return:
+   		typedEvent.setType(eventType)
+   	}
+   
 
     def typedExecEvent(ev: ExecEvent, mode: Int, pt: Type): Tree = {
       val typedRef = typed(ev.meth, FUNmode, WildcardType)
+      
+      
+      //println("typedRef: " + typedRef)
 
       val typedMeth = 
         typedRef match {
             case Apply(tree, List()) => tree
             case _ => typedRef
         }
+      
+      //println("typedMeth: " + typedMeth)
       
       val dataType : Type Either (Type, Type) =
         typedMeth.tpe match {
@@ -1647,8 +1673,12 @@ trait Typers { self: Analyzer =>
             Left(ErrorType)
       }
       
+      //println("dataType: " + dataType)
+      
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
 
+			//println("typedEvent: " + typedEvent)
+			
       val sym = typedMeth.symbol      
       //check that the method is observable or defined in the class or in a parent class
       val isLocal = typedMeth match {
@@ -1659,6 +1689,8 @@ trait Typers { self: Analyzer =>
         error(typedMeth.pos, "the argument must be an observable method or a local method")
       }
       
+      //println("sym: " + sym)
+      
       // eventType = Event[dataType]      
       val eventType = 
         if(dataType.isRight)
@@ -1667,6 +1699,8 @@ trait Typers { self: Analyzer =>
         else
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))
+      
+      //println("eventType: " + eventType)
       
       typedEvent.setType(eventType)
     }
@@ -3898,6 +3932,9 @@ trait Typers { self: Analyzer =>
 
         case ev @ ExecEvent(kind, meth) =>
           typedExecEvent(ev, mode, pt)       
+        
+        case ev @ SetEvent(kind, field) =>
+          typedSetEvent(ev, mode, pt)       
         // @ESCALA END
 
         case tdef @ TypeDef(_, _, _, _) =>

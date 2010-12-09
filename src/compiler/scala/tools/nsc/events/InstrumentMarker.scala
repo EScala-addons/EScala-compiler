@@ -53,10 +53,18 @@ abstract class InstrumentMarker extends Transform
                               (isSuperInstrumented(dd.symbol, dd.symbol.owner)) && !isSuperObservable(dd.symbol, dd.symbol.owner)) =>
           // if the method overrides an isntrumented method (but not observable) set the instrumented flag too
           // if the overridden method was declared as `observable' the type checker should already have checked it
+          println("instrument marker methode with: " + dd)
           if(settings.Yeventsdebug.value)
             println(dd + " overrides instrumented method")
           dd.symbol.setFlag(INSTRUMENTED)
           super.transform(tree)
+       
+       	case vd: ValDef if(vd.symbol.isVariable) =>
+       		//println("instrument marker field with: " + vd + ", symbol: " + vd.symbol)
+       		//println("hasSetter? " + vd.symbol.isSetter)
+       		//println("isObservable? " + vd.symbol.hasFlag(OBSERVABLE))
+       		//println("isVariable? " + vd.symbol.isVariable)
+       		super.transform(tree)
         case _ => super.transform(tree)
       }
     }
