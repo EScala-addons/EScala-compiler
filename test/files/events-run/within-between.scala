@@ -4,7 +4,7 @@ class C {
   imperative evt e1[Unit]
   imperative evt e2[Unit]
   imperative evt e3[Unit]
-  evt e4 = e3 && within(between(e1, e2))
+  evt e4 = e3 within(between(e1, e2))
 }
 
 object Test {

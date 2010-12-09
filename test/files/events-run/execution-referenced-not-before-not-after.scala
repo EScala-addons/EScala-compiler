@@ -1,7 +1,7 @@
 import scala.events._
 class C {
   imperative evt e1[Unit]
-  evt e2 = e1 && within(execution(m))
+  evt e2 = e1 within(execution(m))
   observable def m(i: Int, s: String) {
     e1()
     println("m(" + i + ", " + s + ")")
