@@ -27,6 +27,27 @@ trait IntervalEvent[+Start, +Stop] {
   protected[this] lazy val ended = (e: Stop) => {
     _active = false
   }
+  
+  protected[events] trait ReferenceCounting {
+  /**
+   * reference counting (for before/after wrappers)
+   */
+  private var refCount: Int = 0
+  final def ++ {
+    refCount += 1
+    if (refCount == 1)
+      deploy
+  }
+  final def -- {
+    refCount -= 1
+    if (refCount <= 0)
+      undeploy
+
+  }
+
+  def deploy
+  def undeploy
+}
 
   val ref: ReferenceCounting = new ReferenceCounting {
     def deploy = IntervalEvent.this.deploy
@@ -98,7 +119,7 @@ trait IntervalEvent[+Start, +Stop] {
 
 }
 
-class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNode[T] {
+class PunktualNode[T](punktEv: Event[T], ref: IntervalEvent[Any,Any]#ReferenceCounting) extends EventNode[T] {
 
   lazy val react = reactions _
 
@@ -151,25 +172,4 @@ class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
   override protected[events] def _before = start
   override protected[events] def _after = end
 
-}
-
-protected[events] trait ReferenceCounting {
-  /**
-   * reference counting (for before/after wrappers)
-   */
-  private var refCount: Int = 0
-  final def ++ {
-    refCount += 1
-    if (refCount == 1)
-      deploy
-  }
-  final def -- {
-    refCount -= 1
-    if (refCount <= 0)
-      undeploy
-
-  }
-
-  def deploy
-  def undeploy
 }
