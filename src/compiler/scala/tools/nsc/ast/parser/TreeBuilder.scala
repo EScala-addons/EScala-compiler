@@ -225,35 +225,6 @@ abstract class TreeBuilder {
       }
     }
 
-  // @ESCALA 
-  def makeModule(parents: List[Tree], self: ValDef, stats: List[Tree],
-                 argss: List[List[Tree]],
-                 npos: Position, cpos: Position): Tree = {
-    //if (parents.isEmpty)
-    //  makeNew(List(scalaAnyRefConstr), self, stats, argss, npos, cpos)
-    //else if (parents.tail.isEmpty && stats.isEmpty)
-    //  atPos(npos union cpos) { New(parents.head, argss) }
-    //else {
-      val x = nme.ANON_CLASS_NAME.toTypeName
-      atPos(npos union cpos) {
-        Block(
-          List(
-            atPos(cpos) {
-              ModuleDef(
-                Modifiers(FINAL), x, Nil,
-                Template(parents, self, NoMods, List(Nil), argss, stats, cpos.focus))
-            }),
-          atPos(npos) {
-            New(
-              Ident(x) setPos npos.focus,
-              List(Nil))
-          }
-        )
-      }
-    //}
-  }
-  // @ESCALA END
-
   /** Create a tree representing an assignment <lhs = rhs> */
   def makeAssign(lhs: Tree, rhs: Tree): Tree = lhs match {
     case Apply(fn, args) => 
