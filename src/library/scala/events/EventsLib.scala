@@ -797,3 +797,14 @@ object Observable {
   def apply[T,U](f: T => U) = new Observable(f)
 }
 
+class AllObject[T] {
+  private var all = new VarList[T]
+
+  def register(instance: T) {
+    all += instance
+  }
+  def unRegister(instance: T) {
+    all -= instance
+  }
+}
+
