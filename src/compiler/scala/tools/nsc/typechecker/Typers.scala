@@ -1618,6 +1618,19 @@ trait Typers { self: Analyzer =>
         )
       }
 
+    // @EXP-LANG
+    def typedEvtDef(edef: EventDef): Tree = {
+      // EventType
+      val tpe = NoType // appliedType(definitions.getClass("scala.events.Event").tpe)
+
+      // modify modifiers
+      val newmods = (edef.mods | PRIVATE);
+
+      // generate new AST-node
+      ValDef(newmods, edef.name, EmptyTree, edef.rhs) setType tpe
+    }
+    // @EXP-LANG END
+
     def typedExecEvent(ev: ExecEvent, mode: Int, pt: Type): Tree = {
       val typedRef = typed(ev.meth, FUNmode, WildcardType)
 
@@ -3892,9 +3905,10 @@ trait Typers { self: Analyzer =>
           newTyper(context.makeNewScope(tree, sym)).typedDefDef(ddef)
           
         // @ESCALA
-        /*case edef @ EventDef(_, _, _, _) =>
+        // @EXP-LANG
+        case edef @ EventDef(_, _, _, _) =>
           // TODO if we allow variable binding, similar to DefDef case
-          typedEvtDef(edef)*/
+          typedEvtDef(edef)
 
         case ev @ ExecEvent(kind, meth) =>
           typedExecEvent(ev, mode, pt)       
