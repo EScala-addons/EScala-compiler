@@ -1,4 +1,4 @@
-import scala.events._
+t cimport scala.events._
 
 
 class Figure {
@@ -14,8 +14,8 @@ class Figure {
 	var w : Int = 0
 	var h : Int = 0
 	
-	def moveBy(x: Int , y : Int) = {this.x += x ; this.y += y}
-	def resize(w: Int, h: Int) = {this.h = h; this.w = w}
+	observable def moveBy(x: Int , y : Int) = {this.x += x ; this.y += y}
+	observable def resize(w: Int, h: Int) = {this.h = h; this.w = w}
 	def getBounds = (x,y,w,h)
 }
 

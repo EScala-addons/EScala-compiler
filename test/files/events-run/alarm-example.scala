@@ -3,10 +3,11 @@ import scala.events._
 
 abstract class Alarm {
 	
-	val isArmed = between(afterExec(arm),afterExec(disarm)) \ isAlarmed
+	val isArmed = between(afterExec(arm),afterExec(disarm)) // \ isAlarmed
+	//Recursive Definition of Events is impossible (isn't it?)
 	imperative evt intrusionDetected[Unit]
-	evt alarm = intrusionDetected within isArmed
-	val isAlarmed = between(alarm,afterExec(disarm))
+	evt alarm[Unit] = intrusionDetected within isArmed
+	val isAlarmed : IntervalEvent[Unit,Unit] = between(alarm,afterExec(disarm))
 	
 	def arm() : Unit
 	def disarm() : Unit
