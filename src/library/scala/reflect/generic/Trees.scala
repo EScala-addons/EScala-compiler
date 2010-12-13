@@ -230,7 +230,7 @@ trait Trees { self: Universe =>
   /** 
    * Event definition
    */
-  case class EventDef(mods: Modifiers, name: Name, tparams: List[Tree],
+  case class EventDef(mods: Modifiers, name: Name, vparams: List[ValDef],
                       rhs: Tree) extends MemberDef
   
   /**
@@ -502,9 +502,9 @@ trait Trees { self: Universe =>
           traverseTrees(mods.annotations); traverseTrees(tparams); traverseTreess(vparamss); traverse(tpt); traverse(rhs)
         }
       // @ESCALA
-      case EventDef(mods, name, tparams, rhs) =>
+      case EventDef(mods, name, vparams, rhs) =>
         atOwner(tree.symbol) {
-          traverseTrees(mods.annotations); traverseTrees(tparams); traverse(rhs)
+          traverseTrees(mods.annotations); traverseTrees(vparams); traverse(rhs)
         }
       case ExecEvent(kind, meth) =>
         atOwner(tree.symbol) {
