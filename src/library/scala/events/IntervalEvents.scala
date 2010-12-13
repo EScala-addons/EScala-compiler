@@ -2,7 +2,7 @@ package scala.events
 
 import scala.collection.mutable.{ ListBuffer, Stack }
 
-trait IntervalEvent[+Start, +Stop] {
+trait IntervalEvent[Start, Stop] {
 
   type Trace = List[Event[_]]
 
@@ -14,6 +14,18 @@ trait IntervalEvent[+Start, +Stop] {
 
   protected[events] var deployed = false
 
+  var defaultValue: Start = _
+  var value: Start = _
+
+  protected val startMergeBehaviour = (intervalValue: Start, changeEventValue: Start) => {
+    //println("Merge-Interval-Value: " + intervalValue)
+    //println("Event-Value: " + changeEventValue)
+    if (intervalValue != this.defaultValue && changeEventValue != this.defaultValue)
+      intervalValue;
+    else
+      changeEventValue;
+  }
+
   protected[this] var _active = false
   def active = _active
 
@@ -22,32 +34,16 @@ trait IntervalEvent[+Start, +Stop] {
 
   protected[this] lazy val started = (s: Start) => {
     _active = true
+
+    this.value = startMergeBehaviour(this.value, s)
+    println("merged value is " + this.value)
   }
 
   protected[this] lazy val ended = (e: Stop) => {
     _active = false
+    this.value = startMergeBehaviour(this.value, this.defaultValue)
+    println("merged value is " + this.value)
   }
-  
-  protected[events] trait ReferenceCounting {
-  /**
-   * reference counting (for before/after wrappers)
-   */
-  private var refCount: Int = 0
-  final def ++ {
-    refCount += 1
-    if (refCount == 1)
-      deploy
-  }
-  final def -- {
-    refCount -= 1
-    if (refCount <= 0)
-      undeploy
-
-  }
-
-  def deploy
-  def undeploy
-}
 
   val ref: ReferenceCounting = new ReferenceCounting {
     def deploy = IntervalEvent.this.deploy
@@ -88,13 +84,13 @@ trait IntervalEvent[+Start, +Stop] {
    * union of intervals, seen as sets of moments
    * (needs refinement when it comes to values)
    */
-  def ||[T >: Start, U >: Stop](ie: IntervalEvent[T, U]) = {
+  def ||(ie: IntervalEvent[Start, Stop]) = {
     val act = _active
     val act2 = ie.active
-    new BetweenEvent[T, U](
+    new BetweenEvent[Start, Stop](
       (realStart || ie.realStart),
       (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
-        || (realEnd.and(ie.realEnd, (s: Stop, v: U) => s))) \ (realStart || ie.realStart))) {
+        || (realEnd.and(ie.realEnd, (s: Stop, v: Stop) => s))) \ (realStart || ie.realStart))) {
 
       _active = act || act2
 
@@ -105,8 +101,8 @@ trait IntervalEvent[+Start, +Stop] {
    * intersection of intervals, seen as sets of moments
    * (need refinement for values)
    */
-  def &&[T >: Start, U >: Stop](ie: IntervalEvent[T, U]) = new BetweenEvent[T, U](
-    ((realStart && (_ => ie.active)) || (ie.realStart && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: T) => s))) \ (realEnd || ie.realEnd),
+  def &&(ie: IntervalEvent[Start, Stop]) = new BetweenEvent[Start, Stop](
+    ((realStart && (_ => ie.active)) || (ie.realStart && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: Start) => s))) \ (realEnd || ie.realEnd),
     realEnd || ie.realEnd) {
     _active = IntervalEvent.this._active && ie.active
   }
@@ -115,11 +111,32 @@ trait IntervalEvent[+Start, +Stop] {
    * difference of intervals, seen as set of moments 
    * (note: this may need refining when it comes to values)
    */
-  def \[T >: Start, U >: Stop](ie: IntervalEvent[U, T]) = this && ie.complement
+  def \(ie: IntervalEvent[Stop, Start]) = this && ie.complement
 
 }
 
-class PunktualNode[T](punktEv: Event[T], ref: IntervalEvent[Any,Any]#ReferenceCounting) extends EventNode[T] {
+protected[events] trait ReferenceCounting {
+  /**
+   * reference counting (for before/after wrappers)
+   */
+  private var refCount: Int = 0
+  final def ++ {
+    refCount += 1
+    if (refCount == 1)
+      deploy
+  }
+  final def -- {
+    refCount -= 1
+    if (refCount <= 0)
+      undeploy
+
+  }
+
+  def deploy
+  def undeploy
+}
+
+class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNode[T] {
 
   lazy val react = reactions _
 
@@ -134,7 +151,7 @@ class PunktualNode[T](punktEv: Event[T], ref: IntervalEvent[Any,Any]#ReferenceCo
   }
 }
 
-class BetweenEvent[+T, +U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
+class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
 
 class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
 
