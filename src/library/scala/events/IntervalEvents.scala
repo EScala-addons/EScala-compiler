@@ -41,28 +41,9 @@ trait IntervalEvent[Start, Stop] {
 
   protected[this] lazy val ended = (e: Stop) => {
     _active = false
+    this.value = startMergeBehaviour(this.value, this.defaultValue)
+    println("merged value is " + this.value)
   }
-  
-  protected[events] trait ReferenceCounting {
-  /**
-   * reference counting (for before/after wrappers)
-   */
-  private var refCount: Int = 0
-  final def ++ {
-    refCount += 1
-    if (refCount == 1)
-      deploy
-  }
-  final def -- {
-    refCount -= 1
-    if (refCount <= 0)
-      undeploy
-
-  }
-
-  def deploy
-  def undeploy
-}
 
   val ref: ReferenceCounting = new ReferenceCounting {
     def deploy = IntervalEvent.this.deploy
@@ -155,6 +136,8 @@ protected[events] trait ReferenceCounting {
   def undeploy
 }
 
+class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNode[T] {
+
   lazy val react = reactions _
 
   override def deploy {
@@ -169,7 +152,7 @@ protected[events] trait ReferenceCounting {
 class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
 }
 
-class BetweenEvent[+T, +U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
+class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
 
 class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
 
