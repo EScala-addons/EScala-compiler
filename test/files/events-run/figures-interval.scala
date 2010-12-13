@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-t cimport scala.events._
-=======
 import scala.events._
->>>>>>> Alarm und Figure Beispiel
 
 
 class Figure {
@@ -18,13 +14,8 @@ class Figure {
 	var w : Int = 0
 	var h : Int = 0
 	
-<<<<<<< HEAD
 	observable def moveBy(x: Int , y : Int) = {this.x += x ; this.y += y}
 	observable def resize(w: Int, h: Int) = {this.h = h; this.w = w}
-=======
-	def moveBy(x: Int , y : Int) = {this.x += x ; this.y += y}
-	def resize(w: Int, h: Int) = {this.h = h; this.w = w}
->>>>>>> Alarm und Figure Beispiel
 	def getBounds = (x,y,w,h)
 }
 
