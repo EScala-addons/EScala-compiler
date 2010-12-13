@@ -1622,12 +1622,14 @@ trait Typers { self: Analyzer =>
     def typedEvtDef(edef: EventDef): Tree = {
       // EventType
       val tpe = NoType // appliedType(definitions.getClass("scala.events.Event").tpe)
-
+      
+      // TypeTree
+      val tpt = EmptyTree
       // modify modifiers
       val newmods = (edef.mods | PRIVATE);
 
       // generate new AST-node
-      ValDef(newmods, edef.name, EmptyTree, edef.rhs) setType tpe
+      ValDef(newmods, edef.name, tpt, edef.rhs) setType tpe
     }
     // @EXP-LANG END
 
