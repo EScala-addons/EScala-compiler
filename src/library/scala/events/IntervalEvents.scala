@@ -14,7 +14,7 @@ trait IntervalEvent[Start, Stop] {
 
   protected[events] var deployed = false
 
-  var defaultValue: Start = _
+  def defaultValue: Start = null.asInstanceOf[Start]
   var value: Start = _
 
   protected val startMergeBehaviour = (intervalValue: Start, changeEventValue: Start) => {
@@ -84,13 +84,13 @@ trait IntervalEvent[Start, Stop] {
    * union of intervals, seen as sets of moments
    * (needs refinement when it comes to values)
    */
-  def ||(ie: IntervalEvent[Start, Stop]) = {
+  def ||[S >: Start, S1 <: S, St >: Stop, St1 <: St](ie: IntervalEvent[S1, St1]) = {
     val act = _active
     val act2 = ie.active
-    new BetweenEvent[Start, Stop](
-      (realStart || ie.realStart),
-      (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
-        || (realEnd.and(ie.realEnd, (s: Stop, v: Stop) => s))) \ (realStart || ie.realStart))) {
+    new BetweenEvent[S, St](
+      (realStart || ie.realStart.asInstanceOf[Event[S]]),
+      (((realEnd && (_ => !ie.active)) || (ie.realEnd.asInstanceOf[Event[St]] && (_ => !active))
+        || (realEnd.and(ie.realEnd, (s: Stop, v: St1) => s))) \ (realStart || ie.realStart))) {
 
       _active = act || act2
 
@@ -101,9 +101,9 @@ trait IntervalEvent[Start, Stop] {
    * intersection of intervals, seen as sets of moments
    * (need refinement for values)
    */
-  def &&(ie: IntervalEvent[Start, Stop]) = new BetweenEvent[Start, Stop](
-    ((realStart && (_ => ie.active)) || (ie.realStart && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: Start) => s))) \ (realEnd || ie.realEnd),
-    realEnd || ie.realEnd) {
+  def &&[S >: Start, S1 <: S, St >: Stop, St1 <: St](ie: IntervalEvent[S1, St1]) = new BetweenEvent[S, St](
+    ((realStart && (_ => ie.active)) || (ie.realStart.asInstanceOf[Event[S]] && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: S1) => s))) \ (realEnd || ie.realEnd),
+    realEnd || ie.realEnd.asInstanceOf[Event[St]]) {
     _active = IntervalEvent.this._active && ie.active
   }
 
