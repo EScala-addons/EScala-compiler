@@ -1629,6 +1629,8 @@ trait Typers { self: Analyzer =>
       // modify modifiers
       val newmods = (edef.mods | PRIVATE);
 
+      edef.symbol updateInfo tpe
+
       // generate new AST-node
       treeCopy.ValDef(edef, newmods, edef.name, tpt, edef.rhs) setType NoType
     }
