@@ -1598,11 +1598,11 @@ trait Typers { self: Analyzer =>
     }
     
     // @ESCALA
-    /*
+    /* @EXP-LANG
      * Generate the event type for the parameter types
      */
-    private def genEventType(tparams: List[Tree]): Type =
-      appliedType(definitions.getClass("scala.events.Event").tpe, tparams map (_.tpe))
+    private def genEventType(vparams: List[ValDef]): Type =
+      appliedType(definitions.getClass("scala.events.Event").tpe, List(tupleType(vparams map (typedValDef) map (_.tpt.tpe))))
 
     /*
      * Generate a tree refering to the empty event
@@ -1621,15 +1621,16 @@ trait Typers { self: Analyzer =>
     // @EXP-LANG
     def typedEvtDef(edef: EventDef): Tree = {
       // EventType
-      val tpe = NoType // appliedType(definitions.getClass("scala.events.Event").tpe)
-      
+      val tpe = genEventType(edef.vparams)
+ 
       // TypeTree
-      val tpt = EmptyTree
+      val tpt = TypeTree(tpe) setType tpe setPos edef.pos
+
       // modify modifiers
       val newmods = (edef.mods | PRIVATE);
 
       // generate new AST-node
-      ValDef(newmods, edef.name, tpt, edef.rhs) setType tpe
+      treeCopy.ValDef(edef, newmods, edef.name, tpt, edef.rhs) setType NoType
     }
     // @EXP-LANG END
 
