@@ -1639,28 +1639,11 @@ trait Typers { self: Analyzer =>
             error(edef.pos, "local variables must be initialized")
           edef.rhs
         } else {
-          val tpt2 = tpt.tpe// if (sym.hasDefault) {
-            // When typechecking default parameter, replace all type parameters in the expected type by Wildcard.
-            // This allows defining "def foo[T](a: T = 1)"
-//            val tparams =
-//              if (sym.owner.isConstructor) sym.owner.owner.info.typeParams
-//              else sym.owner.tpe.typeParams
-//            val subst = new SubstTypeMap(tparams, tparams map (_ => WildcardType)) {
-//              override def matches(sym: Symbol, sym1: Symbol) =
-//                if (sym.isSkolem) matches(sym.deSkolemize, sym1)
-//                else if (sym1.isSkolem) matches(sym, sym1.deSkolemize)
-//                else super[SubstTypeMap].matches(sym, sym1) 
-//            }
-            // allow defaults on by-name parameters
-//            if (sym hasFlag BYNAMEPARAM)
-//              if (tpt1.tpe.typeArgs.isEmpty) WildcardType // during erasure tpt1 is Function0
-//              else subst(tpt1.tpe.typeArgs(0))
-//            else subst(tpt1.tpe)
-//          } else tpt.tpe
+          val tpt2 = tpt.tpe 
           newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt2)
         }
       // generate new AST-node
-      treeCopy.ValDef(edef, newmods, edef.name, tpt, edef.rhs) setType NoType
+      treeCopy.ValDef(edef, newmods, edef.name, tpt, rhs1) setType NoType
     }
     // @EXP-LANG END
 
