@@ -641,7 +641,7 @@ trait Namers { self: Analyzer =>
     }
 
     // @ESCALA completely extract 'enterValueParam' to be able to be called globally?
-    def enterValueParam(owner: Symbol, param: ValDef): Symbol = {
+    def enterValueParam(owner: Symbol)(param: ValDef): Symbol = {
       param.symbol = setInfo(
         enterInScope{
           val sym = owner.newValueParameter(param.pos, param.name).
@@ -946,20 +946,21 @@ trait Namers { self: Analyzer =>
     //@ESCALA
     private def eventSig(mods: Modifiers, vparams: List[ValDef]) : Type = {
 
-      val evt = context.owner
+      val event = context.owner
 
       // since the skolemized tparams are in scope, the TypeRefs in vparamSymss refer to skolemized tparams
-      vparams.map(enterValueParam(evt))
+      vparams.map(enterValueParam(event))
       // DEPMETTODO: do we need to skolemize value parameter symbols?
 
-      for (vparam <- vparam if vparam.tpt.isEmpty) {
+      for (vparam <- vparams if vparam.tpt.isEmpty) {
         context.error(vparam.pos, "missing parameter type")
         vparam.tpt defineType ErrorType
       }
 
       //TODO check dependencies?
 
-      EventType(vparams)
+      WildcardType
+      //EventType(vparams)
     }
     //@ESCALA END
 
@@ -1189,7 +1190,7 @@ trait Namers { self: Analyzer =>
               newNamer(context.makeNewScope(tree, sym)).methodSig(mods, tparams, vparamss, tpt, rhs)
              
             // @ESCALA
-            case EventDef(mods, _, vparams: List[ValDef], _) =>
+            case EventDef(mods, _, vparams, _) =>
               // todo return EventType
               newNamer(context.makeNewScope(tree, sym)).eventSig(mods, vparams)
             // @ESCALA END
