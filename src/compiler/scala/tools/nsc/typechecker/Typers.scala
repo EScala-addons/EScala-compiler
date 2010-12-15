@@ -1629,7 +1629,8 @@ trait Typers { self: Analyzer =>
       val tpt = TypeTree(tpe) setType tpe setPos edef.pos
 
       // modify modifiers
-      val newmods = (edef.mods | PRIVATE);
+      sym setFlag (PRIVATE | MUTABLE | LOCAL)
+      sym resetFlag EVENT
 
       sym updateInfo tpe
 
@@ -1643,7 +1644,7 @@ trait Typers { self: Analyzer =>
           newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt2)
         }
       // generate new AST-node
-      treeCopy.ValDef(edef, newmods, edef.name, tpt, rhs1) setType NoType
+      treeCopy.ValDef(edef, edef.mods, edef.name, tpt, checkDead(rhs1)) setType NoType
     }
     // @EXP-LANG END
 
