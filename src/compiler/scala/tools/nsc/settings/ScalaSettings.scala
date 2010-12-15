@@ -31,7 +31,6 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val classpath     = PathSetting       ("-classpath", "Specify where to find user class files.", scalaUserClassPath) .
                                             withAbbreviation ("-cp")
   val d             = OutputSetting     (outputDirs, ".")
-  val defines       = DefinesSetting()
   val optimise      = BooleanSetting    ("-optimise", "Generates faster bytecode by applying optimisations to the program") . 
                                             withAbbreviation("-optimize") .
                                             withPostSetHook(set => List(inline, Xcloselim, Xdce) foreach (_.value = set.value))
@@ -116,6 +115,7 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val log           = PhasesSetting     ("-Ylog", "Log operations during")
   val Ylogcp        = BooleanSetting    ("-Ylog-classpath", "Output information about what classpath is being applied.")
   val Ynogenericsig = BooleanSetting    ("-Yno-generic-signatures", "Suppress generation of generic signatures for Java.")
+  val Yverifysigs   = BooleanSetting    ("-Yverify-generics", "Validated generated generic signatures.")
   val noimports     = BooleanSetting    ("-Yno-imports", "Compile without any implicit imports.")
   // Not actually doing anything, so disabled.
   // val nopredefs     = BooleanSetting    ("-Yno-predefs", "Compile without any implicit predefined values.")
@@ -140,7 +140,8 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
                       BooleanSetting    ("-Ybuild-manager-debug", "Generate debug information for the Refined Build Manager compiler.")
   val Ytyperdebug   = BooleanSetting    ("-Ytyper-debug", "Trace all type assignements.")
   val Ypmatdebug    = BooleanSetting    ("-Ypmat-debug", "Trace all pattern matcher activity.")
-  val Yrepldebug    = BooleanSetting    ("-Yrepl-debug", "Trace all repl activity.")
+  val Yrepldebug    = BooleanSetting    ("-Yrepl-debug", "Trace all repl activity.") .
+                                          withPostSetHook(set => interpreter._debug = true)
   val Ycompletion   = BooleanSetting    ("-Ycompletion-debug", "Trace all tab completion activity.")
   val Ypmatnaive    = BooleanSetting    ("-Ypmat-naive", "Desugar matches as naively as possible.")
   val Ymurmur       = BooleanSetting    ("-Ymurmur", "Use Murmur hash algorithm for case class generated hashCodes.")

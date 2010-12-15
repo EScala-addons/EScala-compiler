@@ -355,10 +355,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
 
     /** if tpe <: ProductN[T1,...,TN], returns Some(T1,...,TN) else None */
     def getProductArgs(tpe: Type): Option[List[Type]] = 
-      tpe.baseClasses.find(x => isExactProductType(x.tpe)) match {
-        case Some(p) => Some(tpe.baseType(p).typeArgs)
-        case _       => None
-      }
+      tpe.baseClasses collectFirst { case x if isExactProductType(x.tpe) => tpe.baseType(x).typeArgs }
 
     def unapplyUnwrap(tpe:Type) = (tpe match {
       case PolyType(_,MethodType(_, res)) => res
@@ -391,8 +388,9 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     
     def isSeqType(tp: Type) = cond(tp.normalize) { case TypeRef(_, SeqClass, List(tparam)) => true }
     
-    def seqType(arg: Type)   = typeRef(SeqClass.typeConstructor.prefix, SeqClass, List(arg))
-    def arrayType(arg: Type) = typeRef(ArrayClass.typeConstructor.prefix, ArrayClass, List(arg))
+    def seqType(arg: Type)    = typeRef(SeqClass.typeConstructor.prefix, SeqClass, List(arg))
+    def arrayType(arg: Type)  = typeRef(ArrayClass.typeConstructor.prefix, ArrayClass, List(arg))
+    def byNameType(arg: Type) = appliedType(ByNameParamClass.typeConstructor, List(arg))
 
     def ClassType(arg: Type) = 
       if (phase.erasedTypes || forMSIL) ClassClass.tpe

@@ -28,6 +28,9 @@ trait InterpreterControl {
   // the default result means "keep running, and don't record that line"
   val defaultResult = Result(true, None)
   
+  private def isQuoted(s: String) =
+    (s.length >= 2) && (s.head == s.last) && ("\"'" contains s.head)
+  
   // a single interpreter command
   sealed abstract class Command extends Function1[List[String], Result] {
     def name: String
@@ -118,18 +121,21 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
     }
     ignoring(classOf[Exception]) {
       SignalManager("INT") = {
-        val exec = interpreter.currentExecution
-        if (exec != null) exec.cancel(true)
+        if (interpreter == null)
+          onExit()
+        else if (interpreter.lineManager.running)
+          interpreter.lineManager.cancel()
         else if (in.currentLine != "") {
+          // non-empty buffer, so make them hit ctrl-C a second time
           SignalManager("INT") = onExit()
-          io.timer(5)(installSigIntHandler())  // restore original
+          io.timer(5)(installSigIntHandler())  // and restore original handler if they don't
         }
         else onExit()
       }
     }
   }
 
-  /** Close the interpreter and set the var to <code>null</code>. */
+  /** Close the interpreter and set the var to null. */
   def closeInterpreter() {
     if (interpreter ne null) {
       interpreter.close
@@ -144,6 +150,19 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
       settings.classpath append addedClasspath
       
     interpreter = new Interpreter(settings, out) {
+      override protected def createLineManager() = new Line.Manager {
+        override def onRunaway(line: Line[_]): Unit = {
+          val template = """
+            |// She's gone rogue, captain! Have to take her out!
+            |// Calling Thread.stop on runaway %s with offending code:
+            |// scala> %s""".stripMargin
+          
+          println(template.format(line.thread, line.code))
+          // XXX no way to suppress the deprecation warning
+          line.thread.stop()
+          in.redrawLine()
+        }
+      }
       override protected def parentClassLoader =
         settings.explicitParentLoader.getOrElse( classOf[InterpreterLoop].getClassLoader )
     }
@@ -176,17 +195,14 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
   /** Show the history */
   def printHistory(xs: List[String]) {
     val defaultLines = 20
-    
-    if (in.history.isEmpty)
-      return println("No history available.")
-
-    val current = in.history.get.index
-    val count = try xs.head.toInt catch { case _: Exception => defaultLines }
-    val lines = in.historyList takeRight count
-    val offset = current - lines.size + 1
+    val h       = in.history getOrElse { return println("No history available.") }
+    val current = h.index
+    val count   = try xs.head.toInt catch { case _: Exception => defaultLines }
+    val lines   = in.historyList takeRight count    
+    val offset  = current - lines.size + 1
 
     for ((line, index) <- lines.zipWithIndex)
-      println("%d %s".format(index + offset, line))
+      println("%3d  %s".format(index + offset, line.value))
   }
   
   /** Some print conveniences */
@@ -197,14 +213,10 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
   /** Search the history */
   def searchHistory(_cmdline: String) {
     val cmdline = _cmdline.toLowerCase
+    val h       = in.history getOrElse { return println("No history available.") }    
+    val offset  = h.index - h.size + 1
     
-    if (in.history.isEmpty)
-      return println("No history available.")
-    
-    val current = in.history.get.index
-    val offset = current - in.historyList.size + 1
-    
-    for ((line, index) <- in.historyList.zipWithIndex ; if line.toLowerCase contains cmdline)
+    for ((line, index) <- h.asStrings.zipWithIndex ; if line.toLowerCase contains cmdline)
       println("%d %s".format(index + offset, line))
   }
   
@@ -225,7 +237,7 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
   val standardCommands: List[Command] = {
     import CommandImplicits._
     List(
-       OneArg("cp", "add an entry (jar or directory) to the classpath", addClasspath),
+       LineArg("cp", "add an entry (jar or directory) to the classpath", addClasspath),
        NoArgs("help", "print this help message", printHelp),
        VarArgs("history", "show the history (optional arg: lines to show)", printHistory),
        LineArg("h?", "search the history", searchHistory),
@@ -339,7 +351,7 @@ class InterpreterLoop(in0: Option[BufferedReader], protected val out: PrintWrite
     if (f.exists) {
       addedClasspath = ClassPath.join(addedClasspath, f.path)
       val totalClasspath = ClassPath.join(settings.classpath.value, addedClasspath)
-      println("Added '%s'.  Your new classpath is:\n%s".format(f.path, totalClasspath))
+      println("Added '%s'.  Your new classpath is:\n\"%s\"".format(f.path, totalClasspath))
       replay()
     }
     else out.println("The path '" + f + "' doesn't seem to exist.")

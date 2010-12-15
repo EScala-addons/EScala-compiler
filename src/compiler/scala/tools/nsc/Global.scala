@@ -146,6 +146,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     if (opt.fatalWarnings) globalError(msg)
     else reporter.warning(NoPosition, msg)
     
+  def informComplete(msg: String): Unit    = reporter.withoutTruncating(inform(msg))
   def informProgress(msg: String)          = if (opt.verbose) inform("[" + msg + "]")
   def inform[T](msg: String, value: T): T  = returning(value)(x => inform(msg + x))
   def informTime(msg: String, start: Long) = informProgress(msg + " in " + (currentTime - start) + "ms")
@@ -199,8 +200,9 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
     dependencyAnalysis.loadDependencyAnalysis()
 
   if (opt.verbose || opt.logClasspath) {
-    inform("[search path for source files: " + classPath.sourcepaths.mkString(",") + "]")
-    inform("[search path for class files: " + classPath.asClasspathString + "]")
+    // Uses the "do not truncate" inform
+    informComplete("[search path for source files: " + classPath.sourcepaths.mkString(",") + "]")
+    informComplete("[search path for class files: " + classPath.asClasspathString + "]")
   }
   
   /** Taking flag checking to a somewhat higher level. */
@@ -636,8 +638,8 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   lazy val phaseDescriptors: List[SubComponent] = computePhaseDescriptors
   
   /* The set of phase objects that is the basis for the compiler phase chain */
-  protected val phasesSet     = new mutable.HashSet[SubComponent]
-  protected val phasesDescMap = new mutable.HashMap[SubComponent, String] withDefaultValue ""
+  protected lazy val phasesSet     = new mutable.HashSet[SubComponent]
+  protected lazy val phasesDescMap = new mutable.HashMap[SubComponent, String] withDefaultValue ""
   protected def addToPhasesSet(sub: SubComponent, descr: String) {
     phasesSet += sub
     phasesDescMap(sub) = descr
@@ -1157,6 +1159,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
 
   def forJVM           = opt.jvm
   def forMSIL          = opt.msil
+  def forInteractive   = false
   def onlyPresentation = false
   def createJavadoc    = false
 }
