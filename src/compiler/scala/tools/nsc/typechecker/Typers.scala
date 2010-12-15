@@ -1620,6 +1620,8 @@ trait Typers { self: Analyzer =>
 
     // @EXP-LANG
     def typedEvtDef(edef: EventDef): Tree = {
+      val sym = edef.symbol
+      val typer1 = constrTyperIf(sym.isParameter && sym.owner.isConstructor)
       // EventType
       val sym = edef.symbol
       val tpe = genEventType(edef.vparams)
@@ -1633,6 +1635,32 @@ trait Typers { self: Analyzer =>
 
       sym updateInfo tpe
 
+      val rhs1 =
+        if (edef.rhs.isEmpty) {
+          if (sym.isVariable && sym.owner.isTerm && phase.id <= currentRun.typerPhase.id)
+            error(edef.pos, "local variables must be initialized")
+          edef.rhs
+        } else {
+          val tpt2 = tpt.tpe// if (sym.hasDefault) {
+            // When typechecking default parameter, replace all type parameters in the expected type by Wildcard.
+            // This allows defining "def foo[T](a: T = 1)"
+//            val tparams =
+//              if (sym.owner.isConstructor) sym.owner.owner.info.typeParams
+//              else sym.owner.tpe.typeParams
+//            val subst = new SubstTypeMap(tparams, tparams map (_ => WildcardType)) {
+//              override def matches(sym: Symbol, sym1: Symbol) =
+//                if (sym.isSkolem) matches(sym.deSkolemize, sym1)
+//                else if (sym1.isSkolem) matches(sym, sym1.deSkolemize)
+//                else super[SubstTypeMap].matches(sym, sym1) 
+//            }
+            // allow defaults on by-name parameters
+//            if (sym hasFlag BYNAMEPARAM)
+//              if (tpt1.tpe.typeArgs.isEmpty) WildcardType // during erasure tpt1 is Function0
+//              else subst(tpt1.tpe.typeArgs(0))
+//            else subst(tpt1.tpe)
+//          } else tpt.tpe
+          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt2)
+        }
       // generate new AST-node
       treeCopy.ValDef(edef, edef.mods /*newmods*/, edef.name, tpt, edef.rhs) setType NoType
     }
