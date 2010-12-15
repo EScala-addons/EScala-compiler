@@ -1621,18 +1621,20 @@ trait Typers { self: Analyzer =>
     // @EXP-LANG
     def typedEvtDef(edef: EventDef): Tree = {
       // EventType
+      val sym = edef.symbol
       val tpe = genEventType(edef.vparams)
  
       // TypeTree
       val tpt = TypeTree(tpe) setType tpe setPos edef.pos
 
       // modify modifiers
-      val newmods = (edef.mods | PRIVATE);
+      sym setFlag (PRIVATE | MUTABLE | LOCAL)
+      sym resetFlag EVENT
 
-      edef.symbol updateInfo tpe
+      sym updateInfo tpe
 
       // generate new AST-node
-      treeCopy.ValDef(edef, newmods, edef.name, tpt, edef.rhs) setType NoType
+      treeCopy.ValDef(edef, edef.mods /*newmods*/, edef.name, tpt, edef.rhs) setType NoType
     }
     // @EXP-LANG END
 
