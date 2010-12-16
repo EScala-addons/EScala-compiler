@@ -448,10 +448,19 @@ trait Namers { self: Analyzer =>
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
             return context.makeNewImport(imp)
           //@ESCALA
-          case EventDef(mods, name, vparams, _) =>
-            tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
+          case ed @ EventDef(mods, name, vparams, _) =>
+
             // TODO what value has to be set as info?
+            val getter = enterAccessorMethod(tree, name.append("_"), getterFlags(mods.flags), mods)
+            setInfo(getter)(namerOf(getter).getterTypeCompleter2(ed))
+            
+            val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
+            tree.symbol = enterInScope(sym)
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
+            if (mods.isLazy)
+              sym.setLazyAccessor(getter)
+
+
           //@ESCALA END
           case _ =>
         }        
@@ -567,6 +576,16 @@ trait Namers { self: Analyzer =>
       if (settings.debug.value) log("defined " + sym)
       validate(sym)
     }
+
+    // @ESCALA @EXP-LANG blablatest
+    def getterTypeCompleter2(ed: EventDef) = mkTypeCompleter(ed) { sym =>
+      if (settings.debug.value) log("defining " + sym)
+      val tp = typeSig(ed)
+      sym.setInfo(PolyType(List(), tp))
+      if (settings.debug.value) log("defined " + sym)
+      validate(sym)
+    }
+    // @ESCALA END
 
     def setterTypeCompleter(vd: ValDef) = mkTypeCompleter(vd) { sym =>
       if (settings.debug.value) log("defining " + sym)
@@ -959,7 +978,8 @@ trait Namers { self: Analyzer =>
 
       //TODO check dependencies?
 
-      WildcardType
+      //WildcardType
+      appliedType(definitions.getClass("scala.events.Event").tpe, List())
       //EventType(vparams)
     }
     //@ESCALA END

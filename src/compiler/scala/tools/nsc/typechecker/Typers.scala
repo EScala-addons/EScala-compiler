@@ -1634,6 +1634,9 @@ trait Typers { self: Analyzer =>
 
       sym updateInfo tpe
 
+      println(sym.owner.info.decls)
+      println(sym.owner.owner.info.decls)
+
       val rhs1 =
         if (edef.rhs.isEmpty) {
           if (sym.isVariable && sym.owner.isTerm && phase.id <= currentRun.typerPhase.id)
