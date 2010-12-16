@@ -449,9 +449,9 @@ trait Namers { self: Analyzer =>
             return context.makeNewImport(imp)
           //@ESCALA
           case EventDef(mods, name, vparams, _) =>
-            tree.symbol = owner.newEvent(tree.pos, name).setFlag(mods.flags)
-            // TODO what value has to be set as info?
+            val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
+            tree.symbol = enterInScope(sym)
           //@ESCALA END
           case _ =>
         }        

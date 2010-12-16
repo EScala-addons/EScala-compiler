@@ -1621,7 +1621,9 @@ trait Typers { self: Analyzer =>
     // @EXP-LANG
     def typedEvtDef(edef: EventDef): Tree = {
       val sym = edef.symbol
+
       val typer1 = constrTyperIf(sym.isParameter && sym.owner.isConstructor)
+
       // EventType
       val tpe = genEventType(edef.vparams)
  
@@ -1631,6 +1633,8 @@ trait Typers { self: Analyzer =>
       // modify modifiers
       sym setFlag (PRIVATE | MUTABLE | LOCAL)
       sym resetFlag EVENT
+      
+      val newmods = (edef.mods | PRIVATE | MUTABLE | LOCAL)  & ~EVENT
 
       sym updateInfo tpe
 
@@ -1643,8 +1647,19 @@ trait Typers { self: Analyzer =>
           val tpt2 = tpt.tpe 
           newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt2)
         }
-      // generate new AST-node
-      treeCopy.ValDef(edef, edef.mods, edef.name, tpt, checkDead(rhs1)) setType NoType
+
+      // change EventDef to ValDef
+      val vdef = treeCopy.ValDef(edef, newmods, edef.name, tpt, checkDead(rhs1)) setType NoType
+
+      // add getter accessor to symboltable
+      val getter = namer.enterAccessorMethod(edef,edef.name,getterFlags(edef.mods.flags),edef.mods)
+      getter setInfo (namer.namerOf(getter).getterTypeCompleter(vdef))
+      sym.owner.info.decls enter getter
+      
+      // display symboltable
+      println(sym.owner.info.decls)
+
+      vdef
     }
     // @EXP-LANG END
 
