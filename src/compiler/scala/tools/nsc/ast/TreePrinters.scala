@@ -201,7 +201,7 @@ trait TreePrinters { trees: SymbolTable =>
           printOpt(": ", tp); printOpt(" = ", rhs)
           
         // @ESCALA
-        case EventDef(mods, name, vparams: List[ValDef], rhs) =>
+        case EventDef(mods, name, vparams, rhs) =>
           printAnnotations(tree)
           printModifiers(tree, mods)
           print("evt " + symName(tree, name))
