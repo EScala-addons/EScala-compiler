@@ -451,15 +451,22 @@ trait Namers { self: Analyzer =>
           case ed @ EventDef(mods, name, vparams, _) =>
 
             // TODO what value has to be set as info?
-            val getter = enterAccessorMethod(tree, name.append("_"), getterFlags(mods.flags), mods)
+            val getter = enterAccessorMethod(tree, name, getterFlags(mods.flags), mods)
             setInfo(getter)(namerOf(getter).getterTypeCompleter2(ed))
             
-            val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
-            tree.symbol = enterInScope(sym)
-            setInfo(sym)(namerOf(sym).typeCompleter(tree))
-            if (mods.isLazy)
-              sym.setLazyAccessor(getter)
+            //val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
+            tree.symbol = {
+              val lFlag = if (mods.isPrivateLocal) 0 else LOCAL
+              val newflags = mods.flags & FieldFlags | PRIVATE | MUTABLE | EVENT | lFlag
+              val sym = owner.newValue(tree.pos, nme.getterToLocal(name)) setFlag newflags
+              enterInScope(sym)
+              setInfo(sym)(namerOf(sym).typeCompleter(tree))
 
+              if (mods.isLazy)
+                sym.setLazyAccessor(getter)
+
+              sym
+            }
 
           //@ESCALA END
           case _ =>
@@ -977,10 +984,14 @@ trait Namers { self: Analyzer =>
       }
 
       //TODO check dependencies?
+      // compute the types of the parameters
+      val types = vparams.map(vparam => typer.typedType(vparam.tpt).tpe) match {
+        case l if l.isEmpty => UnitClass.tpe
+        case l if l.size == 1 => l.head
+        case l => tupleType(l)
+      }
 
-      //WildcardType
-      appliedType(definitions.getClass("scala.events.Event").tpe, List())
-      //EventType(vparams)
+      appliedType(definitions.getClass("scala.events.Event").tpe, List(types))
     }
     //@ESCALA END
 
