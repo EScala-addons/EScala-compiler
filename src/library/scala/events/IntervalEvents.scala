@@ -2,20 +2,22 @@ package scala.events
 
 import scala.collection.mutable.{ ListBuffer, Stack }
 
-trait IntervalEvent[Start, Stop] {
+trait IntervalEvent[Start] {
 
   type Trace = List[Event[_]]
 
   def start: Event[Start]
-  def end: Event[Stop]
+  def end: Event[_]
 
   private lazy val realStart: Event[Start] = start && (_ => !active) && startCondition _
-  private lazy val realEnd: Event[Stop] = end && (_ => active) && endCondition _
+  private lazy val realEnd : Event[_]= end && (_ => active) && endCondition _
 
   protected[events] var deployed = false
 
-  def defaultValue: Start = null.asInstanceOf[Start]
-  var value: Start = _
+  var defaultValue: Start = _
+  protected var value: Start = _
+  
+  def getValue = value
 
   protected val startMergeBehaviour = (intervalValue: Start, changeEventValue: Start) => {
     //println("Merge-Interval-Value: " + intervalValue)
@@ -30,7 +32,7 @@ trait IntervalEvent[Start, Stop] {
   def active = _active
 
   protected[this] def startCondition(v: Start) = true
-  protected[this] def endCondition(v: Stop) = true
+  protected[this] def endCondition(v: Any) = true
 
   protected[this] lazy val started = (s: Start) => {
     _active = true
@@ -39,7 +41,7 @@ trait IntervalEvent[Start, Stop] {
     println("merged value is " + this.value)
   }
 
-  protected[this] lazy val ended = (e: Stop) => {
+  protected[this] lazy val ended = (e: Any) => {
     _active = false
     this.value = startMergeBehaviour(this.value, this.defaultValue)
     println("merged value is " + this.value)
@@ -65,7 +67,7 @@ trait IntervalEvent[Start, Stop] {
   protected[events] def _before = realStart
   protected[events] def _after = realEnd
   lazy val before: Event[Start] = new PunktualNode[Start](_before, ref)
-  lazy val after: Event[Stop] = new PunktualNode[Stop](_after, ref)
+  lazy val after: Event[Start] = new PunktualNode[Start](_after.map( (_ : Any)  =>  value), ref)
 
   /**
    * the complementary interval (note that the start and end events are both
@@ -73,9 +75,9 @@ trait IntervalEvent[Start, Stop] {
    */
   lazy val complement = {
     val act = _active
-    new BetweenEvent[Stop, Start](
-      new PunktualNode[Stop](realEnd, ref),
-      new PunktualNode[Start](realStart, ref)) {
+    new BetweenEvent[Unit](
+      new PunktualNode[Unit](realEnd dropParam, ref),
+      new PunktualNode[Unit](realStart dropParam, ref)) {
       _active = !act
     }
   }
@@ -84,13 +86,13 @@ trait IntervalEvent[Start, Stop] {
    * union of intervals, seen as sets of moments
    * (needs refinement when it comes to values)
    */
-  def ||[S >: Start, S1 <: S, St >: Stop, St1 <: St](ie: IntervalEvent[S1, St1]) = {
+  def ||[S >: Start, S1 <: S](ie: IntervalEvent[S1]) = {
     val act = _active
     val act2 = ie.active
-    new BetweenEvent[S, St](
+    new BetweenEvent[S](
       (realStart || ie.realStart.asInstanceOf[Event[S]]),
-      (((realEnd && (_ => !ie.active)) || (ie.realEnd.asInstanceOf[Event[St]] && (_ => !active))
-        || (realEnd.and(ie.realEnd, (s: Stop, v: St1) => s))) \ (realStart || ie.realStart))) {
+      (((realEnd && (_ => !ie.active)) || (ie.realEnd && (_ => !active))
+        || (realEnd.and(ie.realEnd))) \ (realStart || ie.realStart))) {
 
       _active = act || act2
 
@@ -101,9 +103,9 @@ trait IntervalEvent[Start, Stop] {
    * intersection of intervals, seen as sets of moments
    * (need refinement for values)
    */
-  def &&[S >: Start, S1 <: S, St >: Stop, St1 <: St](ie: IntervalEvent[S1, St1]) = new BetweenEvent[S, St](
+  def &&[S >: Start, S1 <: S](ie: IntervalEvent[S1]) = new BetweenEvent[S](
     ((realStart && (_ => ie.active)) || (ie.realStart.asInstanceOf[Event[S]] && (_ => active)) || (realStart.and(ie.realStart, (s: Start, u: S1) => s))) \ (realEnd || ie.realEnd),
-    realEnd || ie.realEnd.asInstanceOf[Event[St]]) {
+    realEnd || ie.realEnd) {
     _active = IntervalEvent.this._active && ie.active
   }
 
@@ -111,7 +113,7 @@ trait IntervalEvent[Start, Stop] {
    * difference of intervals, seen as set of moments 
    * (note: this may need refining when it comes to values)
    */
-  def \(ie: IntervalEvent[Stop, Start]) = this && ie.complement
+  def \(ie: IntervalEvent[Start]) = this && ie.complement
 
 }
 
@@ -151,15 +153,15 @@ class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNo
   }
 }
 
-class BetweenEvent[T, U](val start: Event[T], val end: Event[U]) extends IntervalEvent[T, U]
+class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T]
 
-class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
+class ExecutionEvent[T] extends IntervalEvent[T] {
 
   def start: Event[T] = _start
-  def end: Event[U] = _end
+  def end: Event[_] = _end
 
   private var _start: Event[T] = _
-  private var _end: Event[U] = _
+  private var _end: Event[_] = _
 
   trait BeforeExecution {
     this: ImperativeEvent[T] =>
@@ -169,10 +171,10 @@ class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
     }
   }
 
-  trait AfterExecution {
-    this: ImperativeEvent[U] =>
+  trait AfterExecution[S] {
+    this: ImperativeEvent[(T,S)] =>
     _end = this
-    protected[events] abstract override def beforeTrigger(u: U) {
+    protected[events] abstract override def beforeTrigger(u : (T,S)) {
       cflow.pop
     }
   }
@@ -181,7 +183,7 @@ class ExecutionEvent[T, U] extends IntervalEvent[T, U] {
 
   override def active = !cflow.isEmpty
 
-  protected[this] override def endCondition(u: U) = cflow.size == 1
+  protected[this] override def endCondition(u: Any) = cflow.size == 1
 
   protected[events] override def deploy {}
   protected[events] override def undeploy {}

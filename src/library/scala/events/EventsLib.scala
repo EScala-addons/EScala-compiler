@@ -90,10 +90,10 @@ trait Event[+T] {
    */
   def dropParam[S >: T] = new EventNodeMap[S, Unit](this, _ => ())
   
-  def within(ie :IntervalEvent[_,_]) = events.within(this,ie)
-  def not_within(ie:IntervalEvent[_,_]) = events.not_within(this, ie)
-  def strictlyWithin(ie:IntervalEvent[_,_]) = events.strictlyWithin(this,ie)
-  def not_strictlyWithin(ie: IntervalEvent[_,_]) = events.not_strictlyWithin(this,ie)
+  def within(ie :IntervalEvent[_]) = events.within(this,ie)
+  def not_within(ie:IntervalEvent[_]) = events.not_within(this, ie)
+  def strictlyWithin(ie:IntervalEvent[_]) = events.strictlyWithin(this,ie)
+  def not_strictlyWithin(ie: IntervalEvent[_]) = events.not_strictlyWithin(this,ie)
   
 }
 
