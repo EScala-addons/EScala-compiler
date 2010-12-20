@@ -4,6 +4,24 @@ import scala.collection.mutable.{ListBuffer,Stack}
 import scala.util.DynamicVariable
 
 trait Event[+T] {
+	
+	  /*
+   * DEBUG
+   */
+      val _branches = new ListBuffer[Int => Unit]                                         
+      var name : String = toString
+      def showTree(tabs : Int) = {
+	  _branches.foreach((b : Int => Unit) => {
+	 	for(i <- 0 until tabs) print('\t')
+	 	println(toString)
+	 	b(tabs+1)
+	  })
+  }
+  
+  /*
+   * end DEBUG
+   */
+	
   /*
    * Sink function type: takes event id, event parameter
    * fills the given list with reactions to be executed
@@ -56,8 +74,6 @@ trait Event[+T] {
    * Event filtered with a boolean variable
    */
   def &&[U >: T](pred: () => Boolean) = new EventNodeFilter[U](this, _ => pred())
-
-  def &&[U >: T](itp: IntervalEventFilter) = new EventNodeFilterInterval[U](this, itp)
   
   /**
    * Event is triggered except if the other one is triggered
@@ -104,7 +120,7 @@ trait Event[+T] {
 abstract class EventNode[T] extends Event[T] {
   protected val sinks = new ListBuffer[Sink]
   protected[events] val _reactions = new ListBuffer[T => Unit]
-
+  
   /*
    * Register a reaction to the event
    */
@@ -291,6 +307,10 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
   protected override def deploy {
     ev1 += onEvt1
     ev2 += onEvt2
+    
+    //DEBUG
+    ev1._branches += showTree _
+    ev2._branches += showTree _
   }
 
   /*
@@ -332,6 +352,10 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
   protected override def deploy {
     ev1 += onEvt
     ev2 += onEvt
+    
+    //DEBUG
+    ev1._branches += showTree _
+    ev2._branches += showTree _
   }
 
   /*
@@ -363,6 +387,9 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
   */
   protected override def deploy {
     ev += onEvt
+    
+    //DEBUG
+    ev._branches += showTree _
   }
 
   /*
@@ -396,6 +423,9 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
   */
   protected override def deploy {
     ev += onEvt
+    
+    //DEBUG
+    ev._branches += showTree _
   }
 
   /*
@@ -589,7 +619,7 @@ class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
   }
 }
 
-class EventNodeExcept[T](accpeted: Event[T], except: Event[_]) extends EventNode[T] {
+class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
   
@@ -627,31 +657,17 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[_]) extends EventNode
   }
   
   override def deploy {
-    accpeted += onAccepted
+    accepted += onAccepted
     except += onExcept
+    
+    //DEBUG
+    accepted._branches += showTree _
+    except._branches += showTree _
   }
   
   override def undeploy {
-    accpeted -= onAccepted
+    accepted -= onAccepted
     except -= onExcept
-  }
-}
-
-class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) extends EventNode[T] {
-
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
-    if(itp())
-      reactions(id, v, reacts)
-  }
-
-  override def deploy {
-    event += onEvt
-    itp.deploy
-  }
-
-  override def undeploy {
-    event -= onEvt
-    itp.undeploy
   }
 }
 
