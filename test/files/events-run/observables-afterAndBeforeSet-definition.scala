@@ -1,6 +1,7 @@
 class help
 {
 	observable var field = "testField"
+	//observable val valuefield = "testValue"
 	
 }
 

@@ -1631,7 +1631,7 @@ trait Typers { self: Analyzer =>
    		
    		val eventType = 
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
-                  ImperativeEventClass, List(UnitClass.tpe))
+                  ImperativeEventClass, List(typedRef.tpe))
       
 //println("eventType OWN: " + eventType)
    		// Tree return:
@@ -1653,7 +1653,7 @@ trait Typers { self: Analyzer =>
       
       //println("typedMeth: " + typedMeth)
       
-      val dataType : Type Either (Type, Type) =
+      val dataType : Either[Type,(Type, Type)] =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
             //val method = params.last.owner
