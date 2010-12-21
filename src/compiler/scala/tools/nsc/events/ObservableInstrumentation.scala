@@ -138,7 +138,7 @@ abstract class ObservableInstrumentation extends Transform
           result
         
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
-              if (sym.isInstrumented && !sym.isGetter) =>
+              if (sym.isInstrumented && !sym.hasAccessorFlag) =>
                               
 println("observInstru: sym: " + sym)
 println("observInstru: tree: " + tree)
