@@ -448,12 +448,6 @@ trait Namers { self: Analyzer =>
             setInfo(sym)(namerOf(sym).typeCompleter(tree))
             return context.makeNewImport(imp)
           //@ESCALA
-<<<<<<< HEAD
-          case EventDef(mods, name, vparams, _) =>
-            val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
-            setInfo(sym)(namerOf(sym).typeCompleter(tree))
-            tree.symbol = enterInScope(sym)
-=======
           case ed @ EventDef(mods, name, vparams, _) =>
 
             // TODO what value has to be set as info?
@@ -474,7 +468,6 @@ trait Namers { self: Analyzer =>
               sym
             }
 
->>>>>>> ipl-ws1011-exp-lang-testing-david
           //@ESCALA END
           case _ =>
         }        
