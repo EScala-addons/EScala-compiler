@@ -140,7 +140,7 @@ abstract class ObservableFieldInstrumentation extends Transform
           result
         
         case dd @ DefDef(mods, name, tparams, vparams, retType, body) 
-        	if(!sym.isConstructor && sym.isSetter) =>
+        	if(!sym.isConstructor && sym.isSetter && sym.isInstrumented) =>
         
         	println("symbol (!constructor && setter): " + sym)
         	val pos = sym.pos
