@@ -1601,8 +1601,17 @@ trait Typers { self: Analyzer =>
     /* @EXP-LANG
      * Generate the event type for the parameter types
      */
-    private def genEventType(vparams: List[ValDef]): Type =
-      appliedType(definitions.getClass("scala.events.Event").tpe, List(tupleType(vparams map (typedValDef) map (_.tpt.tpe))))
+    private def genEventType(vparams: List[ValDef]): Type = {
+      val vparams1 = vparams map (typedValDef) map (_.tpt.tpe)
+      val genericType =
+        if(vparams.isEmpty)
+          UnitClass.tpe
+        else if(vparams.size == 1)
+          vparams1.head
+        else
+          tupleType(vparams1)
+      appliedType(definitions.getClass("scala.events.Event").tpe, List(genericType))
+    }
 
     /*
      * Generate a tree refering to the empty event
@@ -1631,11 +1640,7 @@ trait Typers { self: Analyzer =>
       val tpt = TypeTree(tpe) setType tpe setPos edef.pos
 
       // modify modifiers
-      sym setFlag (PRIVATE | MUTABLE | LOCAL)
       sym resetFlag EVENT
-      
-      val newmods = (edef.mods | PRIVATE | MUTABLE | LOCAL)  & ~EVENT
-
       sym updateInfo tpe
 
       val rhs1 =
@@ -1644,22 +1649,10 @@ trait Typers { self: Analyzer =>
             error(edef.pos, "local variables must be initialized")
           edef.rhs
         } else {
-          val tpt2 = tpt.tpe 
-          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt2)
+          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt.tpe)
         }
-
-      // change EventDef to ValDef
-      val vdef = treeCopy.ValDef(edef, newmods, edef.name, tpt, checkDead(rhs1)) setType NoType
-
-      // add getter accessor to symboltable
-      val getter = namer.enterAccessorMethod(edef,edef.name,getterFlags(edef.mods.flags),edef.mods)
-      getter setInfo (namer.namerOf(getter).getterTypeCompleter(vdef))
-      sym.owner.info.decls enter getter
-      
-      // display symboltable
-      println(sym.owner.info.decls)
-
-      vdef
+      // generate new AST-node
+      treeCopy.ValDef(edef, edef.mods & ~EVENT, edef.name, tpt, checkDead(rhs1)) setType NoType
     }
     // @EXP-LANG END
 

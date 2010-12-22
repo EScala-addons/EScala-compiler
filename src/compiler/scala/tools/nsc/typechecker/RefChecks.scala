@@ -830,7 +830,11 @@ abstract class RefChecks extends InfoTransform {
           case ClassDef(_, _, _, _) | DefDef(_, _, _, _, _, _) | ModuleDef(_, _, _) | ValDef(_, _, _, _) =>
             //assert(stat.symbol != NoSymbol, stat);//debug
             val sym = normalizeSymToRef(stat.symbol)
+<<<<<<< HEAD
             println (sym + "; " + sym.rawowner)
+=======
+            println(sym)
+>>>>>>> ipl-ws1011-exp-lang-testing-david
             if (sym.isLocal) {
               currentLevel.scope.enter(sym)
               symIndex(sym) = index;
