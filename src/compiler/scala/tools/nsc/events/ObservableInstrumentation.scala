@@ -137,8 +137,8 @@ abstract class ObservableInstrumentation extends ObservableUtil {
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
               if (sym.isInstrumented && !sym.hasAccessorFlag) =>
                               
-println("observInstru: sym: " + sym)
-println("observInstru: tree: " + tree)
+//println("observInstru: sym: " + sym)
+//println("observInstru: tree: " + tree)
 //println("params: " + sym + ", " + mods + ", " + name + ", " + tparams + ", " + vparams + ", " + retType + ", " + body)
 
 /*
@@ -147,33 +147,33 @@ println("observInstru: tree: " + tree)
 						else 
 						if(sym.isSetter)
 */
-							println("observInstru: isSetter?: " + sym.isSetter)
+							//println("observInstru: isSetter?: " + sym.isSetter)
 	
 
             val pos = sym.pos
             
             // generate the implementation method
             val newName = buildImplMethodName(sym)
-            println("newName: " + newName)
+            //println("newName: " + newName)
             
 
             // indicates whether this overrides another observable method
             val overrideObs = isSuperObservable(sym, clazz.symbol)
-            println("override another observable?: " + overrideObs)
+            //println("override another observable?: " + overrideObs)
             // indicates whether this overrides an instrumented method (not necessary observable)
             val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
             
             // the flags for the implementation method
             var implMod = Modifiers(PROTECTED | IMPLEMENTATION | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
-						println("step1 flag for implementation method: " + implMod)
+						//println("step1 flag for implementation method: " + implMod)
             if (overrideInstr && sym.isOverride) {
               implMod = implMod | OVERRIDE  
             }
-            println("step2 flag for implementation method: " + implMod)
+            //println("step2 flag for implementation method: " + implMod)
             if (mods.isDeferred) {
               implMod = implMod | DEFERRED  
             }
-            println("step3 flag for implementation method: " + implMod)
+            //println("step3 flag for implementation method: " + implMod)
             
             // enter and type the implementation method
             val tparamsImpl = tparams.map(

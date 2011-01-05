@@ -24,6 +24,8 @@ trait EventUtil {
     internalBuild(meth, "$impl")
 
   private def internalBuild(meth: Symbol, suffix: String) = {
+  	println("internalBuild, meth + meth.tpe: " + meth + ",\n" + meth.tpe + "\n")
+  	println("internalBuild setter-test: " + meth.isSetter)
     meth.tpe match {
       case mt @ MethodType(params, retType) =>
         // build the string representing the parameters
@@ -31,6 +33,7 @@ trait EventUtil {
           (prefix, pt) => prefix + "$" + pt.typeSymbol.rawname
         )
         // and the final name
+        println("\nresulting FinalName with symbol: " + meth + " ------------> " + meth.name + paramString + suffix+"\n")
         meth.name + paramString + suffix
       case _ => ""
     }
