@@ -12,10 +12,7 @@ import typechecker._
  *
  * @author Lucas Satabin
  */
-abstract class ObservableInstrumentation extends Transform 
-                                         with EventUtil
-                                         with TypingTransformers
-                                         with ObservableUtil {
+abstract class ObservableInstrumentation extends ObservableUtil {
 
   import global._
   import definitions._

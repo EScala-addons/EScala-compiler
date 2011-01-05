@@ -12,10 +12,7 @@ import typechecker._
  *
  * @author Acun Guersoy
  */
-abstract class ObservableFieldInstrumentation extends Transform 
-                              				           with EventUtil
-                                      				   with TypingTransformers
-                                         				 with ObservableFieldUtil {
+abstract class ObservableFieldInstrumentation extends ObservableUtil {
 
   import global._
   import definitions._
@@ -140,88 +137,29 @@ abstract class ObservableFieldInstrumentation extends Transform
           result
         
         case dd @ DefDef(mods, name, tparams, vparams, retType, body) 
-        	if(!sym.isConstructor && sym.isSetter && sym.isInstrumented) =>
-        
-        	println("symbol (!constructor && setter): " + sym)
-        	val pos = sym.pos
-            
-            // generate the implementation method
-            val newName = buildImplMethodName(sym)
-            println("newName: " + newName)
-            
+        	if(sym.isSetter && sym.isInstrumented) =>
+        		val pos = sym.pos
 
-            // indicates whether this overrides another observable method
-            val overrideObs = isSuperObservable(sym, clazz.symbol)
-            //println("override another observable?: " + overrideObs)
-            // indicates whether this overrides an instrumented method (not necessary observable)
-            val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
-            
-            // the flags for the implementation method
-            var implMod = Modifiers(PROTECTED | IMPLEMENTATION | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
-						//println("step1 flag for implementation method: " + implMod)
-            if (overrideInstr && sym.isOverride) {
-              implMod = implMod | OVERRIDE  
-            }
-            //println("step2 flag for implementation method: " + implMod)
-            if (mods.isDeferred) {
-              implMod = implMod | DEFERRED  
-            }
-            //println("step3 flag for implementation method: " + implMod)
-            
-            // enter and type the implementation method
-            val tparamsImpl = tparams.map(
-                tp => TypeDef(tp.mods, tp.name, tp.tparams, tp.rhs))
-            val vparamsImpl = vparams.map(
-                vl => vl.map(
-                    vp => ValDef(vp.mods, vp.name, vp.tpt, vp.rhs)
-                )
-            )
-
-            var impl = atPos(pos)(DefDef(implMod, newName,
-                tparamsImpl, vparamsImpl, retType.copyAttrs(retType), transform(body)))
-
-						println("impl: " + impl);
-            namer.enterSyntheticSym(impl)
-            // set the implemented method symbol
-            impl.symbol.implementedMethod = sym
-						println("impl setSymbol: " + impl);
-            // retype the method
-            impl = duplicator.retyped(localTyper.context1.asInstanceOf[duplicator.Context], impl, clazz.symbol, clazz.symbol, scala.collection.immutable.Map.empty[Symbol,Type]).asInstanceOf[DefDef]
-						println("impl: retype" + impl);
-            // reference the parameters of the implementation method
-            val oldSym = vparams.flatten.map(
-              vp => vp.symbol
-            )
-            val newSym = vparamsImpl.flatten.map(
-              vp => vp.symbol
-            )
-            impl = new TreeSymSubstituter(oldSym, newSym)(impl)
-            new ChangeOwnerTraverser(dd.symbol, impl.symbol).traverse(impl)
-
+						
             var genericParam = vparams.flatten.map(vd => vd.tpt)
-            println("genericParam: " + genericParam)
+//println("genericParam: " + genericParam)
             
+            
+            // toDelete? case never existing, because setter always got one param (only type needed)
             if(genericParam.isEmpty) {
               // Unit as generic parameter
               genericParam = List(Ident(newTypeName("Unit")))
             }
-            val tupledGenericParam =
-              if(genericParam.size > 1)
-                genTupleType(genericParam)
-              else
-                genericParam
-                
-            println("tupledGenericParam: " + tupledGenericParam);
             
-            if(!overrideInstr){
-            	
-            	println("super was NOT instrumented!")
-              // the super method was not instrumented (neither observable nor instrumented)
-              // generate the events and the wrapper
-
-              // the events
-
-              // the event modifiers
+            // always else-case? then no if needed
+            val tupledGenericParam =
+              //if(genericParam.size > 1)
+                //genTupleType(genericParam)
+              //else
+                genericParam
+//println("tupledGenericParam: " + tupledGenericParam);
+            
+            // the event modifiers
               val modifiers = 
                   (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | (
                     if(!sym.isObservable && !sym.isPrivate)
@@ -232,37 +170,36 @@ abstract class ObservableFieldInstrumentation extends Transform
                       FINAL
                   )
                   
-              println("modifiers: " + modifiers)
+println("SYMBOL in instrumentation: " + sym)
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
-              val execEvName = buildExecutionEventName(sym)
-              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeExecEvent(tupledGenericParam, execEvName), pos)
+              println("sym: ___________________ " + sym)
+              println("name: ___________________ " + name)
+              println("beforeEvName: ------------------- " + beforeEvName)
+              //println("afterEvName: ------------------- " + afterEvName)
+              println("genEvent with params (dd, modifiers, beforeEvName): __________ " + dd + ", " + modifiers + ", " + beforeEvName)
+              println("")
+              
+              
+              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
-                                     newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName), pos)
-              var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
-                                    newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
-              // enter the declaration of the events in the class declarations
+                                     newAfterSetEvent(tupledGenericParam ::: List(retType)), pos)
+              //var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
+                                    //newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
+              // enter the declaration of the events in the class declarations 
+              // AG: -> namer references class?
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
-              namer.enterSyntheticSym(execEv)
-              
-              /*
-              println("NAME beforeEvent: " + beforeEvName)
-              println("execEvent: " + execEv)
-              println("NAME afterEvent: " + afterEvName)
-							*/
-							
+
               // type the events
               def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
-              execEv = typeEvent(execEv)
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
               
-              println("AFTER TYPING created Events:")
-              println("beforeEvent: " + beforeEv)
-              println("execEvent: " + execEv)
-              println("afterEvent: " + afterEv)
+              //println("AFTER TYPING created Events:")
+              //println("beforeEvent: " + beforeEv)
+              //println("afterEvent: " + afterEv)
               
               // the wrapper method
 
@@ -274,6 +211,10 @@ abstract class ObservableFieldInstrumentation extends Transform
                 } else
                   args
 
+							println("given args, size: " + args + ", " + args.size)
+							
+
+
               // the body is a block triggering before, calling the implementation,
               // triggering after and returning the result
               val tupledEvArgs =
@@ -281,62 +222,29 @@ abstract class ObservableFieldInstrumentation extends Transform
                   genTupleTerm(evArgs)
                 else
                   evArgs.head
+                  
+             println("tupledEvArgs (evArgs.size >1?: " + tupledEvArgs)
               
               val wrapperBody =
-                if(retType.tpe == definitions.UnitClass.tpe) {
-                	println("definitions.UnitClass.tpe------------------------------------------")
-                  // the return type is unit, do not save the result
+                  // AG: using beforeEv.symbol instead of beforeEvName because 
+                  // "$eq" becomes "=" after namer.enterSyntheticSym(beforeEv) so referencing not correct?
                   atPos(pos)(Block(
                             Apply(
-                                Ident(beforeEvName),
+                                Ident(beforeEv.symbol),
                                 tupledEvArgs :: Nil) ::
-                            Apply(
-                                Ident(newName),
-                                args) ::
+                            body ::
                             Nil,
                             Apply(
-                                Ident(afterEvName),
+                                Ident(afterEv.symbol),
                                 tupledEvArgs :: List(Literal(()))
                             )
                         ))
-                } else {
-                	println("return type not unit!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                  // the return type is not unit, save the result
-                  atPos(pos)(Block(
-                              Apply(
-                                Ident(beforeEvName),
-                                tupledEvArgs :: Nil) ::
-                              ValDef(NoMods,
-                                newTermName("res"),
-                                retType,
-                                Apply(
-                                    Ident(newName),
-                                    args)) ::
-                              Apply(
-                                Ident(afterEvName),
-                                tupledEvArgs :: List(Ident("res"))
-                              ) ::
-                              Nil,
-                              Ident(newTermName("res"))
-                        ))
-                }
-              
-              
-                        
-                        
-              // the symbol and type information
-              sym.resetFlag(DEFERRED)
-              var wrapperMeth = atPos(pos)(DefDef(mods, name,
-                     tparams,
-                     vparams,
-                     retType, wrapperBody)).setSymbol(sym)
-              wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
-              
-              // add to the list of synthesized members
-              synthesized = wrapperMeth :: beforeEv :: afterEv :: synthesized
-            }
+                
+                
+                synthesized = beforeEv :: afterEv :: synthesized
+
+        	treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperBody)
         	//super.transform(tree)
-        	impl
        	
         case _ => super.transform(tree)
       }
@@ -350,6 +258,32 @@ abstract class ObservableFieldInstrumentation extends Transform
       val event = ValDef(flags, name, tpt, body)
       atPos(pos)(event)
     }
+
+/*    
+    def buildBeforeEventName(meth: Symbol) =
+    internalBuild(meth, "$before")
+
+  	def buildAfterEventName(meth: Symbol) =
+    internalBuild(meth, "$after")
+    
+    private def internalBuild(meth: Symbol, suffix: String) = {
+    meth.tpe match {
+      case mt @ MethodType(params, retType) =>
+        // build the string representing the parameters
+        val paramString = mt.paramTypes.foldLeft("")(
+          (prefix, pt) => prefix + "$" + pt.typeSymbol.rawname
+        )
+println("EVENT UTIL, paramString: " + paramString)
+println("RAW PARAM meth (sym): " + meth)
+println("final NAME parts : " + meth.rawname + " -- " + paramString + " -- " + suffix)
+println("")
+        // and the final name
+        meth.name + paramString + suffix
+      case _ => ""
+    }
+  }
+*/    
+    
     
   }
 

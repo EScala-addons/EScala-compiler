@@ -42,24 +42,30 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
 
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
+      //println("obsREF.................. tree + symbol: " + tree + ",\n " + tree.symbol)
 
       tree match {
         case dd: DefDef if sym.isOverride && sym.isImplementationMethod =>
           val oldMeth = meth
+          println(":::::::::found DefDef, symbol: " + sym)
           meth = dd
           val res = super.transform(tree)
           meth = oldMeth
           res
         case ee @ ExecEvent(kind, meth) =>
           val methSymbol = meth.symbol
+          println("------ ee: " + ee)
+          println(":::::::::found ExecEvent, symbol: " + methSymbol)
           methSymbol.tpe match {
             case mt @ MethodType(params, retType) =>
               // build the string representing the parameters
+              println("execEvent -> looking for Type: " + kind)
               val eventName = kind match {
                 case BeforeExec() => buildBeforeEventName(methSymbol)
                 case AfterExec() => buildAfterEventName(methSymbol)
                 case Execution() => buildExecutionEventName(methSymbol)
               }
+              println("execEvent -> resulting eventName: " + eventName)
 
               // search the symbol in the class
               localTyper.typed(
@@ -77,6 +83,19 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
               unit.error(tree.pos, "a reference to a method is expected")
               EmptyTree
           }
+        case se @ SetEvent(kind, field) =>
+           val fieldSymbol = field.symbol
+           // PROBLEM: got Fieldreference (!= Methodreference!!) as Tree not a reference to setterMethod
+            	println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ", fieldsymbol: " + field.symbol)
+            	
+           val eventName = kind match {
+                case BeforeSet() => println("found beforeSet"); buildBeforeEventName(fieldSymbol)
+                case AfterSet() => println("found afterSet"); buildAfterEventName(fieldSymbol)
+                case _ => println("no catching " + kind)
+              }
+          	println("resulting eventName: " + eventName)
+            super.transform(tree)
+              
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
           // super call in an observable method
           // call to the super observable method must be replaced 
