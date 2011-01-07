@@ -462,7 +462,7 @@ abstract class ClassfileParser {
       ss = s substring start
       sym = owner.info.decls lookup ss
       if (sym == NoSymbol) {
-        sym = owner.newClass(NoPosition, ss) setInfo completer
+        sym = owner.newClass(NoPosition, newTypeName(ss)) setInfo completer
         owner.info.decls enter sym
         if (settings.debug.value && settings.verbose.value)
           println("loaded "+sym+" from file "+file)
@@ -725,7 +725,7 @@ abstract class ClassfileParser {
         case 'L' =>
           def processInner(tp: Type): Type = tp match {
             case TypeRef(pre, sym, args) if (!sym.isStatic) =>
-              TypeRef(processInner(pre.widen), sym, args)
+              typeRef(processInner(pre.widen), sym, args)
             case _ =>
               tp
           }
@@ -748,7 +748,7 @@ abstract class ClassfileParser {
                         case '*' => TypeBounds(definitions.NothingClass.tpe,
                                                definitions.AnyClass.tpe)
                       }
-                      val newtparam = sym.newExistential(sym.pos, "?"+i) setInfo bounds
+                      val newtparam = sym.newExistential(sym.pos, newTypeName("?"+i)) setInfo bounds
                       existentials += newtparam
                       xs += newtparam.tpe //@M should probably be .tpeHK
                       i += 1
@@ -758,13 +758,13 @@ abstract class ClassfileParser {
                 } 
                 accept('>')
                 assert(xs.length > 0)
-                existentialType(existentials.toList, TypeRef(pre, classSym, xs.toList))
+                existentialType(existentials.toList, typeRef(pre, classSym, xs.toList))
               } else if (classSym.isMonomorphicType) {
                 tp
               } else {
                 // raw type - existentially quantify all type parameters
                 val eparams = typeParamsToExistentials(classSym, classSym.unsafeTypeParams)            
-                val t = TypeRef(pre, classSym, eparams.map(_.tpe))
+                val t = typeRef(pre, classSym, eparams.map(_.tpe))
                 val res = existentialType(eparams, t)
                 if (settings.debug.value && settings.verbose.value)
                   println("raw type " + classSym + " -> " + res)
@@ -936,7 +936,7 @@ abstract class ClassfileParser {
                   throw new RuntimeException("Scala class file does not contain Scala annotation")
               }
             if (settings.debug.value)
-              log("" + sym + "; annotations = " + sym.rawAnnotations)
+              log("" + sym + "; annotations = " + sym.annotations)
           } else
             in.skip(attrLen)
 

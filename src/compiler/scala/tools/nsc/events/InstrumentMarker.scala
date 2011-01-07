@@ -96,7 +96,7 @@ abstract class InstrumentMarker extends Transform
     }
 
     private def genSuperCall(meth: Symbol)(paramss: List[List[Symbol]]) = {
-      val superMeth = Select(Super(nme.EMPTY, nme.EMPTY), meth)
+      val superMeth = Select(Super(tpnme.EMPTY, tpnme.EMPTY), meth)
       paramss.foldLeft[Tree](superMeth)((base, args) => Apply(base, args.map(s => Ident(s))))
     }
 

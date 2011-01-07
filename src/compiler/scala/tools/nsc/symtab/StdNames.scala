@@ -396,6 +396,8 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
   }
 
   abstract class SymbolNames {
+    protected implicit def stringToTypeName(s: String): TypeName = newTypeName(s)
+
     val BeanProperty        : TypeName
     val BooleanBeanProperty : TypeName
     val BoxedBoolean        : TypeName

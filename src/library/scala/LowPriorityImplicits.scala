@@ -8,9 +8,10 @@
 
 package scala
 
-import collection.mutable._
-import collection.immutable.WrappedString
-import collection.generic.CanBuildFrom
+import scala.collection.{ mutable, immutable, generic }
+import mutable.WrappedArray
+import immutable.WrappedString
+import generic.CanBuildFrom
 
 /** The `LowPriorityImplicits` class provides implicit values that
  *  are valid in all Scala compilation units without explicit qualification,
@@ -35,10 +36,19 @@ class LowPriorityImplicits {
   implicit def doubleWrapper(x: Double)   = new runtime.RichDouble(x)  
   implicit def booleanWrapper(x: Boolean) = new runtime.RichBoolean(x)
 
-  implicit def genericWrapArray[T](xs: Array[T]): WrappedArray[T] = 
-    if (xs ne null) WrappedArray.make(xs) else null
+  implicit def genericWrapArray[T](xs: Array[T]): WrappedArray[T] =
+    if (xs eq null) null
+    else WrappedArray.make(xs)
 
-  implicit def wrapRefArray[T <: AnyRef](xs: Array[T]): WrappedArray[T] = if (xs ne null) new WrappedArray.ofRef[T](xs) else null
+  // Since the JVM thinks arrays are covariant, one 0-length Array[AnyRef]
+  // is as good as another for all T <: AnyRef.  Instead of creating 100,000,000
+  // unique ones by way of this implicit, let's share one.
+  implicit def wrapRefArray[T <: AnyRef](xs: Array[T]): WrappedArray[T] = {
+    if (xs eq null) null
+    else if (xs.length == 0) WrappedArray.empty[T]
+    else new WrappedArray.ofRef[T](xs)
+  }
+    
   implicit def wrapIntArray(xs: Array[Int]): WrappedArray[Int] = if (xs ne null) new WrappedArray.ofInt(xs) else null
   implicit def wrapDoubleArray(xs: Array[Double]): WrappedArray[Double] = if (xs ne null) new WrappedArray.ofDouble(xs) else null
   implicit def wrapLongArray(xs: Array[Long]): WrappedArray[Long] = if (xs ne null) new WrappedArray.ofLong(xs) else null
@@ -52,10 +62,10 @@ class LowPriorityImplicits {
   implicit def wrapString(s: String): WrappedString = if (s ne null) new WrappedString(s) else null
   implicit def unwrapString(ws: WrappedString): String = if (ws ne null) ws.self else null
 
-  implicit def fallbackStringCanBuildFrom[T]: CanBuildFrom[String, T, collection.immutable.IndexedSeq[T]] = 
-    new CanBuildFrom[String, T, collection.immutable.IndexedSeq[T]] { 
-      def apply(from: String) = scala.collection.immutable.IndexedSeq.newBuilder[T]
-      def apply() = scala.collection.immutable.IndexedSeq.newBuilder[T]
+  implicit def fallbackStringCanBuildFrom[T]: CanBuildFrom[String, T, immutable.IndexedSeq[T]] = 
+    new CanBuildFrom[String, T, immutable.IndexedSeq[T]] { 
+      def apply(from: String) = immutable.IndexedSeq.newBuilder[T]
+      def apply() = immutable.IndexedSeq.newBuilder[T]
     }
 }
 

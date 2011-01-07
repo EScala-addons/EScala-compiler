@@ -332,7 +332,7 @@ abstract class ObservableInstrumentation extends Transform
 
               // the wrapper method simply calls the super instrumented method
               // handle curried function call
-              val applies = vparams.foldLeft[Tree](Select(Super(nme.EMPTY,nme.EMPTY), name)) {
+              val applies = vparams.foldLeft[Tree](Select(Super(tpnme.EMPTY, tpnme.EMPTY), name)) {
                 (base, vds) => Apply(base, vds.map(vd => Ident(vd.name)))
               }
               val wrapperBody = atPos(pos)(applies)

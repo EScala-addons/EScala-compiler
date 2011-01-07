@@ -119,7 +119,7 @@ trait ObservableUtil {
       BeforeExec(),
       Select(
         // TODO better handles in which mixin it was?
-        Super(nme.EMPTY, nme.EMPTY),
+        Super(tpnme.EMPTY, tpnme.EMPTY),
         meth
       )
     )
@@ -129,7 +129,7 @@ trait ObservableUtil {
       AfterExec(),
       Select(
         // TODO better handles in which mixin it was?
-        Super(nme.EMPTY, nme.EMPTY),
+        Super(tpnme.EMPTY, tpnme.EMPTY),
         meth
       )
     )

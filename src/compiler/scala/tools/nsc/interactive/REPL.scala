@@ -110,8 +110,9 @@ object REPL {
         case "reloadAndAskType" :: file :: millis :: Nil =>
           comp.askReload(List(toSourceFile(file)), reloadResult)
           Thread.sleep(millis.toInt)
+          println("ask type now")
           comp.askType(toSourceFile(file), false, typedResult)
-          show(typedResult)
+          typedResult.get
         case List("typed", file) =>
           doTypedTree(file)
         case List("typeat", file, off1, off2) =>
@@ -123,6 +124,7 @@ object REPL {
         case List("complete", file, off1) =>
           doComplete(makePos(file, off1, off1))
         case List("quit") =>
+          comp.askShutdown()
           system.exit(1)
         case _ =>
           println("unrecongized command")

@@ -326,7 +326,7 @@ self =>
         Nil,
         List(Nil),
         TypeTree(),
-        Block(List(Apply(Select(Super("", ""), nme.CONSTRUCTOR), Nil)), Literal(Constant(())))
+        Block(List(Apply(Select(Super(tpnme.EMPTY, tpnme.EMPTY), nme.CONSTRUCTOR), Nil)), Literal(Constant(())))
       )
 
       // def main
@@ -2912,7 +2912,11 @@ self =>
         case stats =>
           val start =
             if (stats forall (_ == EmptyTree)) 0
-            else wrappingPos(stats).startOrPoint
+            else {
+              val wpos = wrappingPos(stats)
+              if (wpos.isDefined) wpos.startOrPoint
+              else 0
+            }
 
           makePackaging(start, atPos(start, start, start) { Ident(nme.EMPTY_PACKAGE_NAME) }, stats)
       }
