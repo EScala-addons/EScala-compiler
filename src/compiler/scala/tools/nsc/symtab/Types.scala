@@ -7,6 +7,7 @@ package scala.tools.nsc
 package symtab
 
 import scala.collection.{ mutable, immutable }
+import scala.ref.WeakReference
 import scala.collection.mutable.ListBuffer
 import ast.TreeGen
 import util.{ Position, NoPosition }
@@ -150,7 +151,7 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
    *  It makes use of the fact that these two operations depend only on the parents,
    *  not on the refinement.
    */
-  val intersectionWitness = new mutable.WeakHashMap[List[Type], Type]
+  val intersectionWitness = new mutable.WeakHashMap[List[Type], WeakReference[Type]]
 
   private object gen extends {
     val global : Types.this.type = Types.this
@@ -1220,7 +1221,7 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
     override def bounds: TypeBounds = this
     def containsType(that: Type) = that match {
       case TypeBounds(_, _) => that <:< this 
-      case _ => lo <:< that && that <:< hi
+      case _                => lo <:< that && that <:< hi
     }
     // override def isNullable: Boolean = NullClass.tpe <:< lo;
     override def safeToString = ">: " + lo + " <: " + hi
@@ -1228,6 +1229,10 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
   }
 
   object TypeBounds extends TypeBoundsExtractor {
+    def empty: TypeBounds           = apply(NothingClass.tpe, AnyClass.tpe)
+    def upper(hi: Type): TypeBounds = apply(NothingClass.tpe, hi)
+    def lower(lo: Type): TypeBounds = apply(lo, AnyClass.tpe)
+    
     def apply(lo: Type, hi: Type): TypeBounds =
       unique(new TypeBounds(lo, hi) with UniqueType)
   }
@@ -1337,14 +1342,29 @@ trait Types extends reflect.generic.Types { self: SymbolTable =>
       baseClassesCache
     }
 
-    def memo[A](op1: => A)(op2: Type => A) = intersectionWitness get parents match {
-      case Some(w) =>
-        if (w eq this) op1 else op2(w)
-      case none => 
-        intersectionWitness(parents) = this
+    /** The slightly less idiomatic use of Options is due to 
+     *  performance considerations. A version using for comprehensions
+     *  might be too slow (this is deemed a hotspot of the type checker).
+     *  
+     *  See with Martin before changing this method.
+     */
+    def memo[A](op1: => A)(op2: Type => A): A = {
+      def updateCache(): A = {
+        intersectionWitness(parents) = new WeakReference(this)
         op1
+      }
+      
+      intersectionWitness get parents match {
+        case Some(ref) =>
+          ref.get match {
+            case Some(w) => if (w eq this) op1 else op2(w)
+            case None => updateCache()
+          }
+        case None => updateCache() 
+      }
+     
     }
-
+ 
     override def baseType(sym: Symbol): Type = {
       val index = baseTypeIndex(sym)
       if (index >= 0) baseTypeSeq(index) else NoType
@@ -2848,19 +2868,25 @@ A type's typeSymbol should never be inspected directly.
 // Hash consing --------------------------------------------------------------
 
   private val initialUniquesCapacity = 4096
-  private var uniques: util.HashSet[AnyRef] = _
+  private var uniques: util.HashSet[Type] = _
   private var uniqueRunId = NoRunId
 
-  private def unique[T <: AnyRef](tp: T): T = {
+  private def unique[T <: Type](tp: T): T = {
     incCounter(rawTypeCount)
     if (uniqueRunId != currentRunId) {
-      uniques = new util.HashSet("uniques", initialUniquesCapacity)
+      uniques = util.HashSet[Type]("uniques", initialUniquesCapacity)
       uniqueRunId = currentRunId
     }
     (uniques findEntryOrUpdate tp).asInstanceOf[T]
   }
 
 // Helper Classes ---------------------------------------------------------
+
+  /** @PP: Unable to see why these apparently constant types should need vals
+   *  in every TypeConstraint, I lifted them out.
+   */
+  private lazy val numericLoBound = IntClass.tpe
+  private lazy val numericHiBound = intersectionType(List(ByteClass.tpe, CharClass.tpe), ScalaPackageClass)
 
   /** A class expressing upper and lower bounds constraints of type variables, 
    * as well as their instantiations.
@@ -2876,13 +2902,6 @@ A type's typeSymbol should never be inspected directly.
 
     def loBounds: List[Type] = if (numlo == NoType) lobounds else numlo :: lobounds
     def hiBounds: List[Type] = if (numhi == NoType) hibounds else numhi :: hibounds
-
-    /** @PP: Would it be possible to get a comment explaining what role these are serving?
-     *  In particular, why is numericHiBound being calculated this way given that all the
-     *  arguments are constant?
-     */
-    private val numericLoBound = IntClass.tpe
-    private val numericHiBound = intersectionType(List(ByteClass.tpe, CharClass.tpe), ScalaPackageClass)
 
     def addLoBound(tp: Type, isNumericBound: Boolean = false) {
       if (isNumericBound && isNumericValueType(tp)) {
@@ -3233,7 +3252,7 @@ A type's typeSymbol should never be inspected directly.
   }
 
   def singletonBounds(hi: Type) = {
-    TypeBounds(NothingClass.tpe, intersectionType(List(hi, SingletonClass.tpe)))
+    TypeBounds.upper(intersectionType(List(hi, SingletonClass.tpe)))
   }
 
   /** A map to compute the asSeenFrom method  */
@@ -3769,6 +3788,7 @@ A type's typeSymbol should never be inspected directly.
         var rebind0 = pre.findMember(sym.name, BRIDGE, 0, true)
         if (rebind0 == NoSymbol) {
           if (sym.isAliasType) throw missingAliasException
+          if (settings.debug.value) println(pre+"."+sym+" does no longer exist, phase = "+phase)
           throw new MissingTypeControl // For build manager purposes
           //assert(false, pre+"."+sym+" does no longer exist, phase = "+phase)
         }
@@ -5242,7 +5262,7 @@ A type's typeSymbol should never be inspected directly.
                   val symbounds = symtypes filter isTypeBound
                   var result: Type =
                     if (symbounds.isEmpty)
-                      TypeBounds(NothingClass.tpe, AnyClass.tpe)
+                      TypeBounds.empty
                     else glbBounds(symbounds)
                   for (t <- symtypes if !isTypeBound(t))
                     if (result.bounds containsType t) result = t

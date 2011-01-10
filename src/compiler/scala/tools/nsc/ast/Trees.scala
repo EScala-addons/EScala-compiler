@@ -59,6 +59,7 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
     }
 
     def isErroneous = (tree.tpe ne null) && tree.tpe.isErroneous
+    def isTyped     = (tree.tpe ne null) && !tree.tpe.isErroneous
 
     /** Apply `f' to each subtree */
     def foreach(f: Tree => Unit) { new ForeachTreeTraverser(f).traverse(tree) }
@@ -1164,7 +1165,7 @@ trait Trees extends reflect.generic.Trees { self: SymbolTable =>
   }
 
   private class ResetLocalAttrsTraverser extends ResetAttrsTraverser {
-    private val erasedSyms = new HashSet[Symbol](8)
+    private val erasedSyms = HashSet[Symbol](8)
     override protected def isLocal(sym: Symbol) = erasedSyms(sym)
     override protected def resetDef(tree: Tree) {
       erasedSyms addEntry tree.symbol

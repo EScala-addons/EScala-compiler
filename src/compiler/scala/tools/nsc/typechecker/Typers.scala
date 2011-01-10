@@ -655,7 +655,7 @@ trait Typers extends Modes {
     /** Perform the following adaptations of expression, pattern or type `tree' wrt to 
      *  given mode `mode' and given prototype `pt':
      *  (-1) For expressions with annotated types, let AnnotationCheckers decide what to do
-     *  (0) Convert expressions with constant types to literals
+     *  (0) Convert expressions with constant types to literals (unless in interactive/scaladoc mode)
      *  (1) Resolve overloading, unless mode contains FUNmode 
      *  (2) Apply parameterless functions
      *  (3) Apply polymorphic types to fresh instances of their type parameters and
@@ -691,7 +691,7 @@ trait Typers extends Modes {
     protected def adapt(tree: Tree, mode: Int, pt: Type, original: Tree = EmptyTree): Tree = tree.tpe match {
       case atp @ AnnotatedType(_, _, _) if canAdaptAnnotations(tree, mode, pt) => // (-1)
         adaptAnnotations(tree, mode, pt)
-      case ct @ ConstantType(value) if inNoModes(mode, TYPEmode | FUNmode) && (ct <:< pt) && !forScaladoc => // (0)
+      case ct @ ConstantType(value) if inNoModes(mode, TYPEmode | FUNmode) && (ct <:< pt) && !forScaladoc && !forInteractive => // (0)
         val sym = tree.symbol
         if (sym != null && sym.isDeprecated) {
           val msg = sym.toString + sym.locationString +" is deprecated: "+ sym.deprecationMessage.getOrElse("")
@@ -1874,15 +1874,7 @@ trait Typers extends Modes {
       val syntheticPrivates = new ListBuffer[Symbol]
       try {
         namer.enterSyms(block.stats)
-        for (stat <- block.stats) {
-          if (forInteractive && stat.isDef) {
-            // this might be redundant now
-            var e = context.scope.lookupEntry(stat.symbol.name)
-            while ((e ne null) && (e.sym ne stat.symbol)) e = e.tail
-            if (e eq null) context.scope.enter(stat.symbol)
-          }
-          enterLabelDef(stat)
-        }
+        for (stat <- block.stats) enterLabelDef(stat)
 
         if (phaseId(currentPeriod) <= currentRun.typerPhase.id) {
           // This is very tricky stuff, because we are navigating
@@ -1954,8 +1946,15 @@ trait Typers extends Modes {
       // verify no _* except in last position      
       for (Apply(_, xs) <- cdef.pat ; x <- xs dropRight 1 ; if treeInfo isStar x)
         error(x.pos, "_* may only come last")
-        
+
       val pat1: Tree = typedPattern(cdef.pat, pattpe)
+
+      if (forInteractive) {
+        for (bind @ Bind(name, _) <- cdef.pat)
+          if (name.toTermName != nme.WILDCARD && bind.symbol != null && bind.symbol != NoSymbol) 
+            namer.enterIfNotThere(bind.symbol)
+      }
+        
       val guard1: Tree = if (cdef.guard == EmptyTree) EmptyTree
                          else typed(cdef.guard, BooleanClass.tpe)
       var body1: Tree = typed(cdef.body, pt)
@@ -3071,8 +3070,7 @@ trait Typers extends Modes {
               if (isFullyDefined(pt))
                 context.owner.newAliasType(tree.pos, name) setInfo pt
               else 
-                context.owner.newAbstractType(tree.pos, name) setInfo
-                  TypeBounds(NothingClass.tpe, AnyClass.tpe)
+                context.owner.newAbstractType(tree.pos, name) setInfo TypeBounds.empty
           val rawInfo = vble.rawInfo
           vble = if (vble.name == tpnme.WILDCARD) context.scope.enter(vble)
                  else namer.enterInScope(vble)
@@ -3973,7 +3971,7 @@ trait Typers extends Modes {
           def subArrayType(pt: Type) =
             if (isValueClass(pt.typeSymbol) || !isFullyDefined(pt)) arrayType(pt)
             else {
-              val tparam = context.owner freshExistential "" setInfo TypeBounds(NothingClass.tpe, pt)
+              val tparam = context.owner freshExistential "" setInfo TypeBounds.upper(pt)
               ExistentialType(List(tparam), arrayType(tparam.tpe))
             }
           val (expr1, baseClass) = expr0.tpe.typeSymbol match {

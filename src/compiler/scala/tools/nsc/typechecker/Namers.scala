@@ -173,10 +173,10 @@ trait Namers { self: Analyzer =>
       if (!(sym.isSourceMethod && sym.owner.isClass && !sym.owner.isPackageClass)) {
         var prev = scope.lookupEntry(sym.name)
         if ((prev ne null) && prev.owner == scope && conflict(sym, prev.sym)) {
-           doubleDefError(sym.pos, prev.sym)
-           sym setInfo ErrorType
-           scope unlink prev.sym // let them co-exist...
-           scope enter sym
+          doubleDefError(sym.pos, prev.sym)
+          sym setInfo ErrorType
+          scope unlink prev.sym // let them co-exist...
+          scope enter sym
         } else scope enter sym
       } else scope enter sym
     }
@@ -338,13 +338,32 @@ trait Namers { self: Analyzer =>
       } else setInfo(sym)(ltype)
     }
 
+    def enterIfNotThere(sym: Symbol) {
+      val scope = context.scope
+      var e = scope.lookupEntry(sym.name)
+      while ((e ne null) && (e.owner eq scope) && (e.sym ne sym)) e = e.tail
+      if (!((e ne null) && (e.owner eq scope))) context.scope.enter(sym)
+    }
+    
     def enterSym(tree: Tree): Context = {
       def finishWith(tparams: List[TypeDef]) { enterSymFinishWith(tree, tparams) }
       def finish = finishWith(Nil)
       def sym = tree.symbol
-      if (sym != NoSymbol)
+      if (sym != NoSymbol) {
+        if (forInteractive && sym != null && sym.owner.isTerm) {
+          // this logic is needed in case typer was interrupted half way through and then comes
+          // back to do the tree again. In that case the definitions that were already 
+          // attributed as well as any default parameters of such methods need to be 
+          // re-entered in the current scope.
+          enterIfNotThere(sym)
+          if (sym.isLazy) {
+            val acc = sym.lazyAccessor
+            if (acc != NoSymbol) enterIfNotThere(acc)
+          }
+          defaultParametersOfMethod(sym) foreach enterIfNotThere
+        }
         return this.context
-      
+      }
       try { 
         val owner = context.owner
         tree match {
@@ -851,7 +870,7 @@ trait Namers { self: Analyzer =>
       var resultPt = if (tpt.isEmpty) WildcardType else typer.typedType(tpt).tpe
       val site = meth.owner.thisType
 
-      def overriddenSymbol = intersectionType(meth.owner.info.parents).member(meth.name).filter(sym => {
+      def overriddenSymbol = intersectionType(meth.owner.info.parents).nonPrivateMember(meth.name).filter(sym => {
         // luc: added .substSym from skolemized to deSkolemized
         // site.memberType(sym): PolyType(tparams, MethodType(..., ...)) ==> all references to tparams are deSkolemized
         // thisMethodType: tparams in PolyType are deSkolemized, the references in the MethodTypes are skolemized. ==> the two didn't match
@@ -1036,6 +1055,13 @@ trait Namers { self: Analyzer =>
             if (!isConstr)
               meth.owner.resetFlag(INTERFACE) // there's a concrete member now
             val default = parentNamer.enterSyntheticSym(defaultTree)
+            if (forInteractive && default.owner.isTerm) {
+              // enter into map from method symbols to default arguments.
+              // if compiling the same local block several times (which can happen in interactive mode)
+              // we might otherwise not find the default symbol, because the second time it the
+              // method symbol will be re-entered in the scope but the default parameter will not.
+              defaultParametersOfMethod(meth) += default
+            }
           } else if (baseHasDefault) {
             // the parameter does not have a default itself, but the corresponding parameter
             // in the base class does.
@@ -1054,7 +1080,7 @@ trait Namers { self: Analyzer =>
       val tparamSyms = typer.reenterTypeParams(tparams) //@M make tparams available in scope (just for this abstypedef)
       val tp = typer.typedType(rhs).tpe match {
         case TypeBounds(lt, rt) if (lt.isError || rt.isError) =>
-          TypeBounds(NothingClass.tpe, AnyClass.tpe)
+          TypeBounds.empty
         case tp @ TypeBounds(lt, rt) if (tpsym hasFlag JAVA) =>
           TypeBounds(lt, objToAny(rt))
         case tp => 
