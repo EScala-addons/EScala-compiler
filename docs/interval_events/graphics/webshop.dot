@@ -1,0 +1,18 @@
+digraph {
+ NotLoggedIn[label="Nicht eingeloggt"];
+ LoggedIn[label="Eingeloggt"];
+ BrowseProducts[label="Produkte auswählen"];
+ DisplayLoginPage[label="Anmeldedialog anzeigen"];
+ ConfirmPaymentMethod[label="Zahlungsart bestätigen"];
+ ShoppingSuccessful[label="Bestellung erfolgreich"];
+ 
+ BrowseProducts->DisplayLoginPage[label="Bestellen und nicht eingeloggt"];
+ BrowseProducts->BrowseProducts[label="in den Warenkorb"]
+ BrowseProducts->ConfirmPaymentMethod[label="Bestellen und eingeloggt"]; 
+ DisplayLoginPage->ConfirmPaymentMethod[label="einloggen"];
+ ConfirmPaymentMethod->ShoppingSuccessful[label="bestätigen"];
+ ShoppingSuccessful->BrowseProducts[label="Warenkorb leeren"];
+
+ LoggedIn -> NotLoggedIn[label="Abmelden: Warenkorb leeren"];
+ NotLoggedIn -> LoggedIn[label="Anmelden"]; 
+}

@@ -1,0 +1,8 @@
+digraph {
+ NotInitialized[label="Nicht initialisiert"];
+ Started[label="Gestartet"];
+ Stopped[label="Gestoppt"];
+ NotInitialized->Started[label="start"];
+ Started->Stopped[label="stop"];
+ Stopped->Started[label="start"];
+}
