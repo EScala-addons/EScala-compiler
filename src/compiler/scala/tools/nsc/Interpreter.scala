@@ -1041,7 +1041,7 @@ class Interpreter(val settings: Settings, out: PrintWriter) {
     }
     private def bindUnexceptionally(t: Throwable) = {
       quietBind("lastException", classOf[Throwable], t)
-      stringFromWriter(t printStackTrace _)
+      stackTraceString(t)
     }
 
     /** load and run the code using reflection */
@@ -1367,7 +1367,7 @@ object Interpreter {
     intLoop.createInterpreter
     intLoop.in = InteractiveReader.createDefault(intLoop.interpreter)
     
-    // rebind exit so people don't accidentally call system.exit by way of predef
+    // rebind exit so people don't accidentally call sys.exit by way of predef
     intLoop.interpreter.beQuietDuring {
       intLoop.interpreter.interpret("""def exit = println("Type :quit to resume program execution.")""")
       for (p <- args) {

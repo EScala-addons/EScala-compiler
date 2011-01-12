@@ -98,7 +98,7 @@ object NestUI {
     println
     println(utils.Properties.versionString)
     println("maintained by Philipp Haller (EPFL)")
-    system.exit(1)
+    sys.exit(1)
   }
 
   var _verbose = false
@@ -115,5 +115,9 @@ object NestUI {
       outline("debug: ")
       println(msg)
     }
+  }
+  def shout(msg: String) {
+    warning("something is wrong:")
+    println(msg)
   }
 }

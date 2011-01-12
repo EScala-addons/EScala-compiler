@@ -22,9 +22,9 @@ package object util {
    *  execution to complete.
    */
   def waitingForThreads[T](body: => T) = {
-    val ts1        = system.allThreads()
+    val ts1        = sys.allThreads()
     val result     = body
-    val ts2        = system.allThreads()
+    val ts2        = sys.allThreads()
     val newThreads = ts2.toSet -- ts1 filterNot (_.isDaemon())
     
     newThreads foreach (_.join())
@@ -58,4 +58,5 @@ package object util {
     ps.close()
     bs.toString()
   }
+  def stackTraceString(ex: Throwable): String = stringFromWriter(ex printStackTrace _)
 }
