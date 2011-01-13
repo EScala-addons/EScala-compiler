@@ -42,10 +42,22 @@ abstract class ObservableClass extends Transform
   class ObservablesClassTrans(unit: CompilationUnit) extends TypingTransformer(unit) { 
         
     import symtab.Flags._
+
+    private var obsobjects: List[Tree] = null
     
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
       tree match {
+          case pd: PackageDef =>
+                obsobjects = List()
+                val tpack = super.transform(pd).asInstanceOf[PackageDef]                 
+
+                //add the observable classes object
+                //and generate result
+                val result = treeCopy.PackageDef(tpack, tpack.pid, 
+                        obsobjects ::: tpack.stats)
+
+                result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
             val oldNamer = namer
@@ -55,43 +67,20 @@ abstract class ObservableClass extends Transform
               if (settings.Yeventsdebug.value) {
                   println("Transform of observable class called for :  " + name)
               }
-
-              val modifiers = (cd.mods & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | FINAL
-
-              val allObjectName = name + "$all"
-              var allObject = genAllObject(
-                  cd,
-                  modifiers,
-                  allObjectName,
-                  genAllObjectTpt(List[Tree](Ident(name))),
-                  newAllObject(List[Tree](Ident(name)), name),
-                  sym.pos)
-
-              if (settings.Yeventsdebug.value) {
-                println("allObject: " + allObject)
-              }
-
-              namer.enterSyntheticSym(allObject)
-              //allObject = localTyper.typed(allObject).asInstanceOf[ValDef]
-              //... TODO
-
-              //tree // is it the proper thing to return ?
+              val pos = sym.pos
+              val newobj = ModuleDef ( NoMods, 
+                                      name+"$all", 
+                                      Template(Nil,emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
+                                      )
+              obsobjects = newobj :: obsobjects
             }
             
-            tree // is it the proper thing to return ? bis
+            tree 
 
           case _ => super.transform(tree)
-       }
+        }
     }
+ }
 
-    private def genAllObject(tree: ClassDef, modifiers: Modifiers, name: Name, tpt: Tree, body: Tree, pos: Position) = {
-      
-      val flags = modifiers | LAZY | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC)
-      
-      val obj = ValDef(flags, name, tpt, body)
-      // TODO must be in the class' parent (?)
-      atPos(pos)(obj)
-    }
-  }
 }
 // vim: set ts=4 sw=4 et:
