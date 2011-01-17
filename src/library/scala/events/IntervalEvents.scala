@@ -14,7 +14,8 @@ trait IntervalEvent[Start] {
 
   protected[events] var deployed = false
 
-  def defaultValue: Start
+  private final var default: Start = _
+  protected def defaultValue = default
   protected var value: Start = _
 
   def getValue = value
@@ -28,19 +29,17 @@ trait IntervalEvent[Start] {
   protected[this] lazy val started = (s: Start) => {
     _active = true
     this.value = s
-    println("started")
   }
 
   protected[this] lazy val ended = (e: Any) => {
     _active = false
     this.value = defaultValue
-    println("ended")
   }
 
   val ref = new ReferenceCounting {
     def deploy = IntervalEvent.this.deploy
     def undeploy = IntervalEvent.this.undeploy
-    
+
     //DEBUG
     override def toString = IntervalEvent.this.toString
   }
@@ -48,6 +47,7 @@ trait IntervalEvent[Start] {
   protected[events] def deploy {
     realStart += started
     realEnd += ended
+    assert(deployed == false)
     deployed = true
   }
 
@@ -73,7 +73,7 @@ trait IntervalEvent[Start] {
    */
   def ||[S >: Start, S1 <: S](ie: IntervalEvent[S1]) = new ActiveOverridingInterval[S](
     (before || ie.before.asInstanceOf[Event[S]]),
-    (((after && (_ => !ie.active)) || (ie.after && (_ => !active)) || (after and ie.after)) \ (before || ie.before)),
+    (((after && (_ => !ie.active)) || (ie.after && (_ => !active)) || (after and ie.after))) \ (before || ie.before),
     active || ie.active, value)
 
   /**
@@ -97,7 +97,9 @@ trait IntervalEvent[Start] {
   def &&[S >: Start](p: S => Boolean) =
     new ActiveOverridingInterval(before && p, after, active && p(value), value)
 
-  /**
+  
+  implicit def castValue[S >: Start] = map((v : Start) => v.asInstanceOf[S])
+  /*
    * convenience methods
    */
 
@@ -117,7 +119,6 @@ protected[events] trait ReferenceCounting {
     refCount += 1
     if (refCount == 1)
       deploy
- //   println(this + " d " + refCount)
 
   }
   final def -- {
@@ -125,43 +126,40 @@ protected[events] trait ReferenceCounting {
     if (refCount <= 0)
       undeploy
 
- //   println(this + " u " + refCount)
-
   }
 
   def deploy
   def undeploy
 }
 
-protected[events] trait DefaultValues[T] {
-  var default: T = _
-  def defaultValue = default
-}
-
 protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCounting) extends EventNode[T] {
 
-  lazy val react = reactions _
-  name = ref.toString
-  
+  lazy val onEvt: Sink = (id: Int, v: T, reacts: ListBuffer[(() => Unit, List[Event[_]])]) => {
+    reactions(id, v, reacts)
+  }
+
   override def toString = punktEv.toString
 
   override def deploy {
-    punktEv += react
-    ref ++
-    
-    //DEBUG
-    punktEv._branches += showTree _
+    ref ++;
+    punktEv += onEvt
+
   }
 
   override def undeploy {
-    punktEv -= react
+    punktEv -= onEvt
     ref --
+  }
+
+  protected[events] override def redeploy {
+    super.redeploy
+    punktEv.redeploy
   }
 }
 
-class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T] with DefaultValues[T]{
-	override def toString : String = "between(" + start + ","+ end + ")"
-	
+class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T] {
+  override def toString: String = "between(" + start + "," + end + ")"
+
 }
 
 /**
@@ -174,7 +172,7 @@ protected[events] class ActiveOverridingInterval[T](start: Event[T],
   value = if (active) defValue else defaultValue
 }
 
-class ExecutionEvent[T] extends IntervalEvent[T] with DefaultValues[T] {
+class ExecutionEvent[T] extends IntervalEvent[T] {
 
   def start: Event[T] = _start
   def end: Event[_] = _end
