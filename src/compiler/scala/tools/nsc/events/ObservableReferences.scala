@@ -66,12 +66,14 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
                 case Execution() => buildExecutionEventName(methSymbol)
               }
               println("execEvent -> resulting eventName: " + eventName)
+              
 
               // search the symbol in the class
               localTyper.typed(
                 atPos(tree.pos) {
                   meth match {
                     case Select(prefix, _) =>
+                    	println("PREFIX -___-___- " + prefix)
                       Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
                     case _ => /* should not happen here */
                       unit.error(tree.pos, "a reference to a method is expected")
@@ -84,17 +86,26 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
               EmptyTree
           }
         case se @ SetEvent(kind, field) =>
-           val fieldSymbol = field.symbol
-           // PROBLEM: got Fieldreference (!= Methodreference!!) as Tree not a reference to setterMethod
+           val fieldSymbol = field.symbol           
             	println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ", fieldsymbol: " + field.symbol)
             	
            val eventName = kind match {
-                case BeforeSet() => println("found beforeSet"); buildBeforeEventName(fieldSymbol)
-                case AfterSet() => println("found afterSet"); buildAfterEventName(fieldSymbol)
+                case BeforeSet() => buildBeforeEventName(fieldSymbol)
+                case AfterSet() => buildAfterEventName(fieldSymbol)
                 case _ => println("no catching " + kind)
               }
-          	println("resulting eventName: " + eventName)
-            super.transform(tree)
+          	println("resulting eventName: " + eventName )
+          	println("\n TREE: ")
+            println("\n -------------------")
+          	
+           /*
+            localTyper.typed(
+                atPos(tree.pos) {
+                 Select(tree, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
+                }
+              )
+             */
+             super.transform(tree)
               
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
           // super call in an observable method
