@@ -98,13 +98,13 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
           	println("\n TREE: ")
             println("\n -------------------")
           	
-           /*
+           
             localTyper.typed(
                 atPos(tree.pos) {
                  Select(tree, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
                 }
               )
-             */
+             
              super.transform(tree)
               
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
