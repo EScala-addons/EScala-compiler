@@ -1,13 +1,13 @@
 #TeXlipse project settings
-#Mon Dec 06 13:18:43 CET 2010
+#Mon Jan 17 15:30:45 CET 2011
 builderNum=4
-outputDir=out/
+outputDir=
 makeIndSty=
 bibrefDir=
 outputFormat=pdf
 tempDir=tmp
 mainTexFile=IntervalsDD_Operators_etc.tex
-outputFile=document.pdf
+outputFile=Documentation.pdf
 langSpell=en
 markDer=true
 srcDir=
