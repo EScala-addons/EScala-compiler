@@ -11,40 +11,59 @@ import scala.events._
 }*/
 
 class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
+  var x = 0;
+  var y = 0;
 
   // moved reacts on movement of the upperleft corner
   // this is the old syntax for comparison in the ast
-  evt moved[(Int,Int)] = emptyevent //upperleft.moved
+  evt moved[(Int,Int)] = afterExec(moveBy).map((_:Any) => (1,2))
+// emptyevent //upperleft.moved
 
+//  evt moved2[(Int,Int)] = moved
+
+  def moveBy(dx: Int, dy: Int) = {
+    x += dx
+    y += dy
+  }
   // Resized reacts on movement of the lowerright corner.
   // This shows the new Syntax.
   // compiler error: type events.this.Event[...] does not take parameter
-  evt resized(dx: Int, dy: Int)  = emptyevent //lowerright.moved(dx,dy)
+//  evt resized(dx: Int, dy: Int)  = emptyevent //lowerright.moved(dx,dy)
+  evt resized2(dx: Int, dy: Int)  = moved(dy,dx)
+  
 
   /*def resizeBy(dx: Int, dy: Int) = {
     lowerright.moveBy(dx, dy)
   }*/
 }
 
-/*object Test {
+object Test {
   def main(args: Array[String]) {
-    val point = new Point(5, 5)
-    val rectangle = new Rectangle(new Point(3, 3), new Point(5, 5))
+//    val point = new Point(5, 5)
+    val rectangle = new Rectangle(/*new Point(3, 3), new Point(5, 5)*/)
 
 //  point.moved += pointMoved _
-    point.moveBy(2, 2)
+//    point.moveBy(2, 2)
 //  point.moved -= pointMoved _
 
 //  rectangle.resized += rectangleResized _
-    rectangle resizeBy(1, 2)
+//    rectangle resizeBy(1, 2)
 //  rectangle.resized -= rectangleResized _
+    
+    rectangle.resized2 += rectangleMoved _
+    rectangle moveBy(1,1)
+    rectangle.resized2 -= rectangleMoved _
   }
 
-  def pointMoved() {
-    println("point moved")
+//def pointMoved() {
+//  println("point moved")
+//}
+
+  def rectangleMoved(x: Int,y: Int) {
+    println("rectangle moved by x: " + x + " y: " + y )
   }
 
-  def rectangleResized() {
-    println("rectangle resized")
-  }
-}*/
+//def rectangleResized() {
+//  println("rectangle resized")
+//}
+}
