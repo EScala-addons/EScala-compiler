@@ -5,24 +5,7 @@ import scala.util.DynamicVariable
 
 trait Event[+T] {
 	
-	  /*
-   * DEBUG
-   */
-      val _branches = new ListBuffer[Int => Unit]                                         
-      var name : String = toString
-      def showTree(tabs : Int) = {
-	  _branches.foreach((b : Int => Unit) => {
-	 	for(i <- 0 until tabs) print('\t')
-	 	println(toString)
-	 	b(tabs+1)
-	  })
-  }
-  
-  /*
-   * end DEBUG
-   */
-	
-  /*
+  /**
    * Sink function type: takes event id, event parameter
    * fills the given list with reactions to be executed
    * the reactions represt
@@ -30,22 +13,22 @@ trait Event[+T] {
   type Sink = (Int, T, ListBuffer[(() => Unit, Trace)]) => Unit
   type Trace = List[Event[_]]
 
-  /*
+  /**
    * Register a sink function to the event (used for propagation of events)
    */
   protected[events] def +=(sink: Sink)
 
-  /*
+  /**
    * Unregister a sink function
    */
   protected[events] def -=(sink: Sink)
 
-  /*
+  /**
    * Register a reaction to the event
    */
   def +=(react: T => Unit)
 
-  /*
+  /**
    * Unregister a reaction
    */
   def -=(react: T => Unit)
@@ -85,7 +68,7 @@ trait Event[+T] {
    */
   def and[U, V, S >: T](other: Event[U], merge: (S, U) => V) = new EventNodeAnd[S, U, V](this, other, merge)
 
-  /*
+  /**
   * Event conjunction with a merge method creating a tuple of both event parameters
   */
   def and[U, S >: T](other: Event[U]) = new EventNodeAnd[S, U, (S, U)](this, other, (p1: S, p2: U) => (p1, p2))
@@ -95,22 +78,38 @@ trait Event[+T] {
    */
   def map[U, S >: T, V >: S](mapping: V => U) = new EventNodeMap[S, U](this, mapping)
 
-  /**
-   * Event is triggered if the first event was already triggered but not the second one yet
-   */
-   //def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
-   //def between[U, V, S >: T](ep: (Event[U], Event[V])) = new BetweenEventNode[S,U,V](this, ep._1, ep._2)
 
   /**
    * Drop the event parameter; equivalent to map((_: Any) => ())
    */
   def dropParam[S >: T] = new EventNodeMap[S, Unit](this, _ => ())
   
+  /**
+   * Event inside an Interval
+   */
   def within(ie :IntervalEvent[_]) = events.within(this,ie)
+  /**
+   * Event outside an Interval
+   */
   def not_within(ie:IntervalEvent[_]) = events.not_within(this, ie)
+  /**
+   * Event strictly within an Interval, meaning except it's beginning and end
+   */
   def strictlyWithin(ie:IntervalEvent[_]) = events.strictlyWithin(this,ie)
+  /**
+   * Event without an Interval, but including it's beginning and end
+   */
   def not_strictlyWithin(ie: IntervalEvent[_]) = events.not_strictlyWithin(this,ie)
   
+  
+  /**
+   * redeploy the event recursively, used to avoid the difference bug that
+   * occurs when the accepted path is reached before the except path and
+   * triggers side-effects in AND- or OR-Nodes leading to wrong reactions.
+   * Note that variable events, like EventNodeRef or EventNodeExists withstand
+   * this procedure and may still cause the bug (see difference-anomaly-3.scala)
+   */
+  protected[events] def redeploy : Unit
 }
 
 /*
@@ -170,17 +169,23 @@ abstract class EventNode[T] extends Event[T] {
    * Undeploy the event (i.e. unregisters from the referenced events)
    */
   protected def undeploy: Unit
+  
+  /**
+   * redeploy the event, meaning reregister for the referenced events and
+   * recursively redeploy the event-tree
+   */
+  protected[events] override def redeploy: Unit = { undeploy; deploy}
 
   /** Collects the reactions registered with this event and associates the current event trace.
    *  It then propagates to sinks.
    */
   protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
-    eventTrace.withValue(this :: eventTrace.value) {
+	 eventTrace.withValue(this :: eventTrace.value) {
       // collect the reactions registered with this event
       _reactions.foreach(react => reacts += ((() => react(v)) -> eventTrace.value))
       // propagate to sinks adding this event to the event trace
       sinks.foreach(sink => sink(id, v, reacts))
-    }
+      }
   }
 
 }
@@ -308,9 +313,6 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
     ev1 += onEvt1
     ev2 += onEvt2
     
-    //DEBUG
-    ev1._branches += showTree _
-    ev2._branches += showTree _
   }
 
   /*
@@ -320,6 +322,12 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
     ev1 -= onEvt1
     ev2 -= onEvt2
 
+  }
+  
+  protected[events] override def redeploy{
+	  super.redeploy
+	  ev1.redeploy
+	  ev2.redeploy
   }
 
   override def toString = "(" + ev1 + " and " + ev2 + ")"
@@ -353,9 +361,6 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
     ev1 += onEvt
     ev2 += onEvt
     
-    //DEBUG
-    ev1._branches += showTree _
-    ev2._branches += showTree _
   }
 
   /*
@@ -367,6 +372,13 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
   }
 
   override def toString = "(" + ev1 + " || " + ev2 + ")"
+  
+  
+   protected[events] override def redeploy{
+	  super.redeploy
+	  ev1.redeploy
+	  ev2.redeploy
+  }
 }
 
 /*
@@ -387,9 +399,6 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
   */
   protected override def deploy {
     ev += onEvt
-    
-    //DEBUG
-    ev._branches += showTree _
   }
 
   /*
@@ -397,6 +406,11 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
   */
   protected override def undeploy {
     ev -= onEvt
+  }
+  
+   protected[events] override def redeploy{
+	  super.redeploy
+	  ev.redeploy
   }
 
   override def toString = getClass.getName
@@ -423,16 +437,18 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
   */
   protected override def deploy {
     ev += onEvt
-    
-    //DEBUG
-    ev._branches += showTree _
-  }
+      }
 
   /*
   * Unregister from the referenced events
   */
   protected override def undeploy {
     ev -= onEvt
+  }
+  
+     protected[events] override def redeploy{
+	  super.redeploy
+	  ev.redeploy
   }
 
   override def toString = "(" + ev + " && <predicate>)"
@@ -593,6 +609,12 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
     ev1 -= onEvt1
     ev2 -= onEvt2
   }
+  
+  protected[events] override def redeploy {
+	  super.redeploy
+	  ev1.redeploy
+	  ev2.redeploy
+  }
 
   override def toString = "(" + ev1 + " then " + ev2 + ")"
 
@@ -627,19 +649,23 @@ class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode
   
   lazy val onAccepted = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     myReacts.clear
+  //  println("OnAccepted " + this)
     // if the id is already set, the except event was received
     if(this.id != id) {
+   // 	println("getReacts")
       this.id = id
       reactions(id, v, reacts)
     }
   }
   
   lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+	//  println("onExpcept " + this)
     // the except event is received, set the id to
     if(this.id != id) {
       this.id = id
     } else {
       // remove all my registered reactions
+    //	println("removeReacts")
       reacts --= myReacts
       myReacts.clear
     }
@@ -657,17 +683,22 @@ class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode
   }
   
   override def deploy {
+	  except += onExcept
+	  except.redeploy
     accepted += onAccepted
-    except += onExcept
+    accepted.redeploy
     
-    //DEBUG
-    accepted._branches += showTree _
-    except._branches += showTree _
   }
-  
+   
   override def undeploy {
     accepted -= onAccepted
     except -= onExcept
+  }
+  
+     protected[events] override def redeploy{
+	  super.redeploy
+	  except.redeploy
+	  accepted.redeploy
   }
 }
 

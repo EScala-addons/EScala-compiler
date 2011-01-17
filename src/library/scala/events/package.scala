@@ -8,11 +8,11 @@ package object events {
 	  (e && ie.active _) || (e.and(ie.before, (t : T, s : Any )  => t))
 
   private[events] def not_within[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
-	  (e && (_ => ! ie.active)) \ ie.complement.after
+	  (e && (_ => ! ie.active)) \ ie.before
   private[events] def strictlyWithin[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
-	  (e && ie.active _) \ ie.complement.before
+	  (e && ie.active _) \ ie.after
   private[events] def not_strictlyWithin[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
-	  (e && (_ => ! ie.active)) || e.and(ie.complement.before, (t : T, s : Any) => t)
+	  (e && (_ => ! ie.active)) || e.and(ie.after, (t : T, s : Any) => t)
   
   implicit def betweenFromTupled[T,U](t : (Event[T],Event[U])) = between(t._1,t._2)
   
