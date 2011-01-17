@@ -149,8 +149,11 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val PartialFunctionClass = getClass("scala.PartialFunction")
     lazy val SymbolClass          = getClass("scala.Symbol")
     lazy val StringClass          = getClass(sn.String)
+    lazy val StringModule         = StringClass.linkedClassOfClass
     lazy val ClassClass           = getClass(sn.Class)
       def Class_getMethod = getMember(ClassClass, nme.getMethod_)
+    lazy val DynamicClass         = getClass("scala.Dynamic")
+      val Dynamic_OptInvokeMaxArgCount = 7
 
     // fundamental modules
     lazy val PredefModule: Symbol = getModule("scala.Predef")
@@ -159,6 +162,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       def Predef_error    = getMember(PredefModule, nme.error)
       def Predef_identity = getMember(PredefModule, nme.identity)
       def Predef_conforms = getMember(PredefModule, nme.conforms)
+      def Predef_wrapRefArray = getMember(PredefModule, nme.wrapRefArray)
     lazy val ConsoleModule: Symbol = getModule("scala.Console")
     lazy val ScalaRunTimeModule: Symbol = getModule("scala.runtime.ScalaRunTime")
     lazy val SymbolModule: Symbol = getModule("scala.Symbol") 
@@ -249,6 +253,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
 
     // arrays and their members
     lazy val ArrayModule  = getModule("scala.Array")
+      def ArrayModule_overloadedApply = getMember(ArrayModule, nme.apply)
     lazy val ArrayClass   = getClass("scala.Array")
       def Array_apply      = getMember(ArrayClass, nme.apply)
       def Array_update     = getMember(ArrayClass, nme.update)

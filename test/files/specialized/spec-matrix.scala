@@ -29,9 +29,11 @@ object Test {
   def main(args: Array[String]) {
     val m = randomMatrix(200, 100)
     val n = randomMatrix(100, 200)
-
+    
     mult(m, n)
     println("*")
+    
+    println(runtime.BoxesRunTime.integerBoxCount)
   }
 
   def randomMatrix(n: Int, m: Int) = {

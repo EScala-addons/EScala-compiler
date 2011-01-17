@@ -246,6 +246,7 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
     val view_ : NameType           = "view"
     val wait_ : NameType           = "wait"
     val withFilter: NameType       = "withFilter"
+    val wrapRefArray: NameType     = "wrapRefArray"
     val zip: NameType              = "zip"
 
     // unencoded operators
