@@ -1,3 +1,5 @@
+package truie
+
 import scala.events.VarList
 
 observable class Transaction {

@@ -40,8 +40,7 @@ trait ObservableClassUtil {
    * Will crate a Tree representing the type:
    * scala.events.AllObject[tparams]
    */
-  protected[events] def genAllObjectTpt(tparams: List[Tree]) = {
-    val generics = tupleize(tparams)
+  protected[events] def genAllObjectTpt(tparams: Tree) = {
     AppliedTypeTree(
       Select(
         Select(
@@ -50,15 +49,15 @@ trait ObservableClassUtil {
         ),
         newTypeName("AllObject")
       ),
-    generics)
+    List(tparams))
   }
   
-  protected[events] def newAllObject(tparams: List[Tree], exec: Name) = {
-    val dependentType =
-      Select(
-        Ident(exec),
-        newTypeName("AllObject")) /* TODO is that name ok ? is it important ? */
-    makeNew(genAllObjectTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
-  }
-
+//  protected[events] def newAllObject(tparams: List[Tree], exec: Name) = {
+//    val dependentType =
+//      Select(
+//        Ident(exec),
+//        newTypeName("AllObject")) /* TODO is that name ok ? is it important ? */
+//    makeNew(genAllObjectTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
+//  }
+//
 }

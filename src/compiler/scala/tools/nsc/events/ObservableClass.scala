@@ -49,6 +49,8 @@ abstract class ObservableClass extends Transform
       val sym = tree.symbol
       tree match {
           case pd: PackageDef =>
+                val oldNamer = namer
+                namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
                 obsobjects = List()
                 val tpack = super.transform(pd).asInstanceOf[PackageDef]                 
 
@@ -57,6 +59,7 @@ abstract class ObservableClass extends Transform
                 val result = treeCopy.PackageDef(tpack, tpack.pid, 
                         obsobjects ::: tpack.stats)
 
+                namer = oldNamer
                 result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
@@ -68,15 +71,18 @@ abstract class ObservableClass extends Transform
                   println("Transform of observable class called for :  " + name)
               }
               val pos = sym.pos
-              val newobj = ModuleDef ( NoMods, 
+              val parents = List(genAllObjectTpt(TypeTree(sym.tpe)), TypeTree(ScalaObjectClass.tpe))
+              val newobj = atPos(pos)(ModuleDef ( NoMods, 
                                       name+"$all", 
-                                      Template(Nil,emptyValDef, NoMods, List(Nil), List(Nil), Nil, NoPosition)
-                                      )
-              obsobjects = newobj :: obsobjects
+                                      Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
+                                      ))
+              oldNamer.enterSyntheticSym(newobj)
+              obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
+              //obsobjects = newobj:: obsobjects
             }
-            
+            namer = oldNamer
+             
             tree 
-
           case _ => super.transform(tree)
         }
     }
