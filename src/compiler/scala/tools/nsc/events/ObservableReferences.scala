@@ -74,7 +74,9 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
                   meth match {
                     case Select(prefix, _) =>
                     	println("PREFIX -___-___- " + prefix)
-                      Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
+                      val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
+                      println("tester: " + tester + ", owner: " )
+                      tester
                     case _ => /* should not happen here */
                       unit.error(tree.pos, "a reference to a method is expected")
                       EmptyTree
@@ -87,25 +89,35 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
           }
         case se @ SetEvent(kind, field) =>
            val fieldSymbol = field.symbol           
-            	println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ", fieldsymbol: " + field.symbol)
+println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ", fieldsymbol: " + field.symbol)
             	
            val eventName = kind match {
                 case BeforeSet() => buildBeforeEventName(fieldSymbol)
                 case AfterSet() => buildAfterEventName(fieldSymbol)
-                case _ => println("no catching " + kind)
+                case _ => 
+                	unit.error(se.symbol.pos, "no catching " + kind)
+    							null
+
               }
-          	println("resulting eventName: " + eventName )
-          	println("\n TREE: ")
-            println("\n -------------------")
           	
-           
-            localTyper.typed(
+           localTyper.typed(
                 atPos(tree.pos) {
-                 Select(tree, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
+                  field match {
+                    case Select(prefix, fieldSymbol) =>
+                    	println("PREFIX -___-___- " + prefix + ", ---> " + fieldSymbol )
+                    	println("USING EVENTNAME: " + eventName)
+                      val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol
+                      println("tester: " + tester)
+                      tester
+                      //EmptyTree
+                      
+                    case _ =>
+                      unit.error(tree.pos, "a reference to a method is expected")
+                      EmptyTree
+                  }
                 }
               )
-             
-             super.transform(tree)
+              //super.transform(tree)
               
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
           // super call in an observable method

@@ -1620,20 +1620,42 @@ trait Typers { self: Analyzer =>
     
    	
    	def typedSetEvent(ev: SetEvent, mode: Int, pt: Type): Tree = {  
-//println("given event OWN: " + ev.kind + ", " + ev.field)
+println("given event OWN: " + ev.kind + ", " + ev.field)
    		// Feldreferenzuntersuchung:
    		val typedRef = typed(ev.field)
-//println("typedRef OWN: " + typedRef)
+println("typedRef OWN: " + typedRef)
    		val typedEvent = treeCopy.SetEvent(ev, ev.kind, typedRef)
-//println("typedEvent OWN: " + typedEvent)
-   		val sym = typedRef.symbol
-//println("sym OWN: " + sym)
    		
-   		val eventType = 
-          typeRef(ImperativeEventClass.typeConstructor.prefix, 
-                  ImperativeEventClass, List(typedRef.tpe))
+println("typedEvent OWN: " + typedEvent)
+   		val sym = typedRef.symbol
+println("sym OWN: " + sym + "..... " + sym.tpe)
+   		
+   		
       
-//println("eventType OWN: " + eventType)
+      println("typedRef.tpe: " + typedRef.tpe)
+      
+       val dataType : Either[Type,(Type, Type)] =
+        sym.tpe match {
+          case meth @ PolyType(params, rtpe) =>
+            //val method = params.last.owner
+            val paramType = typedRef.tpe
+            println("paramType, rtpe " + paramType + ", " + rtpe)
+            ev.kind match {
+                case BeforeSet() => Left(paramType)
+                case AfterSet() => Left(tupleType(List(paramType, rtpe)))
+            }
+          case _ => 
+            error(sym.pos, "UNKNOWN FIELD-EVENT EXPRESSION")
+            Left(ErrorType)
+      }
+      
+      println("dataType OWN: " + dataType)
+      
+      val eventType = 
+          typeRef(ImperativeEventClass.typeConstructor.prefix, 
+                  ImperativeEventClass, List(dataType.left.get))
+      
+println("eventType OWN: " + eventType)
    		// Tree return:
    		typedEvent.setType(eventType)
    	}
@@ -1651,7 +1673,7 @@ trait Typers { self: Analyzer =>
             case _ => typedRef
         }
       
-      //println("typedMeth: " + typedMeth)
+      println("typedMeth: " + typedMeth)
       
       val dataType : Either[Type,(Type, Type)] =
         typedMeth.tpe match {
@@ -1663,6 +1685,7 @@ trait Typers { self: Analyzer =>
                 case 1 => meth.paramTypes.head
                 case _ => tupleType(meth.paramTypes)
             }
+            println("RTPE: " + rtpe + ", termsymbol: " + rtpe.termSymbol + "-> type " + rtpe.termSymbol.tpe)
             ev.kind match {
                 case BeforeExec() => Left(paramType)
                 case AfterExec() => Left(tupleType(List(paramType, rtpe)))
@@ -1673,7 +1696,7 @@ trait Typers { self: Analyzer =>
             Left(ErrorType)
       }
       
-      //println("dataType: " + dataType)
+      println("dataType: " + dataType)
       
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
 

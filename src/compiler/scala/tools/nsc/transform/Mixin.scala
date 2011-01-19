@@ -647,12 +647,15 @@ abstract class Mixin extends InfoTransform with ast.TreeDSL {
       import lazyVals._
       
       def bitmapOperation[T](field: Symbol, transientCase: => T, privateCase: => T, rest: => T): T =
+      	{
+      	println("\n----\nerror field: " + field + "\n----\n")
         if (field.accessed.hasAnnotation(TransientAttr))
           transientCase
         else if (field.hasFlag(PRIVATE))
           privateCase
         else
           rest
+         }
       
       /**
        *  Private or transient lazy vals use bitmaps that are private for the class context,

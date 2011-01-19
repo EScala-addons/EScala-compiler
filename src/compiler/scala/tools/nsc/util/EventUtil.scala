@@ -35,11 +35,12 @@ trait EventUtil {
         meth.name + paramString + suffix
       case pt @ PolyType(tparams, result) =>
       	var myList = List(pt.typeSymbol.rawname)
-      	val paramString = myList.foldLeft("_=$")(
+      	val paramString = myList.foldLeft("_$eq$")(
           (prefix, suf) => prefix + suf
         )
         println("------ paramString: ---------- " + paramString)
         meth.name + paramString + suffix
+        //meth.name + "_="
       case _ => ""
      
     }

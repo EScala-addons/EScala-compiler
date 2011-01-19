@@ -161,34 +161,33 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
             
             // the event modifiers
               val modifiers = 
-                  (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | (
-                    if(!sym.isObservable && !sym.isPrivate)
+                  (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) 
+                  //| (
+                    //if(!sym.isObservable && !sym.isPrivate)
                       // only instrumented => protected events
-                      PROTECTED //| LOCAL
-                    else
+                      //PROTECTED //| LOCAL
+                    //else
                       // the method is observable or private => same visibility
-                      FINAL
-                  )
-                  
+                      //FINAL
+                  //)
+              
 println("SYMBOL in instrumentation: " + sym)
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
-              println("sym: ___________________ " + sym)
-              println("name: ___________________ " + name)
-              println("beforeEvName: ------------------- " + beforeEvName)
-              //println("afterEvName: ------------------- " + afterEvName)
-              println("genEvent with params (dd, modifiers, beforeEvName): __________ " + dd + ", " + modifiers + ", " + beforeEvName)
-              println("")
+//println("sym: ___________________ " + sym)
+//println("name: ___________________ " + name)
+//println("beforeEvName: ------------------- " + beforeEvName)
+//println("afterEvName: ------------------- " + afterEvName)
+//println("genEvent with params (dd, modifiers, beforeEvName): __________ " + dd + ", " + modifiers + ", " + beforeEvName)
+//println("")
               
               
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
                                      newAfterSetEvent(tupledGenericParam ::: List(retType)), pos)
-              //var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
-                                    //newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
+
               // enter the declaration of the events in the class declarations 
-              // AG: -> namer references class?
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
 
@@ -197,11 +196,10 @@ println("SYMBOL in instrumentation: " + sym)
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
               
-              //println("AFTER TYPING created Events:")
-              //println("beforeEvent: " + beforeEv)
-              //println("afterEvent: " + afterEv)
+//println("AFTER TYPING created Events:")
+//println("beforeEvent: " + beforeEv)
+//println("afterEvent: " + afterEv)
               
-              // the wrapper method
 
               // list of parameters
               val args = vparams.flatten[global.ValDef].map(vd => Ident(vd.name))
@@ -226,8 +224,6 @@ println("SYMBOL in instrumentation: " + sym)
              println("tupledEvArgs (evArgs.size >1?: " + tupledEvArgs)
               
               val wrapperBody =
-                  // AG: using beforeEv.symbol instead of beforeEvName because 
-                  // "$eq" becomes "=" after namer.enterSyntheticSym(beforeEv) so referencing not correct?
                   atPos(pos)(Block(
                             Apply(
                                 Ident(beforeEv.symbol),
@@ -241,9 +237,20 @@ println("SYMBOL in instrumentation: " + sym)
                         ))
                 
                 
+                println("WRAPPER BODY: " + wrapperBody + "\n_____\n")
+                var wrapperMeth = atPos(pos)(DefDef(mods, name,
+                     tparams,
+                     vparams,
+                     retType, wrapperBody)).setSymbol(sym)
+              	wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
+              	
+              	println("WRAPPER METH FieldInstru: " + wrapperMeth + "\n_____\n")
+              	
+                
+                
                 synthesized = beforeEv :: afterEv :: synthesized
 
-        	treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperBody)
+        	treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperMeth)
         	//super.transform(tree)
        	
         case _ => super.transform(tree)
