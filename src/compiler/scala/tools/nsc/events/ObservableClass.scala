@@ -49,8 +49,6 @@ abstract class ObservableClass extends Transform
       val sym = tree.symbol
       tree match {
           case pd: PackageDef =>
-                val oldNamer = namer
-                namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
                 var oldobsobjects = obsobjects
                 obsobjects = List()
                 val tpack = super.transform(pd).asInstanceOf[PackageDef]                 
@@ -60,14 +58,12 @@ abstract class ObservableClass extends Transform
                 val result = treeCopy.PackageDef(tpack, tpack.pid, 
                         obsobjects ::: tpack.stats)
 
-                namer = oldNamer
-
                 obsobjects = oldobsobjects
                 result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
             val oldNamer = namer
-            namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
+            namer = analyzer.newNamer(namer.context.make(tree, sym.owner, sym.owner.info.decls))
 
             if (sym.isInstrumented) {
               if (settings.Yeventsdebug.value) {
@@ -79,9 +75,8 @@ abstract class ObservableClass extends Transform
                                       name+"$all", 
                                       Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
                                       ))
-              oldNamer.enterSyntheticSym(newobj)
+              namer.enterSyntheticSym(newobj)
               obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
-              //obsobjects = newobj:: obsobjects
             }
             namer = oldNamer
              
