@@ -41,7 +41,7 @@ trait IntervalEvent[Start] {
     def undeploy = IntervalEvent.this.undeploy
 
     //DEBUG
-    override def toString = IntervalEvent.this.toString
+    //override def toString = IntervalEvent.this.toString
   }
 
   protected[events] def deploy {
@@ -158,7 +158,7 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
 }
 
 class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T] {
-  override def toString: String = "between(" + start + "," + end + ")"
+//  override def toString: String = "between(" + start + "," + end + ")"
 
 }
 
@@ -206,3 +206,23 @@ class ExecutionEvent[T] extends IntervalEvent[T] {
   protected[events] override def undeploy {}
 
 }
+
+
+class ExistenceIntervalNode[T,U](list: VarList[T], 
+		evf: T => IntervalEvent[U]) extends BetweenEvent[U](
+				list.any((t:T) => evf(t).before) || 
+					(list.elementAdded && (t => evf(t).active) map ((t:T) => evf(t).getValue)),
+				list.any((t:T) => evf(t).after) || (list.elementRemoved && (t => evf(t).active) )){
+	
+	private var counter : Int = 0
+	
+	override def startCondition(v:U) = counter == 0
+	override def endCondition(v:Any) = counter == 1
+	
+	override def deploy{
+		start += (_ => counter += 1)
+		end += (_ => counter -= 1)
+		super.deploy
+	}
+}
+

@@ -767,6 +767,8 @@ class VarList[T]() extends Iterable[T] {
    */
   def any[U](evf: T => Event[U]) = new EventNodeExists(this, evf)
   
+  def any[U](evf: T => IntervalEvent[U]) = new ExistenceIntervalNode[T,U](this,evf)
+  
   /*
   * Events notifying over the changes in the list
   */
