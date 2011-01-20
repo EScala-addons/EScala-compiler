@@ -29,7 +29,17 @@ class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
   // This shows the new Syntax.
   // compiler error: type events.this.Event[...] does not take parameter
 //  evt resized(dx: Int, dy: Int)  = emptyevent //lowerright.moved(dx,dy)
-  evt resized2(dx: Int, dy: Int)  = moved(dy,dx)
+
+  evt normal(x: Int, y: Int) = moved(x,y)
+  evt changes(x: Int, y: Int) = moved(y,x)
+
+  evt normal_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))(x,y)
+
+//  evt inverted(x: Int, y: Int) = moved(y,x)
+//  evt inverted_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))
+
+//  evt drop(x: Int) = moved(x,_)
+//  evt drop_old(x: Int) = moved.map((a: Int,_)=>(b))
   
 
   /*def resizeBy(dx: Int, dy: Int) = {
@@ -50,9 +60,13 @@ object Test {
 //    rectangle resizeBy(1, 2)
 //  rectangle.resized -= rectangleResized _
     
-    rectangle.resized2 += rectangleMoved _
-    rectangle moveBy(1,1)
-    rectangle.resized2 -= rectangleMoved _
+    rectangle.normal += rectangleMoved _
+    rectangle.changes += rectangleMoved _
+    rectangle.normal_old += rectangleMoved2 _
+    rectangle moveBy(1,3)
+    rectangle.normal -= rectangleMoved _
+    rectangle.changes -= rectangleMoved _
+    rectangle.normal_old -= rectangleMoved2 _
   }
 
 //def pointMoved() {
@@ -61,6 +75,10 @@ object Test {
 
   def rectangleMoved(x: Int,y: Int) {
     println("rectangle moved by x: " + x + " y: " + y )
+  }
+
+  def rectangleMoved2(x: Int,y: Int) {
+    println("rectangle2 moved by x: " + x + " y: " + y )
   }
 
 //def rectangleResized() {
