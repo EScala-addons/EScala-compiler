@@ -2660,16 +2660,6 @@ trait Typers { self: Analyzer =>
           }
           
 /* --- end unapply  --- */
-        // @ESCALA
-        // @EXP-LANG
-        case TypeRef(a, b, c) =>
-          println("a: " +a)
-          println("b: " +b)
-          println("c: " +c)
-          //println(context.scope)
-          //doTypedApply(tree, fun setType fun.tpe.widen, args, mode, pt)
-          fun
-        // @ESCALA end
         case _ =>
           errorTree(tree, fun+" of type "+fun.tpe+" does not take parameters")
       }
