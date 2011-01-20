@@ -3,9 +3,6 @@ package truie
 import scala.events.VarList
 
 observable class Transaction {
-//class Transaction {
-
-    Transaction.all += this
 
     observable def credit() {
         System.out.println("Credit")
@@ -19,8 +16,7 @@ observable class Transaction {
 class TransactionManager {
 
 //    evt e_bcredit = BeforeExec(Transaction.credit)
-    evt e_bcredit = Transaction.all.any(e => beforeExec(e.credit)) 
-//    evt e_bcredit[Unit] = Transaction.all.any(e => beforeExec(e.credit))
+    evt e_bcredit = Transaction$all.all.any(e => beforeExec(e.credit)) 
     
     e_bcredit += BeforeCredit _
 
@@ -29,9 +25,9 @@ class TransactionManager {
     }
 }
 
-object Transaction {
-    var all = new VarList[Transaction]
-}
+//object Transaction {
+//    var all = new VarList[Transaction]
+//}
 
 object Test {
     def main(args: Array[String]) {
@@ -41,6 +37,7 @@ object Test {
         var t2 = new Transaction
         t1.credit
         t2.debit
+        System.out.println("Objects : "+Transaction$all.all)
     }
 }
 

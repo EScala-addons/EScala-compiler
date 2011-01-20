@@ -798,7 +798,7 @@ object Observable {
 }
 
 class AllObject[T] {
-  private var all = new VarList[T]
+  var all = new VarList[T]
 
   def register(instance: T) {
     all += instance

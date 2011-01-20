@@ -63,24 +63,38 @@ abstract class ObservableClass extends Transform
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
             val oldNamer = namer
-            namer = analyzer.newNamer(namer.context.make(tree, sym.owner, sym.owner.info.decls))
 
             if (sym.isInstrumented) {
+              namer = analyzer.newNamer(namer.context.make(tree, sym.owner, sym.owner.info.decls))
               if (settings.Yeventsdebug.value) {
                   println("Transform of observable class called for :  " + name)
               }
               val pos = sym.pos
               val parents = List(genAllObjectTpt(TypeTree(sym.tpe)), TypeTree(ScalaObjectClass.tpe))
+
+              // Create newobj
               val newobj = atPos(pos)(ModuleDef ( NoMods, 
                                       name+"$all", 
                                       Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
                                       ))
               namer.enterSyntheticSym(newobj)
               obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
+
+              // Add self to allobjects in the constructor
+              var apply = atPos(pos)(localTyper.typed(Apply(Select(Ident(name+"$all"),newTermName("register")),List(This(sym)))))
+
+              val tclazz = super.transform(cd).asInstanceOf[ClassDef]
+              var template = tclazz.impl
+              template = treeCopy.Template(template, template.parents,
+                                        template.self, apply :: template.body)
+              val result = treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
+              tclazz.tparams, template)
+              namer = oldNamer
+
+              result
+            } else {
+                tree
             }
-            namer = oldNamer
-             
-            tree 
           case _ => super.transform(tree)
         }
     }
