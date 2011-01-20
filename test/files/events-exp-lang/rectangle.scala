@@ -31,7 +31,9 @@ class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
 //  evt resized(dx: Int, dy: Int)  = emptyevent //lowerright.moved(dx,dy)
 
   evt normal(x: Int, y: Int) = moved(x,y)
-  evt normal_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))
+  evt changes(x: Int, y: Int) = moved(y,x)
+
+  evt normal_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))(x,y)
 
 //  evt inverted(x: Int, y: Int) = moved(y,x)
 //  evt inverted_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))
@@ -59,9 +61,11 @@ object Test {
 //  rectangle.resized -= rectangleResized _
     
     rectangle.normal += rectangleMoved _
+    rectangle.changes += rectangleMoved _
     rectangle.normal_old += rectangleMoved2 _
-    rectangle moveBy(1,1)
+    rectangle moveBy(1,3)
     rectangle.normal -= rectangleMoved _
+    rectangle.changes -= rectangleMoved _
     rectangle.normal_old -= rectangleMoved2 _
   }
 

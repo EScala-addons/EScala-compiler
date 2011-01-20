@@ -1643,13 +1643,25 @@ trait Typers { self: Analyzer =>
       sym resetFlag EVENT
       sym updateInfo tpe
 
+      val rhs2 = edef.rhs match {
+        case Apply(fun, args) =>
+          Apply(
+            Select(edef.rhs,nme.map),
+            List(Function(
+              edef.vparams,
+              Apply(
+                Select(Ident("scala"),newTermName("Tuple2")),
+                args))))
+        case _ => edef.rhs
+      }
+
       val rhs1 =
         if (edef.rhs.isEmpty) {
           if (sym.isVariable && sym.owner.isTerm && phase.id <= currentRun.typerPhase.id)
             error(edef.pos, "local variables must be initialized")
-          edef.rhs
+          rhs2
         } else {
-          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(edef.rhs, EXPRmode | BYVALmode, tpt.tpe)
+          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(rhs2, EXPRmode | BYVALmode, tpt.tpe)
         }
       // generate new AST-node
       treeCopy.ValDef(edef, edef.mods & ~EVENT, edef.name, tpt, checkDead(rhs1)) setType NoType
