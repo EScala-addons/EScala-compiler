@@ -1646,7 +1646,7 @@ trait Typers { self: Analyzer =>
       val rhs2 = edef.rhs match {
         case Apply(fun, args) =>
           Apply(
-            Select(edef.rhs,nme.map),
+            Select(fun,nme.map),
             List(Function(
               edef.vparams,
               Apply(
