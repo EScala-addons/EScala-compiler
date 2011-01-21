@@ -1,5 +1,5 @@
 /* NEST (New Scala Test)
- * Copyright 2007-2010 LAMP/EPFL
+ * Copyright 2007-2011 LAMP/EPFL
  * @author Philipp Haller
  */
 
@@ -115,9 +115,5 @@ object NestUI {
       outline("debug: ")
       println(msg)
     }
-  }
-  def shout(msg: String) {
-    warning("something is wrong:")
-    println(msg)
   }
 }

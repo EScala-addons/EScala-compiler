@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -1261,7 +1261,7 @@ abstract class ClassfileParser {
     override def complete(sym: Symbol) {
       alias.initialize
       val tparams1 = cloneSymbols(alias.typeParams)
-      sym.setInfo(polyType(tparams1, alias.tpe.substSym(alias.typeParams, tparams1)))
+      sym.setInfo(typeFun(tparams1, alias.tpe.substSym(alias.typeParams, tparams1)))
     }
   }
   

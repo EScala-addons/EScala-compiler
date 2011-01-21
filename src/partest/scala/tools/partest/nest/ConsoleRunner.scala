@@ -1,5 +1,5 @@
 /* NEST (New Scala Test)
- * Copyright 2007-2010 LAMP/EPFL
+ * Copyright 2007-2011 LAMP/EPFL
  * @author Philipp Haller
  */
 
@@ -15,7 +15,7 @@ import RunnerUtils._
 import scala.tools.nsc.Properties.{ versionMsg, setProp }
 import scala.tools.nsc.util.CommandLineParser
 import scala.tools.nsc.io
-import io.{ Path, Process }
+import io.{ Path }
 
 class ConsoleRunner extends DirectRunner {
   import PathSettings.{ srcDir, testRoot }

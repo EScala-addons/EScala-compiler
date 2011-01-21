@@ -170,6 +170,7 @@ self =>
 
   var moreWorkAtNode: Int = -1
   var nodesSeen = 0
+  var noWorkFoundAtNode: Int = -1
 
   /** Called from runner thread and signalDone:
    *  Poll for interrupts and execute them immediately.
@@ -197,12 +198,12 @@ self =>
     logreplay("atnode", nodeWithWork()) match {
       case Some(id) => 
         debugLog("some work at node "+id+" current = "+nodesSeen)
-        assert(id >= nodesSeen) 
+//        assert(id >= nodesSeen) 
         moreWorkAtNode = id
       case None =>
     }
 
-    if (nodesSeen == moreWorkAtNode) {
+    if (nodesSeen >= moreWorkAtNode) {
       if (logreplay("cancelled", pendingResponse.isCancelled)) { 
         throw CancelException
       }
@@ -226,7 +227,10 @@ self =>
             debugLog("quitting work item: "+action)
           }
         case None =>
-          debugLog("no work found")
+          if (nodesSeen > noWorkFoundAtNode) {
+            debugLog("no work found")
+            noWorkFoundAtNode = nodesSeen
+          }
       }
     }
   }    
@@ -480,6 +484,32 @@ self =>
     }
   }
 
+  def getLinkPos(sym: Symbol, source: SourceFile, response: Response[Position]) {
+    informIDE("getLinkPos "+sym+" "+source)
+    respond(response) {
+      reloadSources(List(source))
+      val owner = sym.owner
+      if (owner.isClass) {
+        val pre = adaptToNewRunMap(ThisType(owner))
+        val newsym = pre.decl(sym.name) filter { alt =>
+          sym.isType || matchesType(pre.memberType(alt), pre.memberType(sym), false)
+        }
+        if (newsym == NoSymbol) {
+          debugLog("link not found "+sym+" "+source+" "+pre)
+          NoPosition
+        } else if (newsym.isOverloaded) {
+          debugLog("link ambiguous "+sym+" "+source+" "+pre+" "+newsym.alternatives)
+          NoPosition
+        } else {
+          debugLog("link found for "+newsym+": "+newsym.pos)
+          newsym.pos
+        }
+      } else 
+        debugLog("link not in class "+sym+" "+source+" "+owner)
+        NoPosition
+    }
+  }
+
   def stabilizedType(tree: Tree): Type = tree match {
     case Ident(_) if tree.symbol.isStable => 
       singleType(NoPrefix, tree.symbol)
@@ -515,6 +545,7 @@ self =>
     def addScopeMember(sym: Symbol, pre: Type, viaImport: Tree) =
       if (!sym.name.decode.containsName(Dollar) &&  
           !sym.isSynthetic &&
+          sym.hasRawInfo &&
           !locals.contains(sym.name)) {
         locals(sym.name) = new ScopeMember(
           sym, 
@@ -554,13 +585,6 @@ self =>
   def typeMembers(pos: Position): Stream[List[TypeMember]] = {
     var tree = typedTreeAt(pos)
 
-    // Let's say you have something like val x: List[Int] and ypu want to get completion after List
-    // Then the tree found at first is a TypeTree, ????
-    tree match {
-      case tt : TypeTree if tt.original != null => tree = tt.original // ??? 
-      case _ => 
-    }
-
     // if tree consists of just x. or x.fo where fo is not yet a full member name
     // ignore the selection and look in just x.
     tree match {
@@ -571,6 +595,7 @@ self =>
     val context = doLocateContext(pos)
 
     if (tree.tpe == null)
+      // TODO: guard with try/catch to deal with ill-typed qualifiers.
       tree = analyzer.newTyper(context).typedQualifier(tree)
       
     debugLog("typeMembers at "+tree+" "+tree.tpe)
@@ -592,7 +617,7 @@ self =>
       }
     }        
 
-    /** Create a fucntion application of  a given view function to `tree` and typechecked it.
+    /** Create a function application of a given view function to `tree` and typechecked it.
      */
     def viewApply(view: SearchResult): Tree = {
       assert(view.tree != EmptyTree)

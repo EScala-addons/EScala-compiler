@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -28,7 +28,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val RootPackage: Symbol = {
       val rp = NoSymbol.newValue(NoPosition, nme.ROOTPKG)
         .setFlag(FINAL | MODULE | PACKAGE | JAVA)
-        .setInfo(PolyType(List(), RootClass.tpe))
+        .setInfo(NullaryMethodType(RootClass.tpe))
       RootClass.sourceModule = rp
       rp
     }
@@ -153,7 +153,6 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     lazy val ClassClass           = getClass(sn.Class)
       def Class_getMethod = getMember(ClassClass, nme.getMethod_)
     lazy val DynamicClass         = getClass("scala.Dynamic")
-      val Dynamic_OptInvokeMaxArgCount = 7
 
     // fundamental modules
     lazy val PredefModule: Symbol = getModule("scala.Predef")
@@ -234,9 +233,9 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     )
     lazy val EqualsPatternClass = {
       val clazz = newClass(ScalaPackageClass, tpnme.EQUALS_PATTERN_NAME, Nil)
-      clazz setInfo PolyType(List(newTypeParam(clazz, 0)), ClassInfoType(anyparam, new Scope, clazz))
+      clazz setInfo polyType(List(newTypeParam(clazz, 0)), ClassInfoType(anyparam, new Scope, clazz))
     }
-      
+
     // collections classes
     lazy val ConsClass          = getClass("scala.collection.immutable.$colon$colon")
     lazy val IterableClass      = getClass("scala.collection.Iterable")
@@ -594,7 +593,7 @@ trait Definitions extends reflect.generic.StandardDefinitions {
                     else*/ List(p)
       println("creating " + name + " with parents " + parents) */
       clazz.setInfo(
-        PolyType(
+        polyType(
           List(tparam),
           ClassInfoType(List(AnyRefClass.tpe, p), new Scope, clazz)))
     }
@@ -626,11 +625,11 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     private def newPolyMethodCon(owner: Symbol, name: TermName, tcon: Symbol => Symbol => Type): Symbol = {
       val msym = newMethod(owner, name)
       val tparam = newTypeParam(msym, 0)
-      msym.setInfo(PolyType(List(tparam), tcon(tparam)(msym)))
+      msym.setInfo(polyType(List(tparam), tcon(tparam)(msym)))
     }
 
     private def newParameterlessMethod(owner: Symbol, name: TermName, restpe: Type) =
-      newMethod(owner, name).setInfo(PolyType(List(),restpe))
+      newMethod(owner, name).setInfo(NullaryMethodType(restpe))
 
     private def newTypeParam(owner: Symbol, index: Int): Symbol =
       owner.newTypeParameter(NoPosition, newTypeName("T" + index)) setInfo TypeBounds.empty
@@ -896,9 +895,9 @@ trait Definitions extends reflect.generic.StandardDefinitions {
       Any_## = newMethod(AnyClass, nme.HASHHASH, Nil, inttype) setFlag FINAL
 
       Any_isInstanceOf = newPolyMethod(
-        AnyClass, nme.isInstanceOf_, tparam => booltype) setFlag FINAL
+        AnyClass, nme.isInstanceOf_, tparam => NullaryMethodType(booltype)) setFlag FINAL
       Any_asInstanceOf = newPolyMethod(
-        AnyClass, nme.asInstanceOf_, tparam => tparam.typeConstructor) setFlag FINAL
+        AnyClass, nme.asInstanceOf_, tparam => NullaryMethodType(tparam.typeConstructor)) setFlag FINAL
 
       // members of class java.lang.{ Object, String }
       Object_## = newMethod(ObjectClass, nme.HASHHASH, Nil, inttype) setFlag FINAL

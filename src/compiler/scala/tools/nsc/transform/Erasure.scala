@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author Martin Odersky
  */
 
@@ -400,21 +400,12 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
     }
 
   val deconstMap = new TypeMap {
-   def apply(tp: Type): Type = tp match {
-     case PolyType(_, _) => mapOver(tp)
-     case MethodType(_, _) => mapOver(tp)
-     case _ => tp.deconst
-   }
-  }
-
-  /** The symbol which is called by a bridge;
-   *  @pre phase > erasure
-   */
-  def bridgedSym(bridge: Symbol) = 
-    bridge.owner.info.nonPrivateDecl(bridge.name) suchThat { sym => 
-      !sym.isBridge && matchesType(sym.tpe, bridge.tpe, true) &&
-      (sym.tpe.resultType <:< bridge.tpe.resultType)
+    def apply(tp: Type): Type = tp match {
+      case PolyType(_, _) => mapOver(tp)
+      case MethodType(_, _) => mapOver(tp) // nullarymethod was eliminated during uncurry
+      case _ => tp.deconst
     }
+  }
 
 // -------- erasure on trees ------------------------------------------
 
@@ -440,6 +431,9 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
 
   /** The modifier typer which retypes with erased types. */
   class Eraser(context: Context) extends Typer(context) {  
+    private def safeToRemoveUnbox(cls: Symbol): Boolean = 
+      (cls == definitions.NullClass) || isBoxedValueClass(cls)
+      
     /** Box `tree' of unboxed type */
     private def box(tree: Tree): Tree = tree match {
       case LabelDef(name, params, rhs) =>
@@ -454,9 +448,12 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
             assert(x != ArrayClass)
             tree match {
               /** Can't always remove a Box(Unbox(x)) combination because the process of boxing x
-               *  may lead to throwing an exception.
+               *  may lead to throwing an exception. 
+               *  
+               *  This is important for specialization: calls to the super constructor should not box/unbox specialized
+               *  fields (see TupleX). (ID)
                */
-              case Apply(boxFun, List(arg)) if isUnbox(tree.symbol) && isBoxedValueClass(arg.tpe.typeSymbol) =>
+              case Apply(boxFun, List(arg)) if isUnbox(tree.symbol) && safeToRemoveUnbox(arg.tpe.typeSymbol) =>
                 log("boxing an unbox: " + tree + " and replying with " + arg)
                 arg
               case _ =>
@@ -964,7 +961,17 @@ abstract class Erasure extends AddInterfaces with typechecker.Analyzer with ast.
               args)
 
         case Apply(fn @ Select(qual, _), Nil) if (fn.symbol == Any_## || fn.symbol == Object_##) =>
-          Apply(gen.mkAttributedRef(scalaRuntimeHash), List(qual))
+          // This is unattractive, but without it we crash here on ().## because after
+          // erasure the ScalaRunTime.hash overload goes from Unit => Int to BoxedUnit => Int.
+          // This must be because some earlier transformation is being skipped on ##, but so
+          // far I don't know what.  We also crash on null.## but unless we want to implement
+          // my good idea that null.## works (like null == "abc" works) we have to NPE.
+          val arg = qual.tpe.typeSymbol match {
+            case UnitClass  => BLOCK(qual, REF(BoxedUnit_UNIT))       // ({ expr; UNIT }).##
+            case NullClass  => Typed(qual, TypeTree(ObjectClass.tpe)) // (null: Object).##
+            case _          => qual
+          }
+          Apply(gen.mkAttributedRef(scalaRuntimeHash), List(arg))
 
         case Apply(fn, args) =>
           if (fn.symbol == Any_asInstanceOf)

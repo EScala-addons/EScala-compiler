@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -665,6 +665,12 @@ abstract class TreeBrowsers {
                         Document.group("(" :/:
                                        symsToDocument(params) :/:
                                        "), ") :/:
+                        toDocument(result) :: ")")
+        )
+
+      case NullaryMethodType(result) =>
+        Document.group(
+          Document.nest(4,"NullaryMethodType(" :/:
                         toDocument(result) :: ")")
         )
 

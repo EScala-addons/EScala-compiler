@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -369,34 +369,23 @@ trait NamesDefaults { self: Analyzer =>
     if (givenArgs.length < params.length) {
       val (missing, positional) = missingParams(givenArgs, params)
       if (missing forall (_.hasDefaultFlag)) {
-        val defaultArgs = missing map (p => {
-          var default1 = qual match {
-            case Some(q) => gen.mkAttributedSelect(q.duplicate, defaultGetter(p, context))
-            case None =>    
-              val dgetter = defaultGetter(p, context)
-              if (dgetter == NoSymbol) {
-                println("no getter for "+p+" in "+p.owner)
-                println(p.owner.paramss)
-                var ctx = context
-                while (ctx.owner != p.owner.owner) {
-                  println("inner scope: "+ctx.scope+ctx.scope.hashCode+" "+ctx.owner)
-                  ctx = ctx.outer
-                }
-                while (ctx.owner == p.owner.owner) {
-                  println("this scope: "+ctx.scope+ctx.scope.hashCode+" "+ctx.owner)
-                  ctx = ctx.outer
-                }
-              }
-              gen.mkAttributedRef(dgetter)
-              
-          }
-          default1 = if (targs.isEmpty) default1
-                     else TypeApply(default1, targs.map(_.duplicate))
-          val default2 = (default1 /: previousArgss)((tree, args) =>
-            Apply(tree, args.map(_.duplicate)))
-          atPos(pos) {
-            if (positional) default2
-            else AssignOrNamedArg(Ident(p.name), default2)
+        val defaultArgs = missing flatMap (p => {
+          val defGetter = defaultGetter(p, context)
+          if (defGetter == NoSymbol) None // prevent crash in erroneous trees, #3649
+          else {
+            var default1 = qual match {
+              case Some(q) => gen.mkAttributedSelect(q.duplicate, defGetter)
+              case None    => gen.mkAttributedRef(defGetter)
+
+            }
+            default1 = if (targs.isEmpty) default1
+                       else TypeApply(default1, targs.map(_.duplicate))
+            val default2 = (default1 /: previousArgss)((tree, args) =>
+              Apply(tree, args.map(_.duplicate)))
+            Some(atPos(pos) {
+              if (positional) default2
+              else AssignOrNamedArg(Ident(p.name), default2)
+            })
           }
         })
         (givenArgs ::: defaultArgs, Nil)

@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author Martin Odersky
  */
 
@@ -103,7 +103,7 @@ abstract class SuperAccessors extends transform.Transform with transform.TypingT
             var superAccTpe = clazz.thisType.memberType(sym) 
             if (sym.isModule && !sym.isMethod) {
               // the super accessor always needs to be a method. See #231
-              superAccTpe = PolyType(List(), superAccTpe)
+              superAccTpe = NullaryMethodType(superAccTpe)
             }
             superAcc.setInfo(superAccTpe.cloneInfo(superAcc))
             //println("creating super acc "+superAcc+":"+superAcc.tpe)//DEBUG

@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -113,6 +113,8 @@ trait Implicits {
      */
     private def containsError(tp: Type): Boolean = tp match {
       case PolyType(tparams, restpe) => 
+        containsError(restpe)
+      case NullaryMethodType(restpe) => 
         containsError(restpe)
       case MethodType(params, restpe) => 
         params.exists(_.tpe.isError) || containsError(restpe)
@@ -957,7 +959,7 @@ trait Implicits {
 
     def allImplicits: List[SearchResult] = {
       def search(iss: Infoss, isLocal: Boolean) = applicableInfos(iss, isLocal).values
-      search(context.implicitss, true) ++ search(implicitsOfExpectedType, false) toList
+      (search(context.implicitss, true) ++ search(implicitsOfExpectedType, false)).toList.filter(_.tree ne EmptyTree)
     }
   }
 

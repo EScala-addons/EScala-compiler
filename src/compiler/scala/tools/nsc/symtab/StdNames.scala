@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -203,6 +203,7 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
     val head: NameType             = "head"
     val identity: NameType         = "identity"
     val inlinedEquals: NameType    = "inlinedEquals"
+    val invokeDynamic: NameType    = "invokeDynamic"
     val isArray: NameType          = "isArray"
     val isDefinedAt: NameType      = "isDefinedAt"
     val isEmpty: NameType          = "isEmpty"

@@ -1,5 +1,5 @@
 /* NSC -- new Scala compiler
- * Copyright 2005-2010 LAMP/EPFL
+ * Copyright 2005-2011 LAMP/EPFL
  * @author  Martin Odersky
  */
 
@@ -568,6 +568,7 @@ trait Typers extends Modes {
       case ExistentialType(_, tpe1) => isNarrowable(tpe1)
       case AnnotatedType(_, tpe1, _) => isNarrowable(tpe1)
       case PolyType(_, tpe1) => isNarrowable(tpe1)
+      case NullaryMethodType(tpe1) => isNarrowable(tpe1)
       case _ => !phase.erasedTypes
     } 
 
@@ -702,7 +703,7 @@ trait Typers extends Modes {
       case OverloadedType(pre, alts) if !inFunMode(mode) => // (1)
         inferExprAlternative(tree, pt)
         adapt(tree, mode, pt, original)
-      case PolyType(List(), restpe) => // (2)
+      case NullaryMethodType(restpe) => // (2)
         adapt(tree setType restpe, mode, pt, original)
       case TypeRef(_, ByNameParamClass, List(arg))
       if ((mode & EXPRmode) != 0)   => // (2)
@@ -1617,8 +1618,15 @@ trait Typers extends Modes {
       // because of initialization issues; bug #473
       for (arg <- superArgs ; tree <- arg) {
         val sym = tree.symbol
-        if (sym != null && sym.isModule && (sym.info.baseClasses contains clazz))
-          error(rhs.pos, "super constructor cannot be passed a self reference unless parameter is declared by-name")
+        if (sym != null && (sym.info.baseClasses contains clazz)) {          
+          if (sym.isModule)
+            error(tree.pos, "super constructor cannot be passed a self reference unless parameter is declared by-name")
+          tree match {
+            case This(qual) =>
+              error(tree.pos, "super constructor arguments cannot reference unconstructed `this`")
+            case _ => ()
+          }
+        }
       }
       
       if (superConstr.symbol.isPrimaryConstructor) {
@@ -1666,6 +1674,8 @@ trait Typers extends Modes {
       if (meth.owner.isStructuralRefinement && meth.allOverriddenSymbols.isEmpty && !(meth.isPrivate || meth.hasAccessBoundary)) {
         val tp: Type = meth.tpe match {
           case mt: MethodType => mt
+          case NullaryMethodType(res) => res
+ // TODO_NMT: drop NullaryMethodType from resultType?
           case pt: PolyType => pt.resultType
           case _ => NoType
         }
@@ -1699,7 +1709,7 @@ trait Typers extends Modes {
                 case tpt: Tree =>
                   val alias = enclClass.newAliasType(useCase.pos, name.toTypeName)
                   val tparams = cloneSymbols(tpt.tpe.typeSymbol.typeParams, alias)
-                  alias setInfo polyType(tparams, appliedType(tpt.tpe, tparams map (_.tpe)))
+                  alias setInfo typeFun(tparams, appliedType(tpt.tpe, tparams map (_.tpe)))
                   context.scope.enter(alias)
                 case _ =>
               }
@@ -2250,6 +2260,7 @@ trait Typers extends Modes {
     }
 
     def doTypedApply(tree: Tree, fun0: Tree, args: List[Tree], mode: Int, pt: Type): Tree = {
+      // TODO_NMT: check the assumption that args nonEmpty
       var fun = fun0
       if (fun.hasSymbol && fun.symbol.isOverloaded) {
         // remove alternatives with wrong number of parameters without looking at types.
@@ -3223,7 +3234,7 @@ trait Typers extends Modes {
           val expr2 = Function(List(), expr1) setPos expr1.pos
           new ChangeOwnerTraverser(context.owner, expr2.symbol).traverse(expr2)
           typed1(expr2, mode, pt)
-        case PolyType(List(), restpe) =>
+        case NullaryMethodType(restpe) =>
           val expr2 = Function(List(), expr1) setPos expr1.pos
           new ChangeOwnerTraverser(context.owner, expr2.symbol).traverse(expr2)
           typed1(expr2, mode, pt)
@@ -3546,17 +3557,14 @@ trait Typers extends Modes {
           // try to expand according to Dynamic rules.
 
           if (qual.tpe.widen.typeSymbol isNonBottomSubClass DynamicClass) {
-            val op = context.tree match {
+            var dynInvoke = Apply(Select(qual, nme.invokeDynamic), List(Literal(Constant(name.toString))))
+            context.tree match {
               case Apply(tree1, args) if tree1 eq tree => 
-                "_invoke_" +
-                (if (args.length <= Dynamic_OptInvokeMaxArgCount) args.length.toString
-                 else "")
-              case _ =>
-                "_select_"
+                ;
+              case _ => 
+                dynInvoke = Apply(dynInvoke, List())
             }
-            return typed1(
-              util.trace("dynatype: ")(Apply(Select(qual, op), List(Literal(Constant(name.toString))))), 
-                          mode, pt)
+            return typed1(util.trace("dynatype: ")(dynInvoke), mode, pt)
           }
                   
           if (settings.debug.value) {
