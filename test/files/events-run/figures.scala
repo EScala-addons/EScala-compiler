@@ -140,7 +140,7 @@ class Connector(val start: Figure,
 
 class MutableDrawing {
     val figures = new VarList[Figure]
-    evt invalidated = figures.any(_.invalidated)
+    evt invalidated = figures.any((f : Figure) => f.invalidated)
     
     def addFigure(fig: Figure) { figures += fig }
     def removeFigure(fig: Figure) { figures -= fig }

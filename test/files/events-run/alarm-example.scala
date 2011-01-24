@@ -7,7 +7,7 @@ abstract class Alarm {
 	//Recursive Definition of Events is impossible (isn't it?)
 	imperative evt intrusionDetected[Unit]
 	evt alarm[Unit] = intrusionDetected within isArmed
-	val isAlarmed : IntervalEvent[Unit,Unit] = between(alarm,afterExec(disarm))
+	val isAlarmed : IntervalEvent[Unit] = between(alarm,afterExec(disarm))
 	
 	def arm() : Unit
 	def disarm() : Unit
