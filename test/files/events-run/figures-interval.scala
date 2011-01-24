@@ -1,6 +1,5 @@
 import scala.events._
 
-
 class Figure {
 	
 	val changeOp = (execution(moveBy) || execution(resize)).map(getBounds _)

@@ -3,7 +3,6 @@
 
 \usepackage[stable]{footmisc} 
 \usepackage[ngerman]{hyperref}
-\usepackage[ngerman]{hyperref}
 \usepackage[utf8]{inputenc}
 \usepackage{longtable}
 \usepackage{multirow}
@@ -30,10 +29,13 @@
   \newif\ifTUDmargin\TUDmarginfalse \ifTUDmargin\makeatletter
     \TUD@setmarginpar{2}
   \makeatother\fi
+<<<<<<< HEAD
 =======
     \TUD@setmarginpar{2}
   \makeatother\fi
 >>>>>>> DD added
+=======
+>>>>>>> 2a34938ee3d19810a4650424d721addca2126710
 
 \newlength{\longtablewidth}
 \setlength{\longtablewidth}{0.7\linewidth}
@@ -42,13 +44,9 @@
 
 \title{IntervalEvents in EScala: Design}
 \subtitle{Michael Kutschke und Frank Englert}
-\subtitle{Michael Kutschke und Frank Englert}
-
 
 \begin{document}
 
-=======
->>>>>>> DD added
 \maketitle
 
 \tableofcontents
@@ -61,14 +59,7 @@
 \end{enumerate}
 
 \section{Grundlegende Definitionen}
-Todo:
 
-before, after, complement als Member des Intervall-Events, dabei ist das complement ein Lazy object,
-
-das before und das After werden überladen, wenn das after-Event nicht das Intervall beenden soll. Dies ist z.B. beim ExecutionEvent der Fall.
-
-\section{Grundlegende Definitionen}
-<<<<<<< HEAD
 Sei \before{\Interval} : Event das Ereignis, das den Beginn des Intervalls int angibt
 und \after{\Interval} : Event jenes, welches das Ende von int angibt. Dies kann in
 unterschiedlicher Form erfolgen:
@@ -83,6 +74,7 @@ In der jetzigen Fassung bedeutet dies einfach, ob man sich zeitlich innerhalb de
 Intervalls befindet. Das Umschalten wude bisher als Sink realisiert. Dies führt
 jedoch zu Indeterminismus, sodass e \&\& within(between(e,e')) beim ersten Vorkommen 
 von e nicht unbedingt immer ausgeführt wird. Dies ist unschön und sollte vermieden werden.
+
 Daher sollte active eine andere Semantik erhalten und als reaction aktualisiert
 werden. So kann sichergestellt werden, dass der Zustand von active zu jedem
 Zeitpunkt bekannt ist. Die Semantik ändert sich also wie in Abbildung
@@ -445,7 +437,4 @@ null & t > 6
 \include{implementation}
 
 \listoffigures\addcontentsline{toc}{section}{\listfigurename}
-=======
-\listoffigures\addcontentsline{toc}{section}{\listfigurename}
->>>>>>> DD added
 \end{document}
