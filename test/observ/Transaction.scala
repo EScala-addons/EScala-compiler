@@ -1,6 +1,7 @@
-package truie
+//package truie
 
 import scala.events.VarList
+import scala.events.allInstances
 
 observable class Transaction {
 
@@ -15,12 +16,14 @@ observable class Transaction {
 
 class TransactionManager {
 
-//    evt e_bcredit = BeforeExec(Transaction.credit)
-    evt e_bcredit = Transaction$all.all.any(e => beforeExec(e.credit)) 
+    // Typing ok, but does not translate to what we want (see TODOs in
+    // ObservableClass transformer)
+    evt e_bcredit = beforeExec(allInstances[Transaction].credit)
+    //evt e_bcredit = Transaction$all.all.any(e => beforeExec(e.credit)) 
     
-    e_bcredit += BeforeCredit _
+    //e_bcredit += beforeCredit _
 
-    def BeforeCredit() {
+    def beforeCredit() {
         System.out.println("Be prepared to receive money")
     }
 }
@@ -37,7 +40,7 @@ object Test {
         var t2 = new Transaction
         t1.credit
         t2.debit
-        System.out.println("Objects : "+Transaction$all.all)
+        System.out.println("Objects : "+allInstances[Transaction])
     }
 }
 

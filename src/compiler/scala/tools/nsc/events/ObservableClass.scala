@@ -44,6 +44,7 @@ abstract class ObservableClass extends Transform
     import symtab.Flags._
 
     private var obsobjects: List[Tree] = null
+    private var clazz: ClassDef = null
     
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
@@ -62,6 +63,8 @@ abstract class ObservableClass extends Transform
                 result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
+            val oldclazz = clazz
+            clazz = cd
             val oldNamer = namer
 
             if (sym.isInstrumented) {
@@ -91,10 +94,46 @@ abstract class ObservableClass extends Transform
               tclazz.tparams, template)
               namer = oldNamer
 
+              println(name+"$all mis dans l'arbre")
+              clazz = oldclazz
               result
             } else {
-                tree
+                super.transform(tree)
             }
+          case TypeApply(allInstances, (generic: Tree) :: Nil)
+            if (allInstances.symbol == MethAllInstances) =>
+              if (settings.Yeventsdebug.value)
+                println("Encountered the allInstances symbol. Parameter: "+generic)
+              /*
+               * TODOs:
+               *   - 'generic' contains the name of the package (e.g.
+               *     truie.Transaction) and that trigger an error "symbol no
+               *     found". Why ?
+               *   - allInstances[C].event must be replaced by:
+                     C$all.all.any(c => c.event)
+                     problem: the information that 'event' is an ExecEvent is
+                     lost at that point of compiling. So it's not so easy to
+                     match.
+                     2 solutions:
+                       - put that transformation between observables
+                         and obsrefs and match the ExecEvent (not sure it will
+                         work, though ...) ; and transform that ExecEvent.
+                       - match the Selects which generic is a TypeApply ; and
+                         then transform that Select.
+
+               */
+              val allMember = Select(
+                  Ident(generic+"$all"),
+                  //Ident(newTermName("Transaction$all")),
+                  newTermName("all")
+              )
+              println("Replace the allInstances call by "+allMember)
+              atPhase(currentRun.phaseNamed("typer")) {
+                localTyper.typed(
+                  atPos(allInstances.pos) {allMember}
+                )
+              }
+
           case _ => super.transform(tree)
         }
     }
