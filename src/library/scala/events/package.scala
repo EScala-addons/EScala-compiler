@@ -10,6 +10,8 @@ package object events {
 
   def ?[T](e: =>Event[T]) = new EventNodeCond(e)
 
+  def allInstances[C]: C = throw new NoSuchMethodException("this code has to be compiled with EScala")
+
 }
 
 // vim: set ts=2 sw=2 et:
