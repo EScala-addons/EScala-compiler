@@ -97,7 +97,7 @@ trait ObservableUtil {
         ),
         newTypeName("ExecutionEvent")
       ),
-    beforeG ::: afterG)
+    beforeG )//::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
   }
 
   protected[events] def genIntervalEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
@@ -111,7 +111,7 @@ trait ObservableUtil {
         ),
         newTypeName("IntervalEvent")
       ),
-    beforeG ::: afterG)
+    beforeG ) //::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
   }
 
   protected[events] def superBeforeExec(meth: Name) =
