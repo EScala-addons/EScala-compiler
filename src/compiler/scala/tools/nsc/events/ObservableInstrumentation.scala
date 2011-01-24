@@ -221,7 +221,7 @@ abstract class ObservableInstrumentation extends Transform
               val execEvName = buildExecutionEventName(sym)
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeExecEvent(tupledGenericParam, execEvName), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
-                                     newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName), pos)
+                                     newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName, List(retType)), pos)
               var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
                                     newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
               // enter the declaration of the events in the class declarations

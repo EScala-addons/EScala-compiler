@@ -50,11 +50,11 @@ trait ObservableUtil {
     makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
-  protected[events] def newAfterExecEvent(tparams: List[Tree], exec: Name) = {
+  protected[events] def newAfterExecEvent(tparams: List[Tree], exec: Name, appliedTypeTreeGenerics : List[Tree]) = {
     val dependentType =
-      Select(
+      AppliedTypeTree( Select(
         Ident(exec),
-        newTypeName("AfterExecution"))
+        newTypeName("AfterExecution")), appliedTypeTreeGenerics)
     makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
@@ -97,7 +97,7 @@ trait ObservableUtil {
         ),
         newTypeName("ExecutionEvent")
       ),
-    beforeG )//::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
+      beforeG )//::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
   }
 
   protected[events] def genIntervalEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
@@ -111,7 +111,7 @@ trait ObservableUtil {
         ),
         newTypeName("IntervalEvent")
       ),
-    beforeG ) //::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
+      beforeG )//::: afterG) //@IntervalEvents changed Model to ONE TypeParameter
   }
 
   protected[events] def superBeforeExec(meth: Name) =
