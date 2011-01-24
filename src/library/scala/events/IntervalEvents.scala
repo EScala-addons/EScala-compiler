@@ -151,10 +151,12 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
     ref --
   }
 
-  protected[events] override def redeploy {
+  /*protected[events] override def redeploy {
     super.redeploy
     punktEv.redeploy
-  }
+  }*/
+  
+  protected override def pullFkt(Id : Int): Option[T] = punktEv.pullIsActivated(Id)
 }
 
 class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T] {
