@@ -1645,13 +1645,24 @@ trait Typers { self: Analyzer =>
 
       val rhs2 = edef.rhs match {
         case Apply(fun, args) =>
+          println("args: "+args)
+          val source : List[ValDef] = 
+            args.map((ident) => {
+              println("ident: "+ident)
+              ident match {
+                case Ident(name) => ValDef(context.owner.newValue(name))
+                case _ => ValDef(NoSymbol)
+                }
+              })
+          println("source: "+source)
+          val target : Tree = gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
+          println("target: "+target)
+
           Apply(
             Select(fun,nme.map),
             List(Function(
-              edef.vparams,
-              Apply(
-                Select(Ident("scala"),newTermName("Tuple2")),
-                args))))
+              source,
+              target)))
         case _ => edef.rhs
       }
 
