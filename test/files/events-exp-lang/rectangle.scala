@@ -30,11 +30,11 @@ class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
   // compiler error: type events.this.Event[...] does not take parameter
 //  evt resized(dx: Int, dy: Int)  = emptyevent //lowerright.moved(dx,dy)
 
-  evt normal(a: Int, b: Int) = moved(a,b)
-//  evt changes(x: Int, y: Int) = moved(y,x)
-//  evt drop(x: Int) = moved(x,_)
+  evt normal(x: Int, y: Int) = moved(x,y)
+  evt changes(x: Int, y: Int) = moved(y,x)
+  evt drop(x: Int) = moved(x,_)
 
-//  evt normal_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))(x,y)
+  evt normal_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))(x,y)
 
 //  evt inverted(x: Int, y: Int) = moved(y,x)
 //  evt inverted_old(x: Int, y: Int) = moved.map((a: Int,b: Int)=>(a,b))

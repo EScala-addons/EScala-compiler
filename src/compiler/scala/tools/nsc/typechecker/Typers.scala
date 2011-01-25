@@ -1643,28 +1643,43 @@ trait Typers { self: Analyzer =>
       sym resetFlag EVENT
       sym updateInfo tpe
 
-      val rhs2 = edef.rhs match {
-        case Apply(fun, args) =>
-          println("args: "+args)
-          val source : List[ValDef] = 
-            args.map((ident) => {
-              println("ident: "+ident)
-              ident match {
-                case Ident(name) => ValDef(context.owner.newValue(name))
-                case _ => ValDef(NoSymbol)
+      var vparams = edef.vparams
+
+      def bar(rhs: Tree) : Tree = {
+        rhs match {
+          case Apply(fun, args) =>
+            println("fun: "+fun)
+            val source : List[ValDef] = 
+              args.foldRight(List[ValDef]())((ident: Tree, rest: List[ValDef]) => {
+                ident match {
+                  case Ident(name) =>
+                    vparams.find((vdef) => (vdef.name == name)) match {
+                      case Some(vdef: ValDef) => vdef :: rest
+                      case _ => ValDef(sym.owner.newValue(name) setInfo NoType) :: rest
+                                  // error(edef.pos,"blaa") // todo
+                    }
+                  case _ => rest
                 }
               })
-          println("source: "+source)
-          val target : Tree = gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
-          println("target: "+target)
+            val target : Tree = gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
 
-          Apply(
-            Select(fun,nme.map),
-            List(Function(
-              source,
-              target)))
-        case _ => edef.rhs
+            Apply(
+              Select(fun,nme.map),
+              List(Function(
+                source,
+                target)))
+          case Function(params, foo) => {
+            println("foo: "+foo)
+            vparams = params ::: vparams
+            val barfoo = bar(foo)
+            println("barfoo: "+barfoo)
+            barfoo
+          }
+          case _ => edef.rhs
+        }
       }
+
+      val rhs2 = bar(edef.rhs)
 
       val rhs1 =
         if (edef.rhs.isEmpty) {
@@ -1692,8 +1707,7 @@ trait Typers { self: Analyzer =>
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
             //val method = params.last.owner
-            val paramType = 
-              params.length match {
+            val paramType = params.length match {
                 case 0 => UnitClass.tpe  
                 case 1 => meth.paramTypes.head
                 case _ => tupleType(meth.paramTypes)
