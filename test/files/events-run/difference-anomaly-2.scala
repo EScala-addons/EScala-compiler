@@ -19,7 +19,7 @@ val dummyfkt = (a : Any) => { }
 dummy1 += dummyfkt
 dummy2 += dummyfkt
 
-evt buggy = event or (dummy1 \ dummy2) //second operand can never happen
+evt buggy = event || (dummy1 \ dummy2) //second operand can never happen
 
 buggy += (_ => println("OK"))
 

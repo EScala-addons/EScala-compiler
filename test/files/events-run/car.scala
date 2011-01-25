@@ -56,6 +56,7 @@ object Test {
 		car.accelerate(1000)
 		car.gearUp()
 		car.accelerate(0)
+		car.gearUp()
 		car.gearDown()
 		car.gearDown()
 		car.accelerate(30000000)
