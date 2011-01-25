@@ -122,7 +122,7 @@ class Drawing {
   
   // drawing change = change of one of the figures
   lazy val listChanged = figures.elementAdded || figures.elementRemoved
-  lazy val drawingChanged = figures.any(_.figureChanged) || listChanged
+  lazy val drawingChanged = figures.any((f : Figure)=> f.figureChanged) || listChanged
   
   // an explicit event to force refreshing
   lazy val refresh = new ImperativeEvent[Unit]
