@@ -35,6 +35,7 @@ trait MarkerPhases {
    */
   protected[events] var toInstrument: MultiMap[Symbol, Symbol] = new HashMap[Symbol, Set[Symbol]] with MultiMap[Symbol, Symbol]
 
+
   /**
    * This phase traverses the compilation units and collects all the methods that are to locally instrument
    */
@@ -52,14 +53,17 @@ trait MarkerPhases {
         // we first traverse all the compilation units
         super.run
         // then we eliminate the collected methods that are useless
-        if(settings.Yeventsdebug.value)
+        //if(settings.Yeventsdebug.value)
           println("methods to internally instrument (method, classes using reference to their implicit events): " + toInstrument.mkString("\n", "\n", "\n================="))
         // for each class symbol, contains the list of methods that are to instrument in this class
         val methodsToInstrument: MultiMap[Symbol, Symbol] = new HashMap[Symbol, Set[Symbol]] with MultiMap[Symbol, Symbol]
         // only one class per method per hierarchy must mark the method to be instrumented
+        
+println("1 TOINSTRUMENT: " + toInstrument + "\nMETHODSTOINSTRUMENT: " + methodsToInstrument + "\n")
         toInstrument.foreach(onePerHierarchy(methodsToInstrument))
         toInstrument = methodsToInstrument
-        if(settings.Yeventsdebug.value)
+println("3 TOINSTRUMENT: " + toInstrument + "\nMETHODSTOINSTRUMENT: " + methodsToInstrument + "\n")
+        //if(settings.Yeventsdebug.value)
           println("method to instrument in each class: " + methodsToInstrument.mkString("\n", "\n", "\n================="))
       }
 
@@ -94,7 +98,7 @@ trait MarkerPhases {
               super.traverse(tree)
             case ExecEvent(kind, meth) if(!meth.symbol.isInstrumented) =>
               // so far we are sure that a non instrumented referenced method is defined in this class or in a parent class
-              if(settings.Yeventsdebug.value)
+              //if(settings.Yeventsdebug.value)
                 println("referencing method " + meth.symbol + " in class " + currentThis)
               val declaringClass = meth.symbol.owner
               toInstrument.addBinding(meth.symbol, currentThis)

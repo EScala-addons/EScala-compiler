@@ -1625,15 +1625,10 @@ println("given event OWN: " + ev.kind + ", " + ev.field)
    		val typedRef = typed(ev.field)
 println("typedRef OWN: " + typedRef)
    		val typedEvent = treeCopy.SetEvent(ev, ev.kind, typedRef)
-   		
 println("typedEvent OWN: " + typedEvent)
    		val sym = typedRef.symbol
 println("sym OWN: " + sym + "..... " + sym.tpe)
-   		
-   		
-      
-      println("typedRef.tpe: " + typedRef.tpe)
-      
+println("typedRef.tpe: " + typedRef.tpe)
        val dataType : Either[Type,(Type, Type)] =
         sym.tpe match {
           case meth @ PolyType(params, rtpe) =>
@@ -1647,14 +1642,21 @@ println("sym OWN: " + sym + "..... " + sym.tpe)
           case _ => 
             error(sym.pos, "UNKNOWN FIELD-EVENT EXPRESSION")
             Left(ErrorType)
+      }      
+println("dataType OWN: " + dataType)
+      //check that the method is observable or defined in the class or in a parent class
+      val isLocal = typedRef match {
+        case Select(This(_), _) | Select(Super(_, _), _) => true
+        case _ => false
       }
-      
-      println("dataType OWN: " + dataType)
+println("checking conditions isMethod, isInstrumented, isLocal: " + sym.isMethod + ", " + sym.isInstrumented + ", " + isLocal)
+      if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
+        error(typedRef.pos, "the argument must be an observable method or a local method")
+      }
       
       val eventType = 
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
-                  ImperativeEventClass, List(dataType.left.get))
-      
+                  ImperativeEventClass, List(dataType.left.get))      
 println("eventType OWN: " + eventType)
    		// Tree return:
    		typedEvent.setType(eventType)
@@ -1663,18 +1665,12 @@ println("eventType OWN: " + eventType)
 
     def typedExecEvent(ev: ExecEvent, mode: Int, pt: Type): Tree = {
       val typedRef = typed(ev.meth, FUNmode, WildcardType)
-      
-      
-      //println("typedRef: " + typedRef)
-
-      val typedMeth = 
+			val typedMeth = 
         typedRef match {
             case Apply(tree, List()) => tree
             case _ => typedRef
         }
-      
-      println("typedMeth: " + typedMeth)
-      
+println("typedMeth: " + typedMeth)
       val dataType : Either[Type,(Type, Type)] =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
@@ -1685,7 +1681,7 @@ println("eventType OWN: " + eventType)
                 case 1 => meth.paramTypes.head
                 case _ => tupleType(meth.paramTypes)
             }
-            println("RTPE: " + rtpe + ", termsymbol: " + rtpe.termSymbol + "-> type " + rtpe.termSymbol.tpe)
+println("RTPE: " + rtpe + ", termsymbol: " + rtpe.termSymbol + "-> type " + rtpe.termSymbol.tpe)
             ev.kind match {
                 case BeforeExec() => Left(paramType)
                 case AfterExec() => Left(tupleType(List(paramType, rtpe)))
@@ -1695,13 +1691,8 @@ println("eventType OWN: " + eventType)
             error(typedMeth.pos, "a reference to a method expected")
             Left(ErrorType)
       }
-      
-      println("dataType: " + dataType)
-      
+println("dataType: " + dataType)
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
-
-			//println("typedEvent: " + typedEvent)
-			
       val sym = typedMeth.symbol      
       //check that the method is observable or defined in the class or in a parent class
       val isLocal = typedMeth match {
@@ -1711,10 +1702,8 @@ println("eventType OWN: " + eventType)
       if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
         error(typedMeth.pos, "the argument must be an observable method or a local method")
       }
-      
-      //println("sym: " + sym)
-      
-      // eventType = Event[dataType]      
+//println("sym: " + sym)
+			// eventType = Event[dataType]      
       val eventType = 
         if(dataType.isRight)
           typeRef(IntervalEventClass.typeConstructor.prefix,
@@ -1722,10 +1711,8 @@ println("eventType OWN: " + eventType)
         else
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))
-      
-      //println("eventType: " + eventType)
-      
-      typedEvent.setType(eventType)
+//println("eventType: " + eventType)
+			typedEvent.setType(eventType)
     }
     // @ESCALA END
 

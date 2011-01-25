@@ -32,6 +32,8 @@ abstract class InstrumentMarker extends Transform
 
     var clazz: Symbol = NoSymbol
 
+println("classPARAMETER methodsInClass: " + methodsInClass)
+
     override def transform(tree: Tree) = {
       tree match {
         case cd @ ClassDef(mods, name, tparams, template @ Template(parents, self, body)) if methodsInClass.contains(cd.symbol) =>
@@ -40,10 +42,11 @@ abstract class InstrumentMarker extends Transform
           namer = analyzer.newNamer(namer.context.make(tree, clazz, clazz.info.decls))
 
           val methods = methodsInClass(cd.symbol)
+println("methodsinclass, cd.symbol: " + methods + "\n" + cd.symbol)
           // the synthesized overridden methods if any
           var synthesized: List[DefDef] = Nil
           methods.foreach(markMethod(_, clazz) match {
-              case Some(m) => synthesized = m :: synthesized
+              case Some(m) => println("case classDef: m " + m + ", " + m.symbol.owner); synthesized = m :: synthesized
               case None => /* do nothing */
             })
           // copy the method with the new overridden methods
@@ -53,7 +56,7 @@ abstract class InstrumentMarker extends Transform
                               (isSuperInstrumented(dd.symbol, dd.symbol.owner)) && !isSuperObservable(dd.symbol, dd.symbol.owner)) =>
           // if the method overrides an isntrumented method (but not observable) set the instrumented flag too
           // if the overridden method was declared as `observable' the type checker should already have checked it
-          println("instrument marker methode with: " + dd)
+          println("instrument marker methode with: " + dd + ", " + dd.symbol.owner)
           if(settings.Yeventsdebug.value)
             println(dd + " overrides instrumented method")
           dd.symbol.setFlag(INSTRUMENTED)

@@ -306,7 +306,7 @@ abstract class ObservableInstrumentation extends ObservableUtil {
                         ))
                 }
               
-              
+//println("WRAPPER BODY: " + wrapperBody + "\n_____\n")
                         
                         
               // the symbol and type information
@@ -316,6 +316,8 @@ abstract class ObservableInstrumentation extends ObservableUtil {
                      vparams,
                      retType, wrapperBody)).setSymbol(sym)
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
+              
+              println("WRAPPER METH: " + wrapperMeth + "\n_____\n")
               
               // add to the list of synthesized members
               synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
@@ -361,6 +363,7 @@ abstract class ObservableInstrumentation extends ObservableUtil {
 
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
 
+							println("WRAPPER METH else: " + wrapperMeth + "\n_____\n")
               // add to the list of synthesized members
               synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
 

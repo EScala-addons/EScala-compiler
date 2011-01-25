@@ -1,6 +1,7 @@
 class help
 {
-	observable var field = "testField"
+	var field = "testField" 
+	var noeventfield = "notUsed" 
 }
 
 class sub extends help
