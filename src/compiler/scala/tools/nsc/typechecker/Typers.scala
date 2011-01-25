@@ -1648,33 +1648,39 @@ trait Typers { self: Analyzer =>
       def bar(rhs: Tree) : Tree = {
         rhs match {
           case Apply(fun, args) =>
-            println("fun: "+fun)
             val source : List[ValDef] = 
               args.foldRight(List[ValDef]())((ident: Tree, rest: List[ValDef]) => {
                 ident match {
                   case Ident(name) =>
                     vparams.find((vdef) => (vdef.name == name)) match {
-                      case Some(vdef: ValDef) => vdef :: rest
+                      case Some(vdef: ValDef) =>
+                        val foo = 
+                          vdef.tpt match {
+                            case Ident(_) => vdef
+                            case _ => treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType
+                          }
+                        foo :: rest
                       case _ => ValDef(sym.owner.newValue(name) setInfo NoType) :: rest
                                   // error(edef.pos,"blaa") // todo
                     }
                   case _ => rest
                 }
               })
-            val target : Tree = gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
+
+            val target : Tree = 
+              if(edef.vparams.length == 1)
+                Ident(edef.vparams.head.symbol)
+              else
+                gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
 
             Apply(
               Select(fun,nme.map),
               List(Function(
                 source,
                 target)))
-          case Function(params, foo) => {
-            println("foo: "+foo)
+          case Function(params, foo) =>
             vparams = params ::: vparams
-            val barfoo = bar(foo)
-            println("barfoo: "+barfoo)
-            barfoo
-          }
+            bar(foo)
           case _ => edef.rhs
         }
       }
@@ -1689,6 +1695,7 @@ trait Typers { self: Analyzer =>
         } else {
           newTyper(typer1.context.make(edef, sym)).transformedOrTyped(rhs2, EXPRmode | BYVALmode, tpt.tpe)
         }
+
       // generate new AST-node
       treeCopy.ValDef(edef, edef.mods & ~EVENT, edef.name, tpt, checkDead(rhs1)) setType NoType
     }

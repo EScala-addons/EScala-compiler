@@ -64,10 +64,12 @@ object Test {
     rectangle.normal += rectangleMoved _
     rectangle.changes += rectangleMoved _
     rectangle.normal_old += rectangleMoved2 _
+    rectangle.drop += rectangleMoved3 _
     rectangle moveBy(1,3)
     rectangle.normal -= rectangleMoved _
     rectangle.changes -= rectangleMoved _
     rectangle.normal_old -= rectangleMoved2 _
+    rectangle.drop += rectangleMoved3 _
   }
 
 //def pointMoved() {
@@ -80,6 +82,10 @@ object Test {
 
   def rectangleMoved2(x: Int,y: Int) {
     println("rectangle2 moved by x: " + x + " y: " + y )
+  }
+
+  def rectangleMoved3(x: Int) {
+    println("rectangle2 moved by x: " + x)
   }
 
 //def rectangleResized() {
