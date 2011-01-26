@@ -13,7 +13,7 @@ class Rectangle(){
 
   evt drop_first(y :Int) = moved(_,y)
   evt drop_second(x: Int) = moved(x,_)
-//  evt drop_all() = moved(_,_)
+  evt drop_all() = moved(_,_)
 }
 
 object Test {
@@ -21,11 +21,11 @@ object Test {
     val rectangle = new Rectangle()
     rectangle.drop_first += evtDropFirstMsg _
     rectangle.drop_second += evtDropSecondMsg _
-//    rectangle.drop_all += evtDropAllMsg _
+    rectangle.drop_all += evtDropAllMsg _
     rectangle moveBy(1,3)
     rectangle.drop_first -= evtDropFirstMsg _
     rectangle.drop_second -= evtDropSecondMsg _
-//    rectangle.drop_all -= evtDropAllMsg _
+    rectangle.drop_all -= evtDropAllMsg _
   }
 
   def evtDropFirstMsg(x: Int) {

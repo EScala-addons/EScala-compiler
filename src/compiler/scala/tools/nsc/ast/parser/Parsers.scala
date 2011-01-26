@@ -2398,11 +2398,12 @@ self =>
           
           def paramClause(): List[ValDef] = {
             accept(LPAREN)
-            // check if next token is already RPAREN and create implicit Unit Type
             val params = new ListBuffer[ValDef]
-            params += param()
-            while (in.token == COMMA) {
-              in.nextToken(); params += param()
+            if (in.token != RPAREN) {
+              params += param()
+              while (in.token == COMMA) {
+                in.nextToken(); params += param()
+              }
             }
             accept(RPAREN)
             params.toList
