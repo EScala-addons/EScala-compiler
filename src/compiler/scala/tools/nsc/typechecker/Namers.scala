@@ -1222,7 +1222,6 @@ trait Namers { self: Analyzer =>
              
             // @ESCALA
             case EventDef(mods, _, vparams, _) =>
-              // todo return EventType
               newNamer(context.makeNewScope(tree, sym)).eventSig(mods, vparams)
             // @ESCALA END
 
