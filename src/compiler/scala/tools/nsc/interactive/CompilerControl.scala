@@ -53,11 +53,11 @@ trait CompilerControl { self: Global =>
    *  if it does not yet exist create a new one atomically
    *  Note: We want to get roid of this operation as it messes compiler invariants.
    */
-  @deprecated("use getUnitOf(s) instead")
+  @deprecated("use getUnitOf(s) or onUnitOf(s) instead")
   def unitOf(s: SourceFile): RichCompilationUnit = getOrCreateUnitOf(s)
     
   /** The compilation unit corresponding to a position */
-  @deprecated("use getUnitOf(pos.source) instead")
+  @deprecated("use getUnitOf(pos.source) or onUnitOf(pos.source) instead")
   def unitOf(pos: Position): RichCompilationUnit = getOrCreateUnitOf(pos.source)
 
   /** Removes the CompilationUnit corresponding to the given SourceFile
@@ -75,14 +75,14 @@ trait CompilerControl { self: Global =>
   }
 
   /** Locate smallest tree that encloses position
+   *  @pre Position must be loaded
    */
-  def locateTree(pos: Position): Tree = 
-    new Locator(pos) locateIn unitOf(pos).body
-
+  def locateTree(pos: Position): Tree = onUnitOf(pos.source) { unit => new Locator(pos) locateIn unit.body }
+   
   /** Locates smallest context that encloses position as an optional value.
    */
   def locateContext(pos: Position): Option[Context] =
-    locateContext(unitOf(pos).contexts, pos)
+    for (unit <- getUnit(pos.source); cx <- locateContext(unit.contexts, pos)) yield cx
 
   /** Returns the smallest context that contains given `pos`, throws FatalError if none exists.
    */
@@ -113,8 +113,13 @@ trait CompilerControl { self: Global =>
   /** Sets sync var `response` to the fully attributed & typechecked tree contained in `source`.
    *  @pre `source` needs to be loaded.
    */
-  def askType(source: SourceFile, forceReload: Boolean, response: Response[Tree]) =
+  def askType(source: SourceFile, forceReload: Boolean, response: Response[Tree]) = {
+    if (debugIDE) {
+      println("ask type called")
+      new Exception().printStackTrace()
+    }
     scheduler postWorkItem new AskTypeItem(source, forceReload, response)
+  }
 
   /** Sets sync var `response` to the position of the definition of the given link in 
    *  the given sourcefile. 
@@ -151,6 +156,29 @@ trait CompilerControl { self: Global =>
   /** Asks to do unit corresponding to given source file on present and subsequent type checking passes */
   def askToDoFirst(source: SourceFile) =
     scheduler postWorkItem new AskToDoFirstItem(source)
+
+  /** If source is not yet loaded, loads it, and starts a new run, otherwise
+   *  continues with current pass.
+   *  Waits until source is fully type checked and returns body in response.
+   *  @param source    The source file that needs to be fully typed.
+   *  @param response  The response, which is set to the fully attributed tree of `source`.
+   *                   If the unit corresponding to `source` has been removed in the meantime
+   *                   the a NoSuchUnitError is raised in the response.
+   */
+  def askLoadedTyped(source: SourceFile, response: Response[Tree]) =
+    scheduler postWorkItem new AskLoadedTypedItem(source, response)
+  
+  /** Build structure of source file. The structure consists of a list of top-level symbols
+   *  in the source file, which might contain themselves nested symbols in their scopes.
+   *  All reachable symbols are forced, i.e. their types are completed.
+   *  @param source       The source file to be analyzed
+   *  @param keepLoaded   If set to `true`, source file will be kept as a loaded unit afterwards.
+   *                      If keepLoaded is `false` the operation is run at low priority, only after
+   *                      everything is brought up to date in a regular type checker run.
+   *  @param response     The response, which is set to the list of toplevel symbols found in `source`
+   */
+  def askStructure(source: SourceFile, keepLoaded: Boolean, response: Response[List[Symbol]]) =
+    scheduler postWorkItem new AskStructureItem(source, keepLoaded, response)
 
   /** Cancels current compiler run and start a fresh one where everything will be re-typechecked
    *  (but not re-loaded).
@@ -227,6 +255,16 @@ trait CompilerControl { self: Global =>
     def apply() = self.getLinkPos(sym, source, response)
     override def toString = "linkpos "+sym+" in "+source
   }
+
+  class AskLoadedTypedItem(val source: SourceFile, response: Response[Tree]) extends WorkItem {
+    def apply() = self.waitLoadedTyped(source, response)
+    override def toString = "wait loaded & typed "+source
+  }
+  
+  class AskStructureItem(val source: SourceFile, val keepLoaded: Boolean, response: Response[List[Symbol]]) extends WorkItem {
+    def apply() = self.buildStructure(source, keepLoaded, response)
+    override def toString = "buildStructure "+source+", keepLoaded = "+keepLoaded
+  }
 }
 
   // ---------------- Interpreted exceptions -------------------
@@ -240,4 +278,6 @@ object FreshRunReq extends ControlThrowable
  *  Note: The object has to stay top-level so that the PresentationCompilerThread may access it.
  */
 object ShutdownReq extends ControlThrowable
+
+class NoSuchUnitError(file: AbstractFile) extends Exception("no unit found for file "+file)
 

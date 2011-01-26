@@ -2,14 +2,14 @@ package scala.tools.nsc
 package interactive
 
 import java.io.{ PrintWriter, StringWriter, FileReader, FileWriter }
-import collection.mutable.{ArrayBuffer, SynchronizedBuffer}
+import collection.mutable.{ArrayBuffer, ListBuffer, SynchronizedBuffer, HashMap}
 
 import scala.collection.mutable
 import mutable.{LinkedHashMap, SynchronizedMap,LinkedHashSet, SynchronizedSet}
 import scala.concurrent.SyncVar
 import scala.util.control.ControlThrowable
 import scala.tools.nsc.io.{ AbstractFile, LogReplay, Logger, NullLogger, Replayer }
-import scala.tools.nsc.util.{ SourceFile, BatchSourceFile, Position, RangePosition, NoPosition, WorkScheduler }
+import scala.tools.nsc.util.{ SourceFile, BatchSourceFile, Position, RangePosition, NoPosition, WorkScheduler, MultiHashMap }
 import scala.tools.nsc.reporters._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.ast._
@@ -40,7 +40,9 @@ self =>
     else NullLogger
 
   import log.logreplay
+  debugLog("interactive compiler from 23 Jan")
   debugLog("logger: " + log.getClass + " writing to " + (new java.io.File(logName)).getAbsolutePath)
+  debugLog("classpath: "+classPath)
 
   /** Print msg only when debugIDE is true. */
   @inline final def debugLog(msg: => String) = 
@@ -57,24 +59,30 @@ self =>
   val unitOfFile = new LinkedHashMap[AbstractFile, RichCompilationUnit] with
                        SynchronizedMap[AbstractFile, RichCompilationUnit]
 
+  /** A list containing all those files that need to be removed
+   *  Units are removed by getUnit, typically once a unit is finished compiled.
+   */
   protected val toBeRemoved = new ArrayBuffer[AbstractFile] with SynchronizedBuffer[AbstractFile]
+  
+  /** A map that associates with each abstract file the set of responses that are waiting
+   *  (via waitLoadedTyped) for the unit associated with the abstract file to be loaded and completely typechecked.
+   */
+  protected val waitLoadedTypeResponses = new MultiHashMap[SourceFile, Response[Tree]]
+ 
+  /** A map that associates with each abstract file the set of responses that ware waiting
+   *  (via buildStructure) for the unit associated with the abstract file to be structure-analyzed 
+   */
+  protected var buildStructureResponses = new MultiHashMap[SourceFile, Response[List[Symbol]]]
 
   /** The compilation unit corresponding to a source file
    *  if it does not yet exist create a new one atomically
    *  Note: We want to rmeove this.
    */
-  protected[interactive] def getOrCreateUnitOf(s: SourceFile): RichCompilationUnit =
-    unitOfFile.synchronized {
-      unitOfFile get s.file match {
-        case Some(unit) =>
-          unit
-        case None =>
-          println("*** precondition violated: executing operation on non-loaded file " + s)
-          val unit = new RichCompilationUnit(s)
-          unitOfFile(s.file) = unit
-          unit
-      }
-    }
+  protected[interactive] def getOrCreateUnitOf(source: SourceFile): RichCompilationUnit =
+    unitOfFile.getOrElse(source.file, { println("precondition violated: "+source+" is not loaded"); new Exception().printStackTrace(); new RichCompilationUnit(source) })
+
+  protected [interactive] def onUnitOf[T](source: SourceFile)(op: RichCompilationUnit => T): T =
+    op(unitOfFile.getOrElse(source.file, new RichCompilationUnit(source)))
 
   /** Work through toBeRemoved list to remove any units.
    *  Then return optionlly unit associated with given source.
@@ -89,7 +97,6 @@ self =>
     }
     unitOfFile get s.file
   }
-  
 
   /** A list giving all files to be typechecked in the order they should be checked.
    */
@@ -296,10 +303,10 @@ self =>
 
   // ----------------- The Background Runner Thread -----------------------
 
+  private var threadId = 0
+
   /** The current presentation compiler runner */
   @volatile protected[interactive] var compileRunner = newRunnerThread()
-
-  private var threadId = 0
 
   /** Create a new presentation compiler runner.
    */
@@ -325,9 +332,21 @@ self =>
 
     for (s <- allSources; unit <- getUnit(s)) {
       if (!unit.isUpToDate) typeCheck(unit)
+      for (r <- waitLoadedTypeResponses(unit.source))
+        r set unit.body
     }
-
+    
     informIDE("Everything is now up to date")
+    
+    for ((source, rs) <- waitLoadedTypeResponses; r <- rs) r raise new NoSuchUnitError(source.file)
+    waitLoadedTypeResponses.clear()
+    
+    var atOldRun = true
+    for ((source, rs) <- buildStructureResponses; r <- rs) {
+      if (atOldRun) { newTyperRun(); atOldRun = false }
+      buildStructureNow(source, r)  
+    }
+    buildStructureResponses.clear()
   }
 
   /** Reset unit to unloaded state */
@@ -412,8 +431,11 @@ self =>
         throw ex
 */
       case ex =>
+        if (debugIDE) {
+          println("exception thrown during response: "+ex)
+          ex.printStackTrace()
+        }
         response raise ex
-        throw ex
     } finally {
       pendingResponse = prevResponse
     }
@@ -446,7 +468,7 @@ self =>
 
   /** A fully attributed tree located at position `pos`  */
   def typedTreeAt(pos: Position): Tree = {
-    debugLog("typedTreeAt " + pos)
+    informIDE("typedTreeAt " + pos)
     val tree = locateTree(pos)
     debugLog("at pos "+pos+" was found: "+tree+tree.pos.show)
     if (stabilizedType(tree) ne null) {
@@ -471,7 +493,7 @@ self =>
 
   /** A fully attributed tree corresponding to the entire compilation unit  */
   def typedTree(source: SourceFile, forceReload: Boolean): Tree = {
-    informIDE("typedTree" + source + " forceReload: " + forceReload)
+    informIDE("typedTree " + source + " forceReload: " + forceReload)
     val unit = getOrCreateUnitOf(source)
     if (forceReload) reset(unit)
     if (unit.status <= PartiallyChecked) {
@@ -483,7 +505,6 @@ self =>
 
   /** Set sync var `response` to a fully attributed tree located at position `pos`  */
   def getTypedTreeAt(pos: Position, response: Response[Tree]) {
-    informIDE("getTypedTreeAt" + pos)
     respond(response)(typedTreeAt(pos))
   }
 
@@ -498,13 +519,14 @@ self =>
   def getLastTypedTree(source: SourceFile, response: Response[Tree]) {
     informIDE("getLastTyped" + source)
     respond(response) {
-      val unit = unitOf(source)
+      val unit = getOrCreateUnitOf(source)
       if (unit.status > PartiallyChecked) unit.body
       else if (unit.lastBody ne EmptyTree) unit.lastBody
       else typedTree(source, false)
     }
   }
 
+  /** Implements CompilerControl.askLinkPos */
   def getLinkPos(sym: Symbol, source: SourceFile, response: Response[Position]) {
     informIDE("getLinkPos "+sym+" "+source)
     respond(response) {
@@ -516,7 +538,7 @@ self =>
         val newsym = pre.decl(sym.name) filter { alt =>
           sym.isType || {
             try {
-              val tp1 = pre.memberType(alt)
+              val tp1 = pre.memberType(alt) onTypeError NoType
               val tp2 = adaptToNewRunMap(sym.tpe)
               matchesType(tp1, tp2, false)
             } catch {
@@ -583,7 +605,7 @@ self =>
           !locals.contains(sym.name)) {
         locals(sym.name) = new ScopeMember(
           sym, 
-          pre.memberType(sym), 
+          pre.memberType(sym) onTypeError ErrorType, 
           context.isAccessible(sym, pre, false),
           viaImport)
       }
@@ -639,7 +661,7 @@ self =>
     val members = new LinkedHashMap[Symbol, TypeMember]
 
     def addTypeMember(sym: Symbol, pre: Type, inherited: Boolean, viaView: Symbol) {
-      val symtpe = pre.memberType(sym)
+      val symtpe = pre.memberType(sym) onTypeError ErrorType
       if (scope.lookupAll(sym.name) forall (sym => !(members(sym).tpe matches symtpe))) {
         scope enter sym
         members(sym) = new TypeMember(
@@ -696,6 +718,66 @@ self =>
       }
     }
   }
+  
+  /** Implements CompilerControl.askLoadedTyped */
+  protected def waitLoadedTyped(source: SourceFile, response: Response[Tree]) {
+    getUnit(source) match {
+      case Some(unit) =>
+        if (unit.isUpToDate) response set unit.body
+        else waitLoadedTypeResponses(source) += response
+      case None =>
+        reloadSources(List(source))
+        waitLoadedTyped(source, response)
+    }
+  }
+  
+  /** Implements CompilerControl.askStructure */
+  protected def buildStructure(source: SourceFile, keepLoaded: Boolean, response: Response[List[Symbol]]) {
+    getUnit(source) match {
+      case Some(unit) =>
+        buildStructureNow(source, response)
+      case None =>
+        if (keepLoaded) {
+          reloadSources(List(source))
+          buildStructureNow(source, response)
+        } else {
+          buildStructureResponses(source) += response
+        }
+    }
+  }
+  
+  /** Builds structure of given source file */
+  protected def buildStructureNow(source: SourceFile, response: Response[List[Symbol]]) {
+    def forceSym(sym: Symbol) { 
+      sym.info.decls.iterator foreach forceSym
+    }
+    respond(response) {
+      onUnitOf(source) { unit =>
+        if (unit.status == NotLoaded) parse(unit)
+        structureTraverser.traverse(unit.body)
+        val topLevelSyms = structureTraverser.getResult
+        topLevelSyms foreach forceSym
+        topLevelSyms
+      }
+    }
+  }
+  
+  object structureTraverser extends Traverser {
+    private var topLevelSyms = new ListBuffer[Symbol]
+    override def traverse(tree: Tree) = tree match {
+      case PackageDef(pkg, body) =>
+        body foreach traverse
+      case md: MemberDef =>
+        topLevelSyms += md.symbol
+      case _ => 
+    }
+    def getResult: List[Symbol] = { 
+      val result = topLevelSyms.toList
+      topLevelSyms.clear()
+      result
+    }
+  }
+  
 
   // ---------------- Helper classes ---------------------------
 
@@ -742,6 +824,17 @@ self =>
   class TyperResult(val tree: Tree) extends ControlThrowable
   
   assert(globalPhase.id == 0)
+  
+  implicit def addOnTypeError[T](x: => T): OnTypeError[T] = new OnTypeError(x)
+  
+  class OnTypeError[T](op: => T) {
+    def onTypeError(alt: => T) = try {
+      op
+    } catch {
+      case ex: TypeError => alt
+    }
+  }
 }
 
 object CancelException extends Exception
+

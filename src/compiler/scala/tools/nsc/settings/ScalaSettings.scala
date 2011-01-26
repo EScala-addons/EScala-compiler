@@ -141,7 +141,6 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
                                           withPostSetHook(set => interpreter._debug = true)
   val Ycompletion   = BooleanSetting    ("-Ycompletion-debug", "Trace all tab completion activity.")
   val Ypmatnaive    = BooleanSetting    ("-Ypmat-naive", "Desugar matches as naively as possible.")
-  val Ymurmur       = BooleanSetting    ("-Ymurmur", "Use Murmur hash algorithm for case class generated hashCodes.")
   val Ynotnull      = BooleanSetting    ("-Ynotnull", "Enable (experimental and incomplete) scala.NotNull.")
   // @ESCALA
   val Yeventsdebug  = BooleanSetting    ("-Yevents-debug", "Enable the debugging output for the event transformations")
