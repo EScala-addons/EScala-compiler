@@ -16,7 +16,8 @@ class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
 
   // moved reacts on movement of the upperleft corner
   // this is the old syntax for comparison in the ast
-  evt moved[(Int,Int)] = afterExec(moveBy).map((_:Any) => (1,2))
+  evt moved(x: Int,y: Int) = afterExec(moveBy).map((_:Any) => (1,2))(x,y)
+  //evt moved(x: Int,y: Int) = afterExec(moveBy).map(((a:Int,b:Int) => _:Boolean) => (a,b))(x,y)
 
   def moveBy(dx: Int, dy: Int) = {
     x += dx
@@ -30,10 +31,16 @@ class Rectangle(/*val upperleft: Point, val lowerright: Point*/){
 
   evt drop_first(y :Int) = moved(_,y)
   evt drop_second(x: Int) = moved(x,_)
-//  evt drop_all() = moved(_,_)
 
-  evt unbound_left(a: Int, y: Int) = moved(x,y)
-  evt unbound_right(x: Int, y: Int) = moved(x, b)
+  evt drop_all() = moved(_,_)
+
+//  evt wrong(x:Int,y:Int) = moveBy(x,y)_
+//  evt wrong2(x: Int,y: Int) = this
+//  evt wrong3(x:Int,y:Int,z:Int) = moved(x,y)
+//  evt wrong4(x:String,y:Int) = moved(x,y)
+
+//  evt unbound_left(a: Int, y: Int) = moved(x,y)
+//  evt unbound_right(x: Int, y: Int) = moved(x, b)
 
   /*def resizeBy(dx: Int, dy: Int) = {
     lowerright.moveBy(dx, dy)
@@ -58,14 +65,16 @@ object Test {
     rectangle.change_order += evtChangeMsg _
     rectangle.drop_first += evtDropFirstMsg _
     rectangle.drop_second += evtDropSecondMsg _
-//  rectangle.drop_all += evtDropAllMsg _
+    rectangle.drop_all += evtDropAllMsg _
+//    rectangle.wrong3 += evtWrong3Msg _
     rectangle moveBy(1,3)
+//    rectangle.wrong3 -= evtWrong3Msg _
     rectangle.normal -= evtNormalMsg _
     rectangle.normal_old -= evtNormalMsg _
     rectangle.change_order -= evtChangeMsg _
     rectangle.drop_first -= evtDropFirstMsg _
     rectangle.drop_second -= evtDropSecondMsg _
-//    rectangle.drop_all -= evtDropAllMsg _
+    rectangle.drop_all -= evtDropAllMsg _
   }
 
 //def pointMoved() {
@@ -77,15 +86,15 @@ object Test {
   }
 
   def evtChangeMsg(x: Int,y: Int) {
-    println("changed order: by x: " + x + " y: " + y )
+    println("changed order: x: " + x + " y: " + y )
   }
 
   def evtDropFirstMsg(x: Int) {
-    println(" First dropped, second left: y: " + x)
+    println("First dropped, second left: y: " + x)
   }
 
   def evtDropSecondMsg(x: Int) {
-    println(" Second dropped, first left: x: " + x)
+    println("Second dropped, first left: x: " + x)
   }
 
   def evtDropAllMsg() {

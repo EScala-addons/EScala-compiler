@@ -1606,6 +1606,24 @@ BOOTRAPING TEST AND TEST SUITE
     </target>
     <!-- END @LS events -->
 
+  <!-- @LS events-exp-lang -->
+  <target name="test.events-exp-lang.suite" depends="pack.done">
+     <property name="partest.srcdir" value="files" />
+     <partest showlog="yes" erroronfailed="yes" javacmd="${java.home}/bin/java"
+              timeout="2400000" javaccmd="${javac.cmd}" 
+              srcdir="${partest.srcdir}"
+              scalacopts="${scalac.args.optimise}">
+        <compilationpath>
+          <path refid="pack.classpath"/>
+          <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
+        </compilationpath>
+        <negtests  dir="${partest.dir}/${partest.srcdir}/events-exp-lang-neg" includes="*.scala"/>
+        <!--<postests  dir="${partest.dir}/${partest.srcdir}/events-exp-lang-pos" includes="*.scala"/>-->
+        <runtests  dir="${partest.dir}/${partest.srcdir}/events-exp-lang-run" includes="*.scala"/>
+      </partest>
+    </target>
+    <!-- END @LS events-exp-lang -->
+
 
   <target name="test.scaladoc" depends="pack.done">
     <partest erroronfailed="yes" scalacopts="${scalac.args.optimise}">
