@@ -103,7 +103,7 @@ trait IntervalEvent[Start] {
    * convenience methods
    */
 
-  def and[T](e: Event[T]) = within(e, this)
+  def and[T](e: Event[T]) = within(e, this, (t:T,s:Start) => t)
   def and[T](ie: IntervalEvent[T]) = this && ie
   def and[S >: Start](p: S => Boolean) = this && p
   def or[T](ie: IntervalEvent[T]) = this || ie

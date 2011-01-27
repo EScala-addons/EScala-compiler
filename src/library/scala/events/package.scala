@@ -4,8 +4,8 @@ package object events {
 
   def between[T](start: Event[T], end: Event[_]) = new BetweenEvent(start, end)
 
-  private[events] def within[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
-	  (e && ie.active _) || (e.and(ie.before, (t : T, s : Any )  => t))
+  private[events] def within[T,S,U](e: Event[T], ie: IntervalEvent[S], merge : (T,S) => U): Event[U] = 
+	  (e && ie.active _ map ((t:T) => merge(t,ie.getValue))) || (e.and(ie.before, merge))
 
   private[events] def not_within[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
 	  (e && (_ => ! ie.active)) \ ie.before

@@ -86,7 +86,16 @@ trait Event[+T] {
   /**
    * Event inside an Interval
    */
-  def within(ie: IntervalEvent[_]) = events.within(this, ie)
+  def within(ie: IntervalEvent[_]) : Event[T] = events.within(this, ie, (t:T,_:Any) => t)
+
+  /**
+   * Event inside an Interval. This method gives the possibility to access the 
+   * interval's value
+   * @param ie
+   * @param merge function that processes this event's value and the Interval's value
+   * @return
+   */
+  def within[S,U](ie: IntervalEvent[S], merge: (T,S) => U): Event[U] = events.within(this,ie,merge)
   /**
    * Event outside an Interval
    */
