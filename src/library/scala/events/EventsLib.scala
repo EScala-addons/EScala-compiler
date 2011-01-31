@@ -110,17 +110,8 @@ trait Event[+T] {
   def not_strictlyWithin(ie: IntervalEvent[_]) = events.not_strictlyWithin(this, ie)
 
   /**
-   * redeploy the event recursively, used to avoid the difference bug that
-   * occurs when the accepted path is reached before the except path and
-   * triggers side-effects in AND- or OR-Nodes leading to wrong reactions.
-   * Note that variable events, like EventNodeRef or EventNodeExists withstand
-   * this procedure and may still cause the bug (see difference-anomaly-3.scala)
-   */
-  //protected[events] def redeploy : Unit
-
-  /**
-   * pull whehther 
-   * @param id
+   * pull whether the event has been triggered
+   * @param id the current event id; Note that behavior is undefined if id != EventIds.lastId
    * @return
    */
   protected[events] def pullIsActivated(id: Int): Option[T]
@@ -182,12 +173,6 @@ abstract class EventNode[T] extends Event[T] {
    * Undeploy the event (i.e. unregisters from the referenced events)
    */
   protected def undeploy: Unit
-
-  /**
-   * redeploy the event, meaning reregister for the referenced events and
-   * recursively redeploy the event-tree
-   */
-  //protected[events] override def redeploy: Unit = { undeploy; deploy}
 
   /** Collects the reactions registered with this event and associates the current event trace.
    *  It then propagates to sinks.
@@ -375,12 +360,6 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
 
   }
 
-  /*protected[events] override def redeploy{
-	  super.redeploy
-	  ev1.redeploy
-	  ev2.redeploy
-  }*/
-
   protected override def pullFkt(Id: Int): Option[T] = {
 
     val v1 = ev1.pullIsActivated(Id)
@@ -434,11 +413,6 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
 
   override def toString = "(" + ev1 + " || " + ev2 + ")"
 
-  /*  protected[events] override def redeploy{
-	  super.redeploy
-	  ev1.redeploy
-	  ev2.redeploy
-  }*/
   protected override def pullFkt(Id: Int): Option[T] = {
     val v1 = ev1.pullIsActivated(Id)
     if (v1 != None) return v1
@@ -475,11 +449,6 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
   protected override def undeploy {
     ev -= onEvt
   }
-
-  /*  protected[events] override def redeploy{
-	  super.redeploy
-	  ev.redeploy
-  }*/
 
   protected override def pullFkt(Id: Int): Option[U] = {
     ev.pullIsActivated(Id) match {
@@ -520,11 +489,6 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
   protected override def undeploy {
     ev -= onEvt
   }
-
-  /*   protected[events] override def redeploy{
-	  super.redeploy
-	  ev.redeploy
-  }*/
 
   protected override def pullFkt(Id: Int): Option[T] = {
     ev.pullIsActivated(Id) match {
@@ -705,12 +669,6 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
     ev2 -= onEvt2
   }
 
-  /* protected[events] override def redeploy {
-	  super.redeploy
-	  ev1.redeploy
-	  ev2.redeploy
-  }*/
-
   protected override def pullFkt(Id: Int): Option[V] = {
     if (this.id != -1 && this.id != Id) {
       ev2.pullIsActivated(Id) match {
@@ -765,22 +723,13 @@ class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode
 
   override def deploy {
     except += onExcept
-    //  except.redeploy
     accepted += onAccepted
-    //accepted.redeploy
-
   }
 
   override def undeploy {
     accepted -= onAccepted
     except -= onExcept
   }
-
-  /*   protected[events] override def redeploy{
-	  super.redeploy
-	  except.redeploy
-	  accepted.redeploy
-  }*/
 
   protected override def pullFkt(Id: Int): Option[T] = {
     if (except.pullIsActivated(Id) == None)

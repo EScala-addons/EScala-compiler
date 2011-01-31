@@ -14,8 +14,9 @@ package object events {
   private[events] def not_strictlyWithin[T](e: Event[T], ie: IntervalEvent[_]): Event[T] = 
 	  (e && (_ => ! ie.active)) || e.and(ie.after, (t : T, s : Any) => t)
   
-  implicit def betweenFromTupled[T,U](t : (Event[T],Event[U])) = between(t._1,t._2)
-  
+  def from[T](e: Event[T]) = between(e,emptyevent)
+  def to[T] (e : Event[T]) = from(e).complement
+	  
   def causedBy[T](e: Event[T]) = new CausedByFilter(e)
 
   def ?[T](e: => Event[T]) = new EventNodeCond(e)

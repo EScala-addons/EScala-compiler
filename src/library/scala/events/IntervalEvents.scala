@@ -4,61 +4,65 @@ import scala.collection.mutable.{ ListBuffer, Stack }
 
 trait IntervalEvent[Start] {
 
+  type Sink = (Int, Start, ListBuffer[(() => Unit, Trace)]) => Unit
   type Trace = List[Event[_]]
 
   def start: Event[Start]
   def end: Event[_]
 
-  private lazy val realStart: Event[Start] = start && (_ => !active) && startCondition _
-  private lazy val realEnd: Event[_] = end && (_ => active) && endCondition _
-
-  protected[events] var deployed = false
+  private lazy val realStart: Event[Start] = new BeforeNode[Start](start && (_ => !active) && startCondition _ )
+  private lazy val realEnd: Event[_] = new BeforeNode[Any](end && (_ => active) && endCondition _ )
 
   private final var default: Start = _
   protected def defaultValue = default
-  protected var value: Start = _
+  protected var _value: Start = _
 
-  def getValue = value
+  protected[events] def getValue = _value
+  def value : Start = {if (eventTrace.value.isEmpty) getValue //No events triggered
+		  			else if (isActive) { //pull activation
+		  				if (active) getValue //realStart already fired or we were active before
+		  				else realStart.pullIsActivated(EventIds.lastId).get
+		  				}
+		  			else defaultValue }
 
   protected[this] var _active = false
-  def active = _active
+  protected[events] def active = _active
+  def isActive = {if(eventTrace.value.isEmpty) active 
+		  			else if(active) realEnd.pullIsActivated(EventIds.lastId) == None
+		  			else realStart.pullIsActivated(EventIds.lastId) != None
+  }
 
   protected[this] def startCondition(v: Start) = true
   protected[this] def endCondition(v: Any) = true
 
   protected[this] lazy val started = (s: Start) => {
     _active = true
-    this.value = s
+    this._value = s
   }
 
-  protected[this] lazy val ended = (e: Any) => {
+  protected[this] lazy val ended = (s:Any) => {
     _active = false
-    this.value = defaultValue
+    this._value = defaultValue
   }
 
   val ref = new ReferenceCounting {
     def deploy = IntervalEvent.this.deploy
     def undeploy = IntervalEvent.this.undeploy
 
-    //DEBUG
-    //override def toString = IntervalEvent.this.toString
   }
 
   protected[events] def deploy {
     realStart += started
     realEnd += ended
-    assert(deployed == false)
-    deployed = true
   }
 
   protected[events] def undeploy {
     realStart -= started
     realEnd -= ended
-    deployed = false
   }
 
   lazy val before: Event[Start] = new PunktualNode[Start](realStart, ref)
-  lazy val after: Event[Start] = new PunktualNode[Start](realEnd.map((_: Any) => value), ref)
+  lazy val after: Event[Start] = new PunktualNode[Start](realEnd.map((_: Any) => _value), ref)
 
   /**
    * the complementary interval (note that the start and end events are both
@@ -74,28 +78,28 @@ trait IntervalEvent[Start] {
   def ||[S >: Start, S1 <: S](ie: IntervalEvent[S1]) = new ActiveOverridingInterval[S](
     (before || ie.before.asInstanceOf[Event[S]]),
     (((after && (_ => !ie.active)) || (ie.after && (_ => !active)) || (after and ie.after))) \ (before || ie.before),
-    active || ie.active, value)
+    active || ie.active, _value)
 
   /**
    * intersection of intervals, seen as sets of moments
    * (needs refinement for values)
    */
   def &&[S](ie: IntervalEvent[S]) = new ActiveOverridingInterval[(Start, S)](
-    (((before && (_ => ie.active) map ((vals: Start) => (vals, ie.value)))
-      || (ie.before && (_ => active) map ((vals: S) => (value, vals))))
+    (((before && (_ => ie.active) map ((vals: Start) => (vals, ie._value)))
+      || (ie.before && (_ => active) map ((vals: S) => (_value, vals))))
       || (before.and(ie.before, (s: Start, u: S) => (s, u)))) \ (after || ie.after),
     after || ie.after,
-    active && ie.active, (value, ie.value))
+    active && ie.active, (_value, ie._value))
   /**
    * difference of intervals, seen as set of moments 
    */
   def \(ie: IntervalEvent[_]) = this && ie.complement map ((v: (Start, Unit)) => v._1)
 
   def map[S >: Start, T](f: S => T) =
-    new ActiveOverridingInterval[T](before map f, after, active, f(value))
+    new ActiveOverridingInterval[T](before map f, after, active, f(_value))
 
   def &&[S >: Start](p: S => Boolean) =
-    new ActiveOverridingInterval(before && p, after, active && p(value), value)
+    new ActiveOverridingInterval(before && p, after, active && p(_value), _value)
 
   
   implicit def castValue[S >: Start] = map((v : Start) => v.asInstanceOf[S])
@@ -171,7 +175,32 @@ class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEv
 protected[events] class ActiveOverridingInterval[T](start: Event[T],
   end: Event[_], defaultActive: Boolean, defValue: T) extends BetweenEvent(start, end) {
   _active = defaultActive
-  value = if (active) defValue else defaultValue
+  _value = if (active) defValue else defaultValue
+}
+
+/**
+ * this Event class makes sure it's reactions are triggered before the ones of the
+ * underlying event. Helps avoid bugs coming from indirect events in conjunction
+ * with intervals. see Test cases indirect-within1 and indirect-within2
+ * @author Michael
+ *
+ */
+protected[events] class BeforeNode[T](evt : Event[T]) extends EventNode[T]{
+	override def pullFkt(id : Int) = evt.pullIsActivated(id)
+	
+	lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+			val newReacts = new ListBuffer[(() => Unit, Trace)]
+			reactions(id,v,newReacts)
+			reacts prependAll newReacts
+		}
+	
+	override def deploy{
+		evt += onEvt
+	}
+	
+	override def undeploy {
+		evt -= onEvt
+	}
 }
 
 class ExecutionEvent[T] extends IntervalEvent[T] {

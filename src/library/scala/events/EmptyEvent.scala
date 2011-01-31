@@ -5,7 +5,6 @@ object emptyevent extends Event[Nothing] {
   def -=(sink: Sink) { /* do nothing */ }
   def +=(react: Nothing => Unit) { /* do nothing */ }
   def -=(react: Nothing => Unit) { /* do nothing */ }
-  def redeploy{}
   def pullIsActivated(Id : Int) = None
 }
 
