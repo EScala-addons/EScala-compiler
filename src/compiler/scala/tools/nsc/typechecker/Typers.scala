@@ -1645,55 +1645,61 @@ trait Typers { self: Analyzer =>
 
       var vparams = edef.vparams
 
-      def bar(rhs: Tree) : Tree = {
+      // inserts map function that transforms the parameter lists
+      def mapTransform(rhs: Tree) : Tree = {
+
+        def sortValDefs(args: List[Tree]): List[ValDef] = {
+          args.foldLeft(List[ValDef]())((rest: List[ValDef], ident: Tree) => {
+            ident match {
+              case Ident(name) =>
+                vparams.find((vdef) => (vdef.name == name)) match {
+                  case Some(vdef: ValDef) =>
+                    vdef.tpt match {
+                        case Ident(_) => rest :+ vdef
+                        case _ => rest :+ (treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType)
+                      }
+                  case _ => 
+                    error(ident.pos, "ValDef not found") // todo
+                    rest :+ ValDef(sym.owner.newValue(name) setInfo ErrorType)
+                }
+              case _ => 
+                error(ident.pos, "Args contains wrong Tree") // todo
+                rest
+            }
+          })
+        }
+
         rhs match {
           case Apply(fun, args) =>
-            val source : List[ValDef] = 
-              args.foldRight(List[ValDef]())((ident: Tree, rest: List[ValDef]) => {
-                ident match {
-                  case Ident(name) =>
-                    vparams.find((vdef) => (vdef.name == name)) match {
-                      case Some(vdef: ValDef) =>
-                        val foo = 
-                          vdef.tpt match {
-                            case Ident(_) => vdef
-                            case _ => treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType
-                          }
-                        foo :: rest
-                      case _ => ValDef(sym.owner.newValue(name) setInfo NoType) :: rest
-                                  // error(edef.pos,"blaa") // todo
-                    }
-                  case _ => rest
-                }
-              })
+            val vparams = sortValDefs(args);
 
-            val target : Tree = 
+            val body = 
               if(edef.vparams.length == 1)
                 Ident(edef.vparams.head.symbol)
               else
-                gen.mkTuple(edef.vparams.map((valdef) => Ident(valdef.symbol)))
+                gen.mkTuple(edef.vparams.map((vdef) => Ident(vdef.symbol)))
 
             Apply(
               Select(fun,nme.map),
               List(Function(
-                source,
-                target)))
-          case Function(params, foo) =>
+                vparams,
+                body)))
+          case Function(params, body) =>
             vparams = params ::: vparams
-            bar(foo)
-          case _ => edef.rhs
+            mapTransform(body)
+          case _ => 
+            error(edef.rhs.pos, "Unexpected rhs") // todo
+            edef.rhs
         }
       }
-
-      val rhs2 = bar(edef.rhs)
 
       val rhs1 =
         if (edef.rhs.isEmpty) {
           if (sym.isVariable && sym.owner.isTerm && phase.id <= currentRun.typerPhase.id)
             error(edef.pos, "local variables must be initialized")
-          rhs2
+          edef.rhs
         } else {
-          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(rhs2, EXPRmode | BYVALmode, tpt.tpe)
+          newTyper(typer1.context.make(edef, sym)).transformedOrTyped(mapTransform(edef.rhs), EXPRmode | BYVALmode, tpt.tpe)
         }
 
       // generate new AST-node
