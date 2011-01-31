@@ -1636,7 +1636,7 @@ trait Typers { self: Analyzer =>
             case _ => typedRef
         }
       
-      val dataType : Type Either (Type, Type) =
+      val dataType : Type Either Type =//(Type, Type) =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
             //val method = params.last.owner
@@ -1649,7 +1649,7 @@ trait Typers { self: Analyzer =>
             ev.kind match {
                 case BeforeExec() => Left(paramType)
                 case AfterExec() => Left(tupleType(List(paramType, rtpe)))
-                case Execution() => Right((paramType, tupleType(List(paramType, rtpe))))
+                case Execution() => Right((paramType)) //, tupleType(List(paramType, rtpe))))
             }
           case _ => 
             error(typedMeth.pos, "a reference to a method expected")
@@ -1672,7 +1672,7 @@ trait Typers { self: Analyzer =>
       val eventType = 
         if(dataType.isRight)
           typeRef(IntervalEventClass.typeConstructor.prefix,
-                  IntervalEventClass, dataType.right.get._1 :: dataType.right.get._2 :: Nil)
+                  IntervalEventClass, dataType.right.get /* ._1 :: dataType.right.get._2 */ :: Nil)
         else
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))

@@ -4,9 +4,9 @@ object Test{
 
 imperative evt ev[Unit]
 
-val variable1 : Variable[Event[_]] = ev || emptyevent
-val variable2 : Variable[Event[_]] = ev || emptyevent
-val variable3 : Variable[Event[_]] = ev || emptyevent
+val variable1 : Variable[Event[_]] = Variable(ev || emptyevent)
+val variable2 : Variable[Event[_]] = Variable(ev || emptyevent)
+val variable3 : Variable[Event[_]] = Variable(ev || emptyevent)
 
 evt buggy = variable1.event(evnt => evnt) and (variable2.event(evnt => evnt) \ variable3.event(evnt => evnt))
 
