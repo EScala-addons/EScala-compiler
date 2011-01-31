@@ -8,7 +8,7 @@ object O {
 
 
 class C {
-  evt e1() = O.O_inner.e1
+  evt e1() = O.O_inner.e1()
 
   e1 += { () => println("C.e1") }
 }
