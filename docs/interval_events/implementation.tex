@@ -15,7 +15,7 @@ Abb. \ref{event_node_lifecycle} zu sehen.
 \begin{figure}[htp]
 \begin{center}
   \includegraphics[width=0.7\textwidth]{graphics/EventNode-Lifecycle}
-  \caption[labelInTOC]{Lifecycle eines EventNodes}
+  \caption{Lifecycle eines EventNodes}
   \label{event_node_lifecycle}
 \end{center}
 \end{figure}
@@ -24,20 +24,95 @@ Abb. \ref{event_node_lifecycle} zu sehen.
 Es gibt, wie in Abb. \ref{interval_events_structure} zwei Klassen von
 Interval-Event-Nodes: BetweenEvents und ExecutionEvents. BetweenEvents sind vom
 Auftreten des StartEvents bis zum Auftreten des ersten End-Events aktiv, wenn
-eine Reaction registiert wurde\footnote{Dieses Verhalten ist näher im }
+eine Reaction registiert wurde. Das Execution-Event dient dazu, die Ausführung
+einer Funktion zu protokollieren. Wenn das Execution-Event eine Funktion
+überwachen soll, dann instrumentiert der Compiler die Funktion so, dass ein
+Before-Event beim Betreten der Funktion und ein After-Event beim Verlassen der
+Funktion ausgelöst wird.
 
 %\usepackage{graphics} is needed for \includegraphics
 \begin{figure}[htp]
 \begin{center}
   \includegraphics[width=0.5\textwidth]{graphics/interval_event_structure}
-  \caption[labelInTOC]{Arten von Intervall-Events}
+  \caption{Arten von Intervall-Events}
   \label{interval_events_structure}
 \end{center}
 \end{figure}
 
-\subsection{Deploy-Verhalten von Intervall-Events}
-Ein Intervall-Event wird genau dann deployed, wenn die Deploy-Methode des Start-
-oder End-Events aufgerufen wird. 
+
+\subsection{Der Aufbau des Event-Graphen}
+Mithilfe von Event-Nodes können mehrere Events zu komplexeren Events
+zusammengefasst werden. So ist es beispielsweise möglich, alle Events einer
+Filter-Bedingung zu unterziehen. Das resultierende Event wird nur dann
+ausgelöst, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu true
+auswertet. 
+
+Der daraus resultierende Abhänigkeitsgraph soll nachfolgend als Event-Graph
+bezeichnet werden.
+
+Intervall-Events können uneingeschränkt auch als Knoten im Event-Graph
+vorkommen. Eine Liste der möglichen Filterfunktionen und die dazugehörigen
+Definitionen findet sich im Kapitel \ref{definitions}.
+
+\subsection{Auswertung des Event-Graphen}
+
+Bei der Auswertung eines Event-Graphen gibt es zwei möglichen Vorgehensweisen.
+Zum einen kann Events sammeln, die bei Event-Graphen ankommen und dann
+weiterleiten, wenn gewisse Bedingungen erfüllt sind. Hierbei handelt es sich um
+eine Push-basierte Implementierungen. Es werden nämlich nur Änderungen gepusht.
+
+Beim Zweiten Ansatz werden keien Ändeurngen weitergeleitet. Stattdessen wird der
+Event-Graph traversiert um herauszufinden, ob Änderungen passiert sind. Dieser
+Ansatz wird nachfolgend als pull-Basiert bezeichnet.
+
+Bei gleichem Resultat haben beide Implementierungen verschiedene Vor- und
+Nachteile. Nateilig beim Push-Basierten Ansatz ist die relativ hohe Komplexität
+der Implementierung wenn Knoten im Event-Graph einen Zustand aufweisen.
+Außerdem ist es schwierig, ein deterministisches Verhalten sicherzustellen. Beim
+Pull-basierten Ansatz stellt sich stattdessen die Frage, wie man den richtigen
+Zeitpunkt für einen Pull ermitteln kann. 
+
+Die Implementierung im scala.events-Modul verwendet einen hybriden Ansatz um den
+Event-Graphen auszuwerten. Die meisten Event-Knoten wurden Push-Basiert
+implementiert. Eine Ausnahme stellt der Except-Knoten dar. Mit einem
+Event-Knoten können verschiedene Events ausgeschlossen werden. Der Except-Zweig
+des Event-Knotens wurde pull-basiert implementiert.
+
+Betrachten wir nachfolgend zwei Beispiele um diese Vorgehensweise zu begründen:
+\begin{eqnarray}
+val \; e & = e1 \setminus (e2 || e3)\\
+val \; e & = e1 \setminus (e1 || e3)
+\end{eqnarray}
+
+Der Event-Graph des Push-basierten Ansatzes ist in
+Abb\ref{push_based_event_graph} zu sehen.
+
+%\usepackage{graphics} is needed for \includegraphics
+\begin{figure}[htp]
+\centering
+\subfigure[Push basierter Event-Gaph] {
+  \includegraphics[width=0.3\textwidth]{graphics/event_node_except_push}
+  \label{push_based_event_graph}
+}
+\subfigure[Push/Pull basierter Event-Graph] {
+  \includegraphics[width=0.3\textwidth]{graphics/event_node_except_pull}
+  \label{pull_based_event_graph}
+}
+\caption{Event-Graphen für das Beispiel 1}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\subfigure[Push basierter Event-Gaph] {
+  \includegraphics[width=0.3\textwidth]{graphics/event_node_except2_push}
+  \label{failing_push_based_event_graph}
+}
+\subfigure[Push/Pull basierter Event-Graph] {
+  \includegraphics[width=0.3\textwidth]{graphics/event_node_except2_pull}
+  \label{working_pull_based_event_graph}
+}
+\caption{Event-Graphen für das Beispiel 2}
+\end{figure}
 
 
 \subsubsection{Einschränkungen der Implementierung}

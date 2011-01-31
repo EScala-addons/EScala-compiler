@@ -9,8 +9,7 @@
 \usepackage{booktabs}
 \usepackage{pst-all}
 \usepackage{amsmath}
-
-
+\usepackage{subfigure}
 
 
 % Makros
@@ -29,13 +28,6 @@
   \newif\ifTUDmargin\TUDmarginfalse \ifTUDmargin\makeatletter
     \TUD@setmarginpar{2}
   \makeatother\fi
-<<<<<<< HEAD
-=======
-    \TUD@setmarginpar{2}
-  \makeatother\fi
->>>>>>> DD added
-=======
->>>>>>> 2a34938ee3d19810a4650424d721addca2126710
 
 \newlength{\longtablewidth}
 \setlength{\longtablewidth}{0.7\linewidth}
@@ -59,7 +51,7 @@
 \end{enumerate}
 
 \section{Grundlegende Definitionen}
-
+\label{definitions}
 Sei \before{\Interval} : Event das Ereignis, das den Beginn des Intervalls int angibt
 und \after{\Interval} : Event jenes, welches das Ende von int angibt. Dies kann in
 unterschiedlicher Form erfolgen:
