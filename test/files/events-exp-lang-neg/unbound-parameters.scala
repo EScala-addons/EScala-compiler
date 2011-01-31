@@ -1,8 +1,8 @@
 import scala.events._
 
-class Test(){
-  imperative evt event[Int,Int]
+class C {
+  imperative evt e1[Int,Int]
 
-  evt unbound_left(x: Int, y: Int) = moved(a,y)
-  evt unbound_right(x: Int, y: Int) = moved(x, b)
+  evt e2(x: Int, y: Int) = e1(a,y)
+  evt e3(x: Int, y: Int) = e1(x,b)
 }
