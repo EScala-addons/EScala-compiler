@@ -81,6 +81,7 @@ abstract class ObservableClass extends Transform
                                       Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
                                       ))
               namer.enterSyntheticSym(newobj)
+              println("dcls du package: " + sym.owner.info.decls)
               obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
 
               // Add self to allobjects in the constructor
@@ -94,72 +95,11 @@ abstract class ObservableClass extends Transform
               tclazz.tparams, template)
               namer = oldNamer
 
-              println(name+"$all mis dans l'arbre")
               clazz = oldclazz
               result
             } else {
                 super.transform(tree)
             }
-          // Matches "allInstances[generic].event"
-          case sel @ Select(TypeApply(allInstances, (generic: Tree) :: Nil), event)
-          // Matches "allInstances[generic](event)"
-          /*case sel @ Apply(TypeApply(allInstances, (generic: Tree) :: Nil),
-           *                (event: Tree) :: Nil
-           *          )
-           */
-            if (allInstances.symbol == MethAllInstances) =>
-              if (settings.Yeventsdebug.value)
-                println("Encountered the allInstances symbol. Parameter: "+generic)
-              /*
-               * TODOs:
-               *   - 'generic' contains the name of the package (e.g.
-               *     truie.Transaction) and that trigger an error "symbol no
-               *     found". Why ?
-               *   - generic$all.all.any(_ => _.event) returns an
-               *     "EventNodeExists" but the ValDef that takes this value
-               *     has been typed beforehand and doesn't have this type. (in
-               *     the case of "evt blah =
-               *     beforeEvent(allInstances[C].event)", the type is
-               *     ImperativeEvent for instance)
-               *      - Attempts to use another syntax (allInstances[C](event))
-               *     do not work: "event" doesn't refer to a member of an
-               *     instance of C, here ("symbol event no found").
-               *      - Attempts to modify the dummy function "allInstances[C]:
-               *      C" to make it return an EventNodeExists did not make it:
-               *      EventNodeExists takes parameters... how to get them ?
-               *     Maybe we will have to put sth. in the parser, after all ?
-               */
-              // generic$all.all.any
-              val allMemberAny = Select(
-                    Select(
-                      Ident(generic+"$all"),
-                      //Ident(newTermName("Transaction$all")),
-                      newTermName("all")
-                    ),
-                    newTermName("any")
-              )
-              println("allMemberAny = " + allMemberAny)
-
-              // _ => _.event
-              val mapEvent = Function(
-                List(ValDef(NoMods, "_", generic, EmptyTree)),
-                Select(
-                  //Ident(newTermName("_")), event.symbol
-                  Ident("_"), event
-                )
-              )
-              println("mapEvent = " + mapEvent)
-
-              // generic$all.all.any(((_: C) => _.event))
-              val anyApply = Apply(allMemberAny, List(mapEvent))
-              println("anyApply = " + anyApply)
-
-              atPhase(currentRun.phaseNamed("typer")) {
-                localTyper.typed(
-                  atPos(sel.pos) {anyApply}
-                )
-              }
-
           case _ => super.transform(tree)
         }
     }

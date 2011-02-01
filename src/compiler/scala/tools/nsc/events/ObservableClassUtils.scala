@@ -54,13 +54,6 @@ trait ObservableClassUtil {
     List(tparams))
   }
 
-  /*
-   * Symbol allInstances[C]
-   */
-  lazy val ModEvents = definitions.getModule("scala.events")
-  lazy val MethAllInstances = definitions.getMember(ModEvents,
-                                                    "allInstances")
-
   
 //  protected[events] def newAllObject(tparams: List[Tree], exec: Name) = {
 //    val dependentType =
