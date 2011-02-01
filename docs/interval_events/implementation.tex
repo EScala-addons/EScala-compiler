@@ -21,7 +21,7 @@ Abb. \ref{event_node_lifecycle} zu sehen.
 \end{figure}
 
 
-Es gibt, wie in Abb. \ref{interval_events_structure} zwei Klassen von
+Es gibt, wie in Abb.\ref{interval_events_structure} zwei Klassen von
 Interval-Event-Nodes: BetweenEvents und ExecutionEvents. BetweenEvents sind vom
 Auftreten des StartEvents bis zum Auftreten des ersten End-Events aktiv, wenn
 eine Reaction registiert wurde. Das Execution-Event dient dazu, die Ausführung
@@ -85,7 +85,43 @@ val \; e & = e1 \setminus (e1 || e3)
 \end{eqnarray}
 
 Der Event-Graph des Push-basierten Ansatzes ist in
-Abb\ref{push_based_event_graph} zu sehen.
+Abb.\ref{push_based_event_graph} zu sehen. Wenn das Event e1 ausgelöst wird,
+startet zunächst das Sammeln von Reactions im Knoten e1 und folgt den im
+Diagramm eingezeichneten Kanten. 
+
+Der Except-Event-Knoten speichert intern ob bereits ein Sammelvorgang über den
+Except-Zweig durchgeführt wurde. Ist dies nicht der Fall, dann wird das Sammeln
+in e forgesetzt und die Reaction auf das Event e wird gesammelt. 
+
+Wenn allerdings schon eine Sammlung über den Except-Zweig erfolgte, dann
+verhindert der Except-Knoten das Sammeln der Reactions von e.
+
+Der in Abb.\ref{pull_based_event_graph} beschriebene Ansatz funktioniert
+prinzipiell genauso. Allerdings wird im Except-Event-Node explizit der Pull-Vorgang ausgelöst um zu
+prüfen, ob die Except-Bedingung gilt oder nicht. Der Except-Knoten speichert
+dann keinen internen Zustand mehr.
+
+Betrachten wir nun das Beispiel zwei. Das Beispiel 2 ist praktisch von keiner
+Bedeutung. Allerdings zeigt es gut die Einschränkungen einer Push-Basierten
+Implementierung auf. 
+
+Wenn der Event e1 ausgelöst wird, kann das Sammeln von Reactions nun mit zwei
+Knoten starten. Entweder werden zunächst über den Or-Knoten die Reactions vom
+Except-Knoten gesammelt. Dann schaltet der Except-Knoten seinen internen Zustand
+um. Wenn anschließend die Sammlung über die zweite Kante von e1 erfolgt, hat
+sich der Zustand von Except bereits geändert, sodass keine Reaktionen von e
+gesammelt werden.
+
+Wenn allerdings zunächst der Except-Knoten besucht wird, hat dieser seinen
+internen Zustand noch nicht umgeschaltet. Dann werden die Reactions von e
+gesammelt. Erst wenn später der Except-Knoten über den Or-Knoten besucht wird,
+schaltet der Except-Knoten seinen Zustand um. Allerdings wurde dann schon die
+Reaction von e gesammelt. Daher wird nach dem Sammeln der Reactions
+fälschlicher Weise der Event e ausgelöst.
+
+
+ 
+
 
 %\usepackage{graphics} is needed for \includegraphics
 \begin{figure}[htp]
