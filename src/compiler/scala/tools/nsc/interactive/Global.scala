@@ -14,6 +14,8 @@ import scala.tools.nsc.reporters._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.ast._
 import scala.tools.nsc.io.Pickler._
+import scala.annotation.tailrec
+import scala.reflect.generic.Flags.LOCKED
 
 /** The main class of the presentation compiler in an interactive environment such as an IDE
  */
@@ -81,9 +83,6 @@ self =>
   protected[interactive] def getOrCreateUnitOf(source: SourceFile): RichCompilationUnit =
     unitOfFile.getOrElse(source.file, { println("precondition violated: "+source+" is not loaded"); new Exception().printStackTrace(); new RichCompilationUnit(source) })
 
-  protected [interactive] def onUnitOf[T](source: SourceFile)(op: RichCompilationUnit => T): T =
-    op(unitOfFile.getOrElse(source.file, new RichCompilationUnit(source)))
-
   /** Work through toBeRemoved list to remove any units.
    *  Then return optionlly unit associated with given source.
    */
@@ -113,6 +112,8 @@ self =>
 
   /** Units compiled by a run with id >= minRunId are considered up-to-date  */
   private[interactive] var minRunId = 1
+  
+  private var interruptsEnabled = true 
 
   private val NoResponse: Response[_] = new Response[Any]
 
@@ -135,7 +136,7 @@ self =>
       if (context.unit == null)
         context.unit.body = new TreeReplacer(old, result) transform context.unit.body
     }
-    if (activeLocks == 0) { // can we try to avoid that condition (?)
+    if (interruptsEnabled && analyzer.lockedCount == 0) { 
       if (context.unit != null && 
           result.pos.isOpaqueRange && 
           (result.pos includes context.unit.targetPos)) {
@@ -230,10 +231,10 @@ self =>
       logreplay("asked", scheduler.pollInterrupt()) match {
         case Some(ir) =>
           try {
-            activeLocks += 1
+            interruptsEnabled = false
             ir.execute()
           } finally {
-            activeLocks -= 1
+            interruptsEnabled = true
           }
           pollForWork(pos)
         case _ =>
@@ -327,11 +328,12 @@ self =>
 
     for (s <- allSources; unit <- getUnit(s)) {
       if (!unit.isUpToDate && unit.status != JustParsed) reset(unit) // reparse previously typechecked units.
-      if (unit.status == NotLoaded) parse(unit)
+      if (unit.status == NotLoaded) parseAndEnter(unit)
     }
 
     for (s <- allSources; unit <- getUnit(s)) {
       if (!unit.isUpToDate) typeCheck(unit)
+      else debugLog("already up to date: "+unit)
       for (r <- waitLoadedTypeResponses(unit.source))
         r set unit.body
     }
@@ -362,19 +364,22 @@ self =>
   }
 
   /** Parse unit and create a name index. */
-  def parse(unit: RichCompilationUnit): Unit = {
+  def parseAndEnter(unit: RichCompilationUnit): Unit = {
     debugLog("parsing: "+unit)
     currentTyperRun.compileLate(unit)
     if (debugIDE && !reporter.hasErrors) validatePositions(unit.body)
     if (!unit.isJava) syncTopLevelSyms(unit)
     unit.status = JustParsed
   }
+  
+  @deprecated("use parseTree(unit.source) instead") 
+  def parse(unit: RichCompilationUnit) = parseAndEnter(unit)
 
   /** Make sure unit is typechecked
    */
   def typeCheck(unit: RichCompilationUnit) {
     debugLog("type checking: "+unit)
-    if (unit.status == NotLoaded) parse(unit)
+    if (unit.status == NotLoaded) parseAndEnter(unit)
     unit.status = PartiallyChecked
     currentTyperRun.typeCheck(unit)
     unit.lastBody = unit.body
@@ -445,7 +450,7 @@ self =>
     val unit = new RichCompilationUnit(source)
     unitOfFile(source.file) = unit
     reset(unit)
-    parse(unit)
+    parseAndEnter(unit)
   }
 
   /** Make sure a set of compilation units is loaded and parsed */
@@ -458,37 +463,39 @@ self =>
 
   /** Make sure a set of compilation units is loaded and parsed */
   def reload(sources: List[SourceFile], response: Response[Unit]) {
-    informIDE("reload" + sources)
+    informIDE("reload: " + sources)
     respond(response)(reloadSources(sources))
-    if (outOfDate)
-      if (activeLocks == 0) throw FreshRunReq // cancel background compile
-      else scheduler.raise(FreshRunReq)  // cancel background compile on the next poll
+    if (outOfDate) throw FreshRunReq // cancel background compile
     else outOfDate = true            // proceed normally and enable new background compile
   }
 
-  /** A fully attributed tree located at position `pos`  */
-  def typedTreeAt(pos: Position): Tree = {
-    informIDE("typedTreeAt " + pos)
-    val tree = locateTree(pos)
-    debugLog("at pos "+pos+" was found: "+tree+tree.pos.show)
-    if (stabilizedType(tree) ne null) {
-      debugLog("already attributed")
-      tree
-    } else {
-      val unit = getOrCreateUnitOf(pos.source)
-      unit.targetPos = pos
-      try {
-        debugLog("starting targeted type check")
-        //newTyperRun()   // not needed for idempotent type checker phase
-        typeCheck(unit)
-        println("tree not found at "+pos)
-        EmptyTree
-      } catch {
-        case ex: TyperResult => new Locator(pos) locateIn ex.tree
-      } finally {
-        unit.targetPos = NoPosition
+  /** A fully attributed tree located at position `pos` */
+  def typedTreeAt(pos: Position): Tree = getUnit(pos.source) match {
+    case None =>
+      reloadSources(List(pos.source))
+      val result = typedTreeAt(pos)
+      removeUnitOf(pos.source)
+      result
+    case Some(unit) =>  
+      informIDE("typedTreeAt " + pos)
+      val tree = locateTree(pos)
+      debugLog("at pos "+pos+" was found: "+tree.getClass+" "+tree.pos.show)
+      if (stabilizedType(tree) ne null) {
+        debugLog("already attributed")
+        tree
+      } else {
+        unit.targetPos = pos
+        try {
+          debugLog("starting targeted type check")
+          typeCheck(unit)
+          println("tree not found at "+pos)
+          EmptyTree
+        } catch {
+          case ex: TyperResult => new Locator(pos) locateIn ex.tree
+        } finally {
+          unit.targetPos = NoPosition
+        }
       }
-    }
   }
 
   /** A fully attributed tree corresponding to the entire compilation unit  */
@@ -512,18 +519,6 @@ self =>
    *  entire compilation unit  */
   def getTypedTree(source: SourceFile, forceReload: Boolean, response: Response[Tree]) {
     respond(response)(typedTree(source, forceReload))
-  }
-
-  /** Set sync var `response` to the last fully attributed tree produced from the
-   *  entire compilation unit  */
-  def getLastTypedTree(source: SourceFile, response: Response[Tree]) {
-    informIDE("getLastTyped" + source)
-    respond(response) {
-      val unit = getOrCreateUnitOf(source)
-      if (unit.status > PartiallyChecked) unit.body
-      else if (unit.lastBody ne EmptyTree) unit.lastBody
-      else typedTree(source, false)
-    }
   }
 
   /** Implements CompilerControl.askLinkPos */
@@ -682,7 +677,7 @@ self =>
           .typed(Apply(view.tree, List(tree)) setPos tree.pos)
       } catch {
         case ex: TypeError => 
-          debugLog("type error caught")
+          debugLog("type error caught: "+ex)
           EmptyTree
       }
     }
@@ -705,8 +700,10 @@ self =>
         addTypeMember(sym, pre, true, NoSymbol)
       members.values.toList #:: {
         val applicableViews: List[SearchResult] = 
-          new ImplicitSearch(tree, functionType(List(ownerTpe), AnyClass.tpe), isView = true, context.makeImplicit(reportAmbiguousErrors = false))
-            .allImplicits
+          if (ownerTpe.isErroneous) List()
+          else new ImplicitSearch(
+            tree, functionType(List(ownerTpe), AnyClass.tpe), isView = true, 
+            context.makeImplicit(reportAmbiguousErrors = false)).allImplicits
         for (view <- applicableViews) {
           val vtree = viewApply(view)
           val vpre = stabilizedType(vtree)
@@ -740,8 +737,10 @@ self =>
         if (keepLoaded) {
           reloadSources(List(source))
           buildStructureNow(source, response)
-        } else {
+        } else if (outOfDate) {
           buildStructureResponses(source) += response
+        } else {
+          buildStructureNow(source, response)
         }
     }
   }
@@ -749,11 +748,14 @@ self =>
   /** Builds structure of given source file */
   protected def buildStructureNow(source: SourceFile, response: Response[List[Symbol]]) {
     def forceSym(sym: Symbol) { 
-      sym.info.decls.iterator foreach forceSym
+      sym.info match {
+        case t: CompoundType => t.decls.iterator foreach forceSym
+        case _ =>
+      }
     }
     respond(response) {
       onUnitOf(source) { unit =>
-        if (unit.status == NotLoaded) parse(unit)
+        if (unit.status == NotLoaded) parseAndEnter(unit)
         structureTraverser.traverse(unit.body)
         val topLevelSyms = structureTraverser.getResult
         topLevelSyms foreach forceSym
@@ -777,7 +779,6 @@ self =>
       result
     }
   }
-  
 
   // ---------------- Helper classes ---------------------------
 
@@ -802,7 +803,6 @@ self =>
     override def canRedefine(sym: Symbol) = true
 
     def typeCheck(unit: CompilationUnit): Unit = {
-      activeLocks = 0
       applyPhase(typerPhase, unit)
     }
 

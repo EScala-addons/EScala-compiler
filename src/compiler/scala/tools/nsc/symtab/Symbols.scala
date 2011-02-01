@@ -23,10 +23,10 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
   val emptySymbolArray = new Array[Symbol](0)
 
   /** Used for deciding in the IDE whether we can interrupt the compiler */
-  protected var activeLocks = 0
+  //protected var activeLocks = 0
 
   /** Used for debugging only */
-  protected var lockedSyms = collection.immutable.Set[Symbol]()
+  //protected var lockedSyms = collection.immutable.Set[Symbol]()
 
   /** Used to keep track of the recursion depth on locked symbols */
   private var recursionTable = immutable.Map.empty[Symbol, Int]
@@ -307,14 +307,16 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
         } else { handler }
       } else { 
         rawflags |= LOCKED 
-        activeLocks += 1
+//        activeLocks += 1
+//        lockedSyms += this
       }
     }
 
     // Unlock a symbol
     def unlock() = {
       if ((rawflags & LOCKED) != 0L) {
-        activeLocks -= 1
+//        activeLocks -= 1
+//        lockedSyms -= this
         rawflags = rawflags & ~LOCKED
         if (settings.Yrecursion.value != 0)
           recursionTable -= this
@@ -699,7 +701,8 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
           }
         } else {
           rawflags |= LOCKED 
-          activeLocks += 1
+//          activeLocks += 1
+ //         lockedSyms += this
         }
         val current = phase
         try {
@@ -1762,7 +1765,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       if (isFlatAdjusted) {
         if (flatname == null) {
           assert(rawowner.isClass, "fatal: %s has non-class owner %s after flatten.".format(rawname, rawowner))
-          flatname = newTermName(compactify(rawowner.name + "$" + rawname))
+          flatname = nme.flattenedName(rawowner.name, rawname)
         }
         flatname
       } else rawname
@@ -1966,7 +1969,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       if (needsFlatClasses) {
         if (flatname == null) {
           assert(rawowner.isClass, "fatal: %s has owner %s, but a class owner is required".format(rawname+idString, rawowner))
-          flatname = newTypeName(compactify(rawowner.name + "$" + rawname))
+          flatname = tpnme.flattenedName(rawowner.name, rawname)
         }
         flatname
       }

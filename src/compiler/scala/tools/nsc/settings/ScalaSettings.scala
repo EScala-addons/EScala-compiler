@@ -22,6 +22,9 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
 
   /** Disable a setting */
   def disable(s: Setting) = allSettings -= s
+  
+  BooleanSetting("-J<flag>",  "Pass <flag> directly to runtime system")
+  BooleanSetting("-Dprop=value",  "Pass -Dprop=value directly to runtime system")
 
   /**
    *  Standard settings
@@ -111,7 +114,6 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   val log           = PhasesSetting     ("-Ylog", "Log operations during")
   val Ylogcp        = BooleanSetting    ("-Ylog-classpath", "Output information about what classpath is being applied.")
   val Ynogenericsig = BooleanSetting    ("-Yno-generic-signatures", "Suppress generation of generic signatures for Java.")
-  val Yverifysigs   = BooleanSetting    ("-Yverify-generics", "Output a message when an invalid generic signature is suppressed.")
   val noimports     = BooleanSetting    ("-Yno-imports", "Compile without any implicit imports.")
   // Not actually doing anything, so disabled.
   // val nopredefs     = BooleanSetting    ("-Yno-predefs", "Compile without any implicit predefined values.")
@@ -163,10 +165,6 @@ trait ScalaSettings extends AbsScalaSettings with StandardScalaSettings {
   
   val YpresentationLog     = StringSetting("-Ypresentation-log", "file", "Log presentation compiler events into file", "")
   val YpresentationReplay  = StringSetting("-Ypresentation-replay", "file", "Replay presentation compiler events from file", "")
-  /**
-   * "fsc-specific" settings.
-   */
-  val fscShutdown   = BooleanSetting    ("-shutdown", "Shutdown the fsc daemon")
 
   /**
    * -P "Plugin" settings

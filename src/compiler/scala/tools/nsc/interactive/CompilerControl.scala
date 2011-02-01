@@ -36,6 +36,8 @@ import scala.tools.nsc.ast._
  *  a Right value with a FreshRunReq exception.
  */
 trait CompilerControl { self: Global =>
+
+  import syntaxAnalyzer.UnitParser
  
   type Response[T] = scala.tools.nsc.interactive.Response[T]
 
@@ -49,7 +51,14 @@ trait CompilerControl { self: Global =>
    */
   def getUnitOf(s: SourceFile): Option[RichCompilationUnit] = getUnit(s)
   
- /** The compilation unit corresponding to a source file
+  /** Run operation `op` on a compilation unit assocuated with given `source`.
+   *  If source has a loaded compilation unit, this one is passed to `op`.
+   *  Otherwise a new compilation unit is created, but not added to the set of loaded units.
+   */
+  def onUnitOf[T](source: SourceFile)(op: RichCompilationUnit => T): T =
+    op(unitOfFile.getOrElse(source.file, new RichCompilationUnit(source)))
+
+  /** The compilation unit corresponding to a source file
    *  if it does not yet exist create a new one atomically
    *  Note: We want to get roid of this operation as it messes compiler invariants.
    */
@@ -105,7 +114,7 @@ trait CompilerControl { self: Global =>
   }
 
   /** Sets sync var `response` to the smallest fully attributed tree that encloses position `pos`.
-   *  @pre The source file belonging to `pos` needs to be loaded.
+   *  Note: Unlike for most other ask... operations, the source file belonging to `pos` needs not be be loaded.
    */
   def askTypeAt(pos: Position, response: Response[Tree]) = 
     scheduler postWorkItem new AskTypeAtItem(pos, response)
@@ -135,20 +144,16 @@ trait CompilerControl { self: Global =>
   def askLinkPos(sym: Symbol, source: SourceFile, response: Response[Position]) = 
     scheduler postWorkItem new AskLinkPosItem(sym, source, response)
   
-  /** Sets sync var `response` to the last fully attributed & typechecked tree produced from `source`.
-   *  If no such tree exists yet, do a normal askType(source, false, response)
-   */
-  def askLastType(source: SourceFile, response: Response[Tree]) =
-    scheduler postWorkItem new AskLastTypeItem(source, response)
-  
   /** Sets sync var `response' to list of members that are visible
    *  as members of the tree enclosing `pos`, possibly reachable by an implicit.
+   *  @pre  source is loaded
    */
   def askTypeCompletion(pos: Position, response: Response[List[Member]]) = 
     scheduler postWorkItem new AskTypeCompletionItem(pos, response)
 
   /** Sets sync var `response' to list of members that are visible
    *  as members of the scope enclosing `pos`.
+   *  @pre  source is loaded
    */
   def askScopeCompletion(pos: Position, response: Response[List[Member]]) = 
     scheduler postWorkItem new AskScopeCompletionItem(pos, response)
@@ -187,7 +192,23 @@ trait CompilerControl { self: Global =>
 
   /** Tells the compile server to shutdown, and not to restart again */
   def askShutdown() = scheduler raise ShutdownReq
-
+  
+  @deprecated("use parseTree(source) instead") 
+  def askParse(source: SourceFile, response: Response[Tree]) = respond(response) {
+    parseTree(source)
+  }
+  
+  /** Returns parse tree for source `source`. No symbols are entered. Syntax errors are reported.
+   */
+  def parseTree(source: SourceFile): Tree = ask { () =>
+    getUnit(source) match { 
+      case Some(unit) if unit.status >= JustParsed =>
+        unit.body
+      case _ =>
+        new UnitParser(new CompilationUnit(source)).parse()
+    }
+  }
+    
   /** Asks for a computation to be done quickly on the presentation compiler thread */
   def ask[A](op: () => A): A = scheduler doQuickly op
   
@@ -214,7 +235,7 @@ trait CompilerControl { self: Global =>
 
   // items that get sent to scheduler
   
-   abstract class WorkItem extends (() => Unit)
+  abstract class WorkItem extends (() => Unit)
 
   case class ReloadItem(sources: List[SourceFile], response: Response[Unit]) extends WorkItem {
     def apply() = reload(sources, response)
@@ -229,11 +250,6 @@ trait CompilerControl { self: Global =>
   class AskTypeItem(val source: SourceFile, val forceReload: Boolean, response: Response[Tree]) extends WorkItem {
     def apply() = self.getTypedTree(source, forceReload, response)
     override def toString = "typecheck"
-  }
-
-  class AskLastTypeItem(val source: SourceFile, response: Response[Tree]) extends WorkItem {
-    def apply() = self.getLastTypedTree(source, response)
-    override def toString = "reconcile"
   }
 
   class AskTypeCompletionItem(val pos: Position, response: Response[List[Member]]) extends WorkItem {
