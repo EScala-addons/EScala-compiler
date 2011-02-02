@@ -69,7 +69,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
      inkscape:cx="178.57108"
-     inkscape:cy="465.77085"
+     inkscape:cy="180.05656"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -272,5 +272,38 @@
        d="m 394.57143,200.11218 c -1.42857,-45.71429 -1.42857,-45.71429 -1.42857,-45.71429"
        id="path7631"
        inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="449.57144"
+       y="285.79074"
+       id="text3017"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3019"
+         x="449.57144"
+         y="285.79074">pull()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="391.71429"
+       y="409.36218"
+       id="text3021"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3023"
+         x="391.71429"
+         y="409.36218">pull()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="554.57141"
+       y="413.64792"
+       id="text3025"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3027"
+         x="554.57141"
+         y="413.64792">pull()</tspan></text>
   </g>
 </svg>

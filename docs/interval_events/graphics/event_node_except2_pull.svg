@@ -248,5 +248,41 @@
        d="m 393.85714,199.3979 c -1.42857,-45.71429 -1.42857,-45.71429 -1.42857,-45.71429"
        id="path7631"
        inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="191.42857"
+       y="186.96429"
+       id="text3364"
+       sodipodi:linespacing="125%"
+       transform="translate(263.85714,88.826468)"><tspan
+         sodipodi:role="line"
+         id="tspan3366"
+         x="191.42857"
+         y="186.96429">pull()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="286.42856"
+       y="313.39288"
+       id="text3368"
+       sodipodi:linespacing="125%"
+       transform="translate(263.85714,88.826468)"><tspan
+         sodipodi:role="line"
+         id="tspan3370"
+         x="286.42856"
+         y="313.39288">pull()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="107.14286"
+       y="259.10715"
+       id="text3372"
+       sodipodi:linespacing="125%"
+       transform="translate(263.85714,88.826468)"><tspan
+         sodipodi:role="line"
+         id="tspan3374"
+         x="107.14286"
+         y="259.10715">pull()</tspan></text>
   </g>
 </svg>

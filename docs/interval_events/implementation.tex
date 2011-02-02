@@ -47,8 +47,11 @@ Filter-Bedingung zu unterziehen. Das resultierende Event wird nur dann
 ausgelöst, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu true
 auswertet. 
 
-Der daraus resultierende Abhänigkeitsgraph soll nachfolgend als Event-Graph
-bezeichnet werden.
+Der aus mehreren Event-Knoten bestehende Abhänigkeitsgraph soll nachfolgend als Event-Graph bezeichnet werden. Ein Event-Graph besteht aus mindestens einem Event-Node. 
+Mehrere Event-Nodes können mit gerichteten Kanten verbunden sein. Es gibt zwei Arten von Kanten im Event-Graphen. Unbeschriftete Kanten
+zeigen die ``Flussrichtung'' von Events an. Kanten die mit pull() beschriftet
+sind, zeigen die zu prüfenden Abhängigkeiten bei einer Pull-Operation an.
+Except-Event-Knoten haben die Beschriftung ``$\backslash$''.
 
 Intervall-Events können uneingeschränkt auch als Knoten im Event-Graph
 vorkommen. Eine Liste der möglichen Filterfunktionen und die dazugehörigen
@@ -56,25 +59,25 @@ Definitionen findet sich im Kapitel \ref{definitions}.
 
 \subsection{Auswertung des Event-Graphen}
 
-Bei der Auswertung eines Event-Graphen gibt es zwei möglichen Vorgehensweisen.
-Zum einen kann Events sammeln, die bei Event-Graphen ankommen und dann
-weiterleiten, wenn gewisse Bedingungen erfüllt sind. Hierbei handelt es sich um
+Bei der Auswertung eines Event-Graphen gibt es zwei mögliche Vorgehensweisen.
+Zum einen kann man Events sammeln, die bei einem Knoten des Event-Graphen
+ankommen und dann weiterleiten, wenn gewisse Bedingungen erfüllt sind. Hierbei handelt es sich um
 eine Push-basierte Implementierungen. Es werden nämlich nur Änderungen gepusht.
 
-Beim Zweiten Ansatz werden keien Ändeurngen weitergeleitet. Stattdessen wird der
-Event-Graph traversiert um herauszufinden, ob Änderungen passiert sind. Dieser
-Ansatz wird nachfolgend als pull-Basiert bezeichnet.
+Beim Zweiten Ansatz werden keinen Ändeurngen weitergeleitet. Stattdessen wird
+der Event-Graph traversiert um herauszufinden, ob Änderungen passiert sind. Dieser
+Ansatz wird nachfolgend als Pull-basiert bezeichnet.
 
 Bei gleichem Resultat haben beide Implementierungen verschiedene Vor- und
-Nachteile. Nateilig beim Push-Basierten Ansatz ist die relativ hohe Komplexität
+Nachteile. Nachteilig beim Push-basierten Ansatz ist die relativ hohe Komplexität
 der Implementierung wenn Knoten im Event-Graph einen Zustand aufweisen.
-Außerdem ist es schwierig, ein deterministisches Verhalten sicherzustellen. Beim
+Dann ist es schwierig, ein deterministisches Verhalten sicherzustellen. Beim
 Pull-basierten Ansatz stellt sich stattdessen die Frage, wie man den richtigen
 Zeitpunkt für einen Pull ermitteln kann. 
 
 Die Implementierung im scala.events-Modul verwendet einen hybriden Ansatz um den
-Event-Graphen auszuwerten. Die meisten Event-Knoten wurden Push-Basiert
-implementiert. Eine Ausnahme stellt der Except-Knoten dar. Mit einem
+Event-Graphen auszuwerten. Die meisten Event-Knoten wurden Push-basiert
+implementiert. Eine Ausnahme stellt der Except-Knoten dar. Mit einem solchen
 Event-Knoten können verschiedene Events ausgeschlossen werden. Der Except-Zweig
 des Event-Knotens wurde pull-basiert implementiert.
 
@@ -88,7 +91,7 @@ Der Event-Graph des Push-basierten Ansatzes ist in
 Abb.\ref{push_based_event_graph} zu sehen. Wenn das Event e1 ausgelöst wird,
 startet zunächst das Sammeln von Reactions im Knoten e1 und folgt den im
 Diagramm eingezeichneten Kanten. 
-
+ 
 Der Except-Event-Knoten speichert intern ob bereits ein Sammelvorgang über den
 Except-Zweig durchgeführt wurde. Ist dies nicht der Fall, dann wird das Sammeln
 in e forgesetzt und die Reaction auf das Event e wird gesammelt. 
@@ -101,23 +104,38 @@ prinzipiell genauso. Allerdings wird im Except-Event-Node explizit der Pull-Vorg
 prüfen, ob die Except-Bedingung gilt oder nicht. Der Except-Knoten speichert
 dann keinen internen Zustand mehr.
 
-Betrachten wir nun das Beispiel zwei. Das Beispiel 2 ist praktisch von keiner
-Bedeutung. Allerdings zeigt es gut die Einschränkungen einer Push-Basierten
+Betrachten wir nun das Beispiel 2. Das Beispiel 2 ist praktisch von keiner
+Bedeutung. Allerdings zeigt es gut die Probleme einer Push-basierten
 Implementierung auf. 
 
 Wenn der Event e1 ausgelöst wird, kann das Sammeln von Reactions nun mit zwei
-Knoten starten. Entweder werden zunächst über den Or-Knoten die Reactions vom
-Except-Knoten gesammelt. Dann schaltet der Except-Knoten seinen internen Zustand
-um. Wenn anschließend die Sammlung über die zweite Kante von e1 erfolgt, hat
-sich der Zustand von Except bereits geändert, sodass keine Reaktionen von e
-gesammelt werden.
+Knoten starten wie man im Event-Graphen in Abb.
+\ref{failing_push_based_event_graph} sehen kann. Möglicherweise werden die
+Reactions vom Except-Knoten über den Or-Knoten zuerst gesammelt. Dann schaltet 
+der Except-Knoten seinen internen Zustand um. Wenn anschließend die Sammlung
+über  die zweite Kante von e1 erfolgt, hat sich der Zustand von Except bereits 
+geändert, sodass keine Reaktionen von e gesammelt werden.
 
 Wenn allerdings zunächst der Except-Knoten besucht wird, hat dieser seinen
 internen Zustand noch nicht umgeschaltet. Dann werden die Reactions von e
 gesammelt. Erst wenn später der Except-Knoten über den Or-Knoten besucht wird,
 schaltet der Except-Knoten seinen Zustand um. Allerdings wurde dann schon die
-Reaction von e gesammelt. Daher wird nach dem Sammeln der Reactions
-fälschlicher Weise der Event e ausgelöst.
+Reaction von e gesammelt. Daher muss, wenn der Except-Knoten über den
+Except-Zweig erreicht wird, die Liste mit Reactions gelöscht werden. Das hier
+genannte Beispiel 2 würde dann korrekt arbeiten. Allerdings lassen sich durch
+kompliziertere Beispiele Zustände erzeugen, bei dem das korrekte Sammeln von
+Events scheitert\footnote{Ein Beispiel hierfür ist ein Event-Graph bei dem sich
+über dem Except-Knoten ein And-Knoten befindet}.
+
+Der Pull-basierte Ansatz ist in Abb. \ref{working_pull_based_event_graph} zu
+sehen. Hier gibt es in e1 nur einen Weg, die Sammlung der Reactions zu
+beginnen\footnote{Natürlich gibt es auch hier wieder zwei Wege von e1 zum
+Except-Knoten. Allerdings stellt der Weg über den Or-Knoten eine Sackgasse
+dar. Sammler die den Except-Knoten über diesen Weg erreichen, werden ignoriert
+und sammeln keine Reactions ein.}. Wenn der Reaction-Sammler nun im
+Except-Event-Knoten angelangt, wird eine Pull-Operation auf den Except-Zweig ausgeführt. Dabei  wird
+festgestellt, dass der auslösende Event ebenfalls über die Except-Kante beim 
+Except-Knoten ankommt. Daher werden keine Reactions von e gesammelt.
 
 
  
@@ -151,17 +169,3 @@ fälschlicher Weise der Event e ausgelöst.
 \end{figure}
 
 
-\subsubsection{Einschränkungen der Implementierung}
-In einem Event-Graph können nicht EventNodeRef oder EventNodeExists in einem
-Pfad zusammen mit EventNodeExcept verwendet werden, da dies möglicherweise zu
-nicht korrekten Ergebnissen führen würde.
-
-Beim EventNodeExcept kann ein Except-Event empfangen werden, der das Entfernen
-von Reactions auslöst. Die sorgt möglicherweise für Inkonsistenzen
-bei Vorgängerknoten im Event-Graphen, wenn sich die Reaction des Except-Knotens
-vor der Reaction eines anderen Knotens in der ReactionListe befindet.
-Daher muss im Falle eines Except-Events immer ein Undeploy und ein Deploy
-ausgeführt  werden, um die geänderten Reactions weiterzupropagieren.
-
-Dies funktioniert allerdings nicht mehr länger mit EventNodeRef oder
-EventNodeExists, dieses die Reihenfolge von Reactions verändern können.
