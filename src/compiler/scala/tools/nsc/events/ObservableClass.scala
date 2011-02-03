@@ -54,12 +54,18 @@ abstract class ObservableClass extends Transform
                 obsobjects = List()
                 val tpack = super.transform(pd).asInstanceOf[PackageDef]                 
 
+                val oldNamer = namer
+                namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
                 //add the observable classes object
                 //and generate result
+                obsobjects.foreach(obj =>namer.enterSyntheticSym(obj))
                 val result = treeCopy.PackageDef(tpack, tpack.pid, 
                         obsobjects ::: tpack.stats)
 
+                    
+
                 obsobjects = oldobsobjects
+                namer = oldNamer
                 result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
@@ -81,7 +87,7 @@ abstract class ObservableClass extends Transform
                                       Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
                                       ))
               namer.enterSyntheticSym(newobj)
-              println("dcls du package: " + sym.owner.info.decls)
+              //println("dcls du package: " + sym.owner.info.decls)
               obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
 
               // Add self to allobjects in the constructor

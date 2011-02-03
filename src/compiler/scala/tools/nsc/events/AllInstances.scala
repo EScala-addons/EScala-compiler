@@ -46,13 +46,13 @@ abstract class AllInstances extends Transform
       val sym = tree.symbol
       tree match {
         // Matches "allInstances[generic].event"
-        case sel @ Select(TypeApply(allInstances, (generic: Tree) :: Nil), event)
-        // Matches "allInstances[generic](_.event)"
+        case sel @ Select(TypeApply(allInstances, (generic: Tree) :: Nil), event) =>
         /*case sel @ Apply(TypeApply(allInstances, (generic: Tree) :: Nil),
          *                (event: Tree) :: Nil
          *          )
          */
-          if (allInstances.symbol == MethAllInstances) =>
+
+          if (allInstances.symbol == MethAllInstances) {
             if (settings.Yeventsdebug.value)
               println("Encountered the allInstances symbol. Parameter: "+generic)
             /*
@@ -75,6 +75,9 @@ abstract class AllInstances extends Transform
              *     Maybe we will have to put sth. in the parser, after all ?
              */
             // generic$all.all.any
+            val oldNamer = namer
+            namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
+
             val allMemberAny = Select(
                   Select(
                     Ident(generic+"$all"),
@@ -98,10 +101,13 @@ abstract class AllInstances extends Transform
             // generic$all.all.any(((_: C) => _.event))
             val anyApply = Apply(allMemberAny, List(mapEvent))
             println("anyApply = " + anyApply)
+            namer.enterSyntheticSym(anyApply)
+            namer = oldNamer
+            localTyper.typed(atPos(sel.pos)(anyApply))
 
-            localTyper.typed(
-              atPos(sel.pos) {anyApply}
-            )
+        } else {
+            super.transform(tree)
+        }
 
         case _ => super.transform(tree)
       }

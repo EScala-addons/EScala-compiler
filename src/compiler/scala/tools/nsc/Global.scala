@@ -398,7 +398,7 @@ class Global(var settings: Settings, var reporter: Reporter) extends SymbolTable
   // phaseName = "allinstances"
   object allinstances extends {
     val global: Global.this.type = Global.this
-    val runsAfter = List[String]("observableclasses")
+    val runsAfter = List[String]("observableclass")
     val runsRightAfter = None
   } with AllInstances
 
