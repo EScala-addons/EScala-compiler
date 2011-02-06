@@ -57,8 +57,6 @@ abstract class AllInstances extends Transform
               println("Encountered the allInstances symbol. Parameter: "+generic)
             /*
              * TODOs:
-             *   - 'generic' contains the name of the package (e.g.
-             *     truie.Transaction) and that trigger an error "symbol no
              *     found". Why ?
              *   - generic$all.all.any(_ => _.event) returns an
              *     "EventNodeExists" but the ValDef that takes this value
@@ -78,15 +76,17 @@ abstract class AllInstances extends Transform
             val oldNamer = namer
             namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
 
+            val objname = generic.symbol.rawname+"$all"
+            val objall = Ident(generic.symbol.owner.info.decl(objname))
+
+
             val allMemberAny = Select(
-                  Select(
-                    Ident(generic+"$all"),
-                    //Ident(newTermName("Transaction$all")),
+                    Select(objall,
                     newTermName("all")
                   ),
                   newTermName("any")
             )
-            println("allMemberAny = " + allMemberAny)
+            //println("allMemberAny = " + allMemberAny)
 
             // _ => _.event
             val mapEvent = Function(
@@ -96,11 +96,11 @@ abstract class AllInstances extends Transform
                 Ident("_"), event
               )
             )
-            println("mapEvent = " + mapEvent)
+            //println("mapEvent = " + mapEvent)
 
             // generic$all.all.any(((_: C) => _.event))
             val anyApply = Apply(allMemberAny, List(mapEvent))
-            println("anyApply = " + anyApply)
+            //println("anyApply = " + anyApply)
             namer.enterSyntheticSym(anyApply)
             namer = oldNamer
             localTyper.typed(atPos(sel.pos)(anyApply))

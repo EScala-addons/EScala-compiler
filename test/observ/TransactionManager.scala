@@ -1,17 +1,9 @@
-package truie.pipo
+package truie.toto
 
-observable class Transaction {
+import truie.pipo.Transaction
+import scala.events.VarList
+import scala.events.allInstances
 
-    observable def credit() {
-        System.out.println("Credit")
-    }
-
-    observable def debit() {
-        System.out.println("Debit")
-    }
-}
-
-/*
 class TransactionManager {
 
     evt e_bcredit[Unit] = beforeExec(allInstances[Transaction].credit)
@@ -32,9 +24,6 @@ object Test {
         t1.credit
         t2.credit
         t2.debit
-        //System.out.println("Objects : "+allInstances[Transaction])
     }
 }
-*/
 
-// vim: set ts=4 sw=4 et:
