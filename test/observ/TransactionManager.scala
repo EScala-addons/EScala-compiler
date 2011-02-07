@@ -1,7 +1,6 @@
 package truie.toto
 
 import truie.pipo.Transaction
-import scala.events.VarList
 import scala.events.allInstances
 
 class TransactionManager {
