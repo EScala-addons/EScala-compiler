@@ -1,4 +1,6 @@
 package scala.events.pingpong
+
+import java.awt.event.KeyEvent
 import scala.collection.mutable.ListBuffer
 import scala.events._
 
@@ -68,23 +70,36 @@ case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
   override def boundingBox = (width, height)
 }
 
-class Player(world: World, bar: ModelObject, goal: ModelObject) {
-
-  val keyCode_MoveBarUp = 0x48
-  val keyCode_MoveBarDown = 0x49
-
-  val keyPress = new ImperativeEvent[Int]
-  val keyRelease = new ImperativeEvent[Int]
-
-  val moveBarUp = new BetweenEvent(keyPress && ((code: Int) => code == keyCode_MoveBarUp), keyRelease && ((code: Int) => code == keyCode_MoveBarUp));
-  val moveBarDown = new BetweenEvent(keyPress && ((code: Int) => code == keyCode_MoveBarDown), keyRelease && ((code: Int) => code == keyCode_MoveBarDown));
+class Player(moveUpKeyCode : Int, moveDownKeyCode : Int, world: World, bar: ModelObject, goal: ModelObject) {
+  
+  val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)  
+  val pressMoveDown = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
+  
+  var releaseTime : Long = 0;
+  
+  pressMoveUp += ((_) => releaseTime = System.currentTimeMillis+120)
+  pressMoveDown += ((_) => releaseTime = System.currentTimeMillis+120)
+  
+  val moveBarUp = new BetweenEvent(pressMoveUp, world.clock && ((t : Long) => t > releaseTime));
+  val moveBarDown = new BetweenEvent(pressMoveDown, world.clock && ((t : Long) => t > releaseTime));
+  
+  moveBarUp.before += ((_) => {
+	  bar.velocity = (0,-5)
+  })
+  moveBarUp.after += ((_) => {
+	  bar.velocity = (0,0)
+  })
+  
+  moveBarDown.before += ((_)=>bar.velocity =(0,5))
+  moveBarDown.after += ((_)=> bar.velocity  = (0,0))
+  
 }
 
 class World(val size: (Int, Int)) {
 
   /// Events
-  val keyPressed = new ImperativeEvent[Int]
-  val keyReleased = new ImperativeEvent[Int]
+  val keyPressed = new ImperativeEvent[KeyEvent]
+  val keyReleased = new ImperativeEvent[KeyEvent]
   val clock = new ImperativeEvent[Long]
   
   /// Values
@@ -97,8 +112,8 @@ class World(val size: (Int, Int)) {
   val player1Goal = new Goal(size._2, (0, 0))
   val player2Goal = new Goal(size._2, (size._1 - 30, 0))
 
-  val player1 = new Player(this, player1Bar, player1Goal)
-  val player2 = new Player(this, player2Bar, player2Goal)
+  val player1 = new Player(87, 83, this, player1Bar, player1Goal)
+  val player2 = new Player(38, 40, this, player2Bar, player2Goal)
 
   val objects = List(player1Bar,
     player2Bar,
@@ -109,8 +124,5 @@ class World(val size: (Int, Int)) {
     new Ball(radius = 10, pos = (size._1 / 2, size._2 / 2)))
   
   val mover = new Mover(this)  
-  
-  def init = {
-	  clock += (_ => this.objects.foreach(b => mover.move(b)))
-  }
+  clock += (_ => this.objects.foreach(b => mover.move(b)))
 }

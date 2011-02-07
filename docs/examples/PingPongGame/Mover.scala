@@ -8,6 +8,7 @@ class Mover(val world : World) {
   val moved = new ImperativeEvent[ModelObject]
 
   def move(o: ModelObject) {
+	  
     if (o.velocity == (0, 0)) return
     o.position = (o.position._1 + o.velocity._1, o.position._2 + o.velocity._2)
     moved(o)

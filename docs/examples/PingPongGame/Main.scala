@@ -9,7 +9,6 @@ import java.awt.event.KeyEvent;
 
 object Main extends SimpleSwingApplication {
 
-  
   var world = new World(500, 300);
 
   def top = new MainFrame {
@@ -26,29 +25,28 @@ object Main extends SimpleSwingApplication {
 
     this.peer.addKeyListener(new KeyListener() {
       def keyPressed(e: KeyEvent) {
-    	  
-    	//Inform the world about the key down event
-        println(e + " key pressed")
-        world.keyPressed(e.getKeyCode)
+
+        //Inform the world about the key down event
+        world.keyPressed(e)
       };
 
       def keyReleased(e: KeyEvent) {
-    	  //Inform the world about the key-up event
-        println(e + " key released")
-        world.keyReleased(e.getKeyCode)
+        //Inform the world about the key-up event
+        world.keyReleased(e)
       };
 
       def keyTyped(e: KeyEvent) {
-    	  //Here you can access the keyTyped-Event
+        //Here you can access the keyTyped-Event
       }
     });
 
     val timer = new Timer(50, new ActionListener {
       override def actionPerformed(ev: java.awt.event.ActionEvent): Unit = { world.clock(System.currentTimeMillis) }
     });
-    
-    timer.start(); 
+
+    timer.start();
     world.clock += (_ => repaint)
+
     title = "Ping Pong"
     contents = new Component {
       preferredSize = new Dimension(world.size._1, world.size._2)
@@ -62,6 +60,7 @@ object Main extends SimpleSwingApplication {
   }
 
   def reset() = {
+    println("reset")
     world = new World(top.size.width, top.size.height);
   }
 
