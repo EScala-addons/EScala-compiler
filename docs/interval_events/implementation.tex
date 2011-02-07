@@ -5,7 +5,7 @@ Implementierung der Events. Es handelt sich bei Intevall-Events um eine
 spezielle Form von Event-Nodes die aus einem Start- und einem Stop-Event
 bestehen.
 
-Wie bei jedem Event-Node aus dem scala.events-Package durchläuft ein
+Wie bei jedem Event-Node aus dem scala.events-Package durchl"auft ein
 Intervall-Event einen Lebenszyklus bestehend aus dem Setup des Event-Graphen,
 der Registrierung von Reactions, dem Deploy, der Unregistrierung von Reactions
 und dem Undeploy von Event-Nodes. Dieser Lebenszyklus ist auch in
@@ -24,11 +24,11 @@ Abb. \ref{event_node_lifecycle} zu sehen.
 Es gibt, wie in Abb. \ref{interval_events_structure} zwei Klassen von
 Interval-Event-Nodes: BetweenEvents und ExecutionEvents. BetweenEvents sind vom
 Auftreten des StartEvents bis zum Auftreten des ersten End-Events aktiv, wenn
-eine Reaction registiert wurde. Das Execution-Event dient dazu, die Ausführung
+eine Reaction registiert wurde. Das Execution-Event dient dazu, die Ausf"uhrung
 einer Funktion zu protokollieren. Wenn das Execution-Event eine Funktion
-überwachen soll, dann instrumentiert der Compiler die Funktion so, dass ein
+"uberwachen soll, dann instrumentiert der Compiler die Funktion so, dass ein
 Before-Event beim Betreten der Funktion und ein After-Event beim Verlassen der
-Funktion ausgelöst wird.
+Funktion ausgel"ost wird.
 
 %\usepackage{graphics} is needed for \includegraphics
 \begin{figure}[htp]
@@ -41,44 +41,44 @@ Funktion ausgelöst wird.
 
 
 \subsection{Der Aufbau des Event-Graphen}
-Mithilfe von Event-Nodes können mehrere Events zu komplexeren Events
-zusammengefasst werden. So ist es beispielsweise möglich, alle Events einer
+Mithilfe von Event-Nodes k"onnen mehrere Events zu komplexeren Events
+zusammengefasst werden. So ist es beispielsweise m"oglich, alle Events einer
 Filter-Bedingung zu unterziehen. Das resultierende Event wird nur dann
-ausgelöst, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu true
+ausgel"ost, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu true
 auswertet. 
 
-Der daraus resultierende Abhänigkeitsgraph soll nachfolgend als Event-Graph
+Der daraus resultierende Abh"anigkeitsgraph soll nachfolgend als Event-Graph
 bezeichnet werden.
 
-Intervall-Events können uneingeschränkt auch als Knoten im Event-Graph
-vorkommen. Eine Liste der möglichen Filterfunktionen und die dazugehörigen
+Intervall-Events k"onnen uneingeschr"ankt auch als Knoten im Event-Graph
+vorkommen. Eine Liste der m"oglichen Filterfunktionen und die dazugeh"origen
 Definitionen findet sich im Kapitel \ref{definitions}.
 
 \subsection{Auswertung des Event-Graphen}
 
-Bei der Auswertung eines Event-Graphen gibt es zwei möglichen Vorgehensweisen.
+Bei der Auswertung eines Event-Graphen gibt es zwei m"oglichen Vorgehensweisen.
 Zum einen kann Events sammeln, die bei Event-Graphen ankommen und dann
-weiterleiten, wenn gewisse Bedingungen erfüllt sind. Hierbei handelt es sich um
-eine Push-basierte Implementierungen. Es werden nämlich nur Änderungen gepusht.
+weiterleiten, wenn gewisse Bedingungen erf"ullt sind. Hierbei handelt es sich um
+eine Push-basierte Implementierungen. Es werden n"amlich nur "Anderungen gepusht.
 
-Beim Zweiten Ansatz werden keien Ändeurngen weitergeleitet. Stattdessen wird der
-Event-Graph traversiert um herauszufinden, ob Änderungen passiert sind. Dieser
+Beim Zweiten Ansatz werden keien "Andeurngen weitergeleitet. Stattdessen wird der
+Event-Graph traversiert um herauszufinden, ob "Anderungen passiert sind. Dieser
 Ansatz wird nachfolgend als pull-Basiert bezeichnet.
 
 Bei gleichem Resultat haben beide Implementierungen verschiedene Vor- und
-Nachteile. Nateilig beim Push-Basierten Ansatz ist die relativ hohe Komplexität
+Nachteile. Nateilig beim Push-Basierten Ansatz ist die relativ hohe Komplexit"at
 der Implementierung wenn Knoten im Event-Graph einen Zustand aufweisen.
-Außerdem ist es schwierig, ein deterministisches Verhalten sicherzustellen. Beim
+Au\ss erdem ist es schwierig, ein deterministisches Verhalten sicherzustellen. Beim
 Pull-basierten Ansatz stellt sich stattdessen die Frage, wie man den richtigen
-Zeitpunkt für einen Pull ermitteln kann. 
+Zeitpunkt f"ur einen Pull ermitteln kann. 
 
 Die Implementierung im scala.events-Modul verwendet einen hybriden Ansatz um den
 Event-Graphen auszuwerten. Die meisten Event-Knoten wurden Push-Basiert
 implementiert. Eine Ausnahme stellt der Except-Knoten dar. Mit einem
-Event-Knoten können verschiedene Events ausgeschlossen werden. Der Except-Zweig
+Event-Knoten k"onnen verschiedene Events ausgeschlossen werden. Der Except-Zweig
 des Event-Knotens wurde pull-basiert implementiert.
 
-Betrachten wir nachfolgend zwei Beispiele um diese Vorgehensweise zu begründen:
+Betrachten wir nachfolgend zwei Beispiele um diese Vorgehensweise zu begr"unden:
 \begin{eqnarray}
 val \; e & = e1 \setminus (e2 || e3)\\
 val \; e & = e1 \setminus (e1 || e3)
@@ -98,7 +98,7 @@ Abb\ref{push_based_event_graph} zu sehen.
   \includegraphics[width=0.3\textwidth]{graphics/event_node_except_pull}
   \label{pull_based_event_graph}
 }
-\caption{Event-Graphen für das Beispiel 1}
+\caption{Event-Graphen f"ur das Beispiel 1}
 \end{figure}
 
 \begin{figure}[htp]
@@ -111,21 +111,21 @@ Abb\ref{push_based_event_graph} zu sehen.
   \includegraphics[width=0.3\textwidth]{graphics/event_node_except2_pull}
   \label{working_pull_based_event_graph}
 }
-\caption{Event-Graphen für das Beispiel 2}
+\caption{Event-Graphen f"ur das Beispiel 2}
 \end{figure}
 
 
-\subsubsection{Einschränkungen der Implementierung}
-In einem Event-Graph können nicht EventNodeRef oder EventNodeExists in einem
-Pfad zusammen mit EventNodeExcept verwendet werden, da dies möglicherweise zu
-nicht korrekten Ergebnissen führen würde.
+\subsubsection{Einschr"ankungen der Implementierung}
+In einem Event-Graph k"onnen nicht EventNodeRef oder EventNodeExists in einem
+Pfad zusammen mit EventNodeExcept verwendet werden, da dies m"oglicherweise zu
+nicht korrekten Ergebnissen f"uhren w"urde.
 
 Beim EventNodeExcept kann ein Except-Event empfangen werden, der das Entfernen
-von Reactions auslöst. Die sorgt möglicherweise für Inkonsistenzen
-bei Vorgängerknoten im Event-Graphen, wenn sich die Reaction des Except-Knotens
+von Reactions ausl"ost. Die sorgt m"oglicherweise f"ur Inkonsistenzen
+bei Vorg"angerknoten im Event-Graphen, wenn sich die Reaction des Except-Knotens
 vor der Reaction eines anderen Knotens in der ReactionListe befindet.
 Daher muss im Falle eines Except-Events immer ein Undeploy und ein Deploy
-ausgeführt  werden, um die geänderten Reactions weiterzupropagieren.
+ausgef"uhrt  werden, um die ge"anderten Reactions weiterzupropagieren.
 
-Dies funktioniert allerdings nicht mehr länger mit EventNodeRef oder
-EventNodeExists, dieses die Reihenfolge von Reactions verändern können.
+Dies funktioniert allerdings nicht mehr l"anger mit EventNodeRef oder
+EventNodeExists, dieses die Reihenfolge von Reactions ver"andern k"onnen.

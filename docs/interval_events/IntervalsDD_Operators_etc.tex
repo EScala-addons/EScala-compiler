@@ -63,14 +63,14 @@ unterschiedlicher Form erfolgen:
 \end{itemize}
 Ausserdem gebe \aktiv\Interval{} : boolean an, ob das Intervall aktiv ist.
 In der jetzigen Fassung bedeutet dies einfach, ob man sich zeitlich innerhalb des
-Intervalls befindet. Das Umschalten wude bisher als Sink realisiert. Dies führt
+Intervalls befindet. Das Umschalten wude bisher als Sink realisiert. Dies f"uhrt
 jedoch zu Indeterminismus, sodass e \&\& within(between(e,e')) beim ersten Vorkommen 
-von e nicht unbedingt immer ausgeführt wird. Dies ist unschön und sollte vermieden werden.
+von e nicht unbedingt immer ausgef"uhrt wird. Dies ist unsch"on und sollte vermieden werden.
 
 Daher sollte active eine andere Semantik erhalten und als reaction aktualisiert
 werden. So kann sichergestellt werden, dass der Zustand von active zu jedem
-Zeitpunkt bekannt ist. Die Semantik ändert sich also wie in Abbildung
-\ref{active_bit_behaviour} gezeigt. Dies ist keine Einschränkung, wie im
+Zeitpunkt bekannt ist. Die Semantik "andert sich also wie in Abbildung
+\ref{active_bit_behaviour} gezeigt. Dies ist keine Einschr"ankung, wie im
 weiteren gezeigt werden wird.
 
 \begin{figure}[h]
@@ -83,7 +83,7 @@ weiteren gezeigt werden wird.
 
 	\rput(1.2,1.7){\psframebox*[framearc=.3]{B}}
 	\rput(9.2,1.7){\psframebox*[framearc=.3]{A}}
-	\rput(0.2,1.55){\psframebox*[framearc=.3]{Früher}}
+	\rput(0.2,1.55){\psframebox*[framearc=.3]{Fr"uher}}
 	\psline[linewidth=1pt]{[-]}(1,1.5)(9,1.5)
 
 	\rput(1.2,0.7){\psframebox*[framearc=.3]{B}}
@@ -97,14 +97,14 @@ weiteren gezeigt werden wird.
 \end{figure}
 
 
-Für alle Intervalle muss gelten, dass active nur bei einem \before{\_} oder
+F"ur alle Intervalle muss gelten, dass active nur bei einem \before{\_} oder
 \after{\_} Event umgeschaltet wird, wobei \aktiv{\_} nur von einem \before{\_}
-Event gesetzt und von einem \after{\_} Event zurückgesetzt werden kann.
+Event gesetzt und von einem \after{\_} Event zur"uckgesetzt werden kann.
 Ausserdem sollten ausserhalb des Intervalls keine isolierten Events auftreten.
 
 \section{Operatoren}
-Im folgenden werden einige Operatoren sowie ihre mögliche Imlementierung und
-evtl. Schwächen des jeweiligen Ansatzes diskutiert.
+Im folgenden werden einige Operatoren sowie ihre m"ogliche Imlementierung und
+evtl. Schw"achen des jeweiligen Ansatzes diskutiert.
 
 \subsection{Komplement comp\Interval : Intervall}
 \begin{itemize}
@@ -113,19 +113,19 @@ evtl. Schwächen des jeweiligen Ansatzes diskutiert.
 \item \aktiv{\comp{\Interval}} <=> ! \aktiv{\Interval}
 \end{itemize}
 Probleme: An den Schnittpunkten ist ein Event laut dieser Definition sowohl in
-int als auch \comp{\Interval}. Bei verschachtelten Events gibt es unerwünschte,
+int als auch \comp{\Interval}. Bei verschachtelten Events gibt es unerw"unschte,
 isolierte before(\comp{\Interval})-Events.
 
-mögliche Lösungen: Komplement als Methode von Intervall Event überladbar
-machen, und in Spezialfällen gesondert behandeln. Für das Schnittpunkt-Problem
-gibt es (noch) keine Lösung, ist evtl. auch positiv (siehe Differenz)
+m"ogliche L"osungen: Komplement als Methode von Intervall Event "uberladbar
+machen, und in Spezialf"allen gesondert behandeln. F"ur das Schnittpunkt-Problem
+gibt es (noch) keine L"osung, ist evtl. auch positiv (siehe Differenz)
 
-Bemerkung: die zusätzlichen Bedingungen an after und active existieren aufgrund
+Bemerkung: die zus"atzlichen Bedingungen an after und active existieren aufgrund
 der Nicht-Standard-Intervalle. Die explizite Definition von active ist wichtig damit das Komplement auch anfangs aktiv sein kann.
 
 \subsection{Vereinigung \Interval{1} || \Interval{2} : Intervall}
 Die Semantik der ||-Vereinigung soll eine Vereinigung der Zeitpunkte von \Interval{1}
-und \Interval{2} sein, also w"are, falls \Interval{1} ein Exec Event wäre, \Interval{1} || \Interval{1} ein Standard Intervall.
+und \Interval{2} sein, also w"are, falls \Interval{1} ein Exec Event w"are, \Interval{1} || \Interval{1} ein Standard Intervall.
 \begin{itemize}
 \item \before{\Interval{1} || \Interval{2}}  <=> (\before{\Interval{1}} ||
 \before{\Interval{2}}) \&\& !
@@ -138,11 +138,11 @@ und \Interval{2} sein, also w"are, falls \Interval{1} ein Exec Event wäre, \Int
 \end{itemize}
 Anmerkung: statt \after{\Interval{1}} wurde hier \before{\comp{\Interval{1}}}
 verwendet. In der jetzigen Fassung ist dies "aquivalent, allerdings bietet diese Formulierung den
-Vorteil, dass falls die Probleme für Komplement gelöst werden, auch zum größten
+Vorteil, dass falls die Probleme f"ur Komplement gel"ost werden, auch zum gr"o\ss ten
 Teil die Probleme mit Vereinigung verschwinden.
 
-Problem: Verschachtelte Events, äahnlich wie bei Komplement. Eine Lösung für
-das Problem mit Komplement löst auch dieses Problem.
+Problem: Verschachtelte Events, "aahnlich wie bei Komplement. Eine L"osung f"ur
+das Problem mit Komplement l"ost auch dieses Problem.
 
 \subsection{Schnitt \Interval{1} \&\& \Interval{2} : Intervall}
 \begin{itemize}
@@ -157,16 +157,16 @@ Anmerkungen: zu \before{\comp{\_}} siehe Anm. zur Vereinigung
 
 \subsection{Differenz \Interval{1} \textbackslash\ \Interval{2} : Interval}
 Alle Zeitpunkte, die in \Interval{1} liegen, nicht aber in \Interval{2} (ausser Start bzw.
-Endzeitpunkt, siehe Anm.). Wegen dieser Einschränkung kann es sinnvoll sein,
-eine Bedingung an einen Zeitpunkt über eine Verbindung von within und !within
-auszudrücken.
+Endzeitpunkt, siehe Anm.). Wegen dieser Einschr"ankung kann es sinnvoll sein,
+eine Bedingung an einen Zeitpunkt "uber eine Verbindung von within und !within
+auszudr"ucken.
 
 \Interval{1} \textbackslash\ \Interval{2} <=> \Interval{1} \&\& comp(\Interval{2})
 
-Anmerkung: Wie bei Komplement erwähnt, sind die Eckpunkte von \Interval{1} und \Interval{2}
-evtl. fälschlicherweise mit in \Interval{1} \textbackslash\ \Interval{2}. Dies
-lässt sich nicht lösen, solange keine Möglichkeit gefunden wird, offene Intervalle zu
-modellieren (z.B. über explizite before-Trigger o.ä.). U.U. ist dies aber auch
+Anmerkung: Wie bei Komplement erw"ahnt, sind die Eckpunkte von \Interval{1} und \Interval{2}
+evtl. f"alschlicherweise mit in \Interval{1} \textbackslash\ \Interval{2}. Dies
+l"asst sich nicht l"osen, solange keine M"oglichkeit gefunden wird, offene Intervalle zu
+modellieren (z.B. "uber explizite before-Trigger o."a.). U.U. ist dies aber auch
 keine schlechte Eigenschaft, so dass ein Wechsel int -> \comp{\Interval{}}
 atomar zu einem bestimmten Zeitpunkt stattfindet.
 
@@ -188,27 +188,27 @@ Problem: Auch hier werden bei verschachtelten Intervallen multiple \after{\_} Ev
 Der Umstand, dass sich int und \comp{\Interval{}} zwei Zeitpunkte teilen, mag
 unintuitiv erscheinen, allerdings  bietet dies nicht nur Nachteile. So ist int
 || \comp{\Interval{}} wie  erwartet immer aktiv, beginnt und endet niemals. int
-\&\& \comp{\Interval{}} ist niemals aktiv  und löst auch niemals before oder
+\&\& \comp{\Interval{}} ist niemals aktiv  und l"ost auch niemals before oder
 after Ereignisse aus.
 
   \section{An Events gebundene Werte}
-Es ist möglich, beliebige Werte an Events zu binden. Diese Möglichkeit soll
-auch für Intervall-Events existieren. Wann im Intervall welche Werte gelten,
-hängt von der Art des Intervalls ab. 
+Es ist m"oglich, beliebige Werte an Events zu binden. Diese M"oglichkeit soll
+auch f"ur Intervall-Events existieren. Wann im Intervall welche Werte gelten,
+h"angt von der Art des Intervalls ab. 
 
-Auf den aktellen Wert des Intervalls wird über die Eigenschaft val zugegriffen.
+Auf den aktellen Wert des Intervalls wird "uber die Eigenschaft val zugegriffen.
 Wenn also nachfolgend <Intervall>.val geschrieben steht, soll auf den aktuellen
 Wert des Intervall-Events zugegriffen werden.
 
 Nachfolgend wird das Standartverhalten der Intervall-Operatoren dargestellt.
-Natürlich kann das Verhalten der Operatoren bei Bedarf abgeändert werden. Dann
+Nat"urlich kann das Verhalten der Operatoren bei Bedarf abge"andert werden. Dann
 muss beim Intervall-Event-Knoten eine Benutzerdefinierte Merge-Funktion
 angegeben werden, die Values der Events aggregiert.
 
 \subsection{Intervall zwischen dem Event B und dem Event A)}
-Für between-Intervalle wie in Abbildung \ref{interval-between_b_a} gilt der Wert des
-Before-Events bis zum End-Event. Dannach hat das Intervall den Wert null. Wenn der Wert des After-Events benötigt
-wird, kann dieser über das Komplement des Intervalls erhalten werden. Beim
+F"ur between-Intervalle wie in Abbildung \ref{interval-between_b_a} gilt der Wert des
+Before-Events bis zum End-Event. Dannach hat das Intervall den Wert null. Wenn der Wert des After-Events ben"otigt
+wird, kann dieser "uber das Komplement des Intervalls erhalten werden. Beim
 Intervall\ref{interval-between_b_a} gilt also:
 \[
 val(t) = \begin{cases}
@@ -239,8 +239,8 @@ null & t >= 9
 
 Wenn die \before{\_}-Events mehrfach auftreten, hat das
 between-Intervall als Wert den Wert des ersten \before{\_} oder des ersten
-\after{\_}-Events. Ein Beispiel hierfür ist in Abbildung
-\ref{interval-between_b_a-multiple} zu sehen. Für
+\after{\_}-Events. Ein Beispiel hierf"ur ist in Abbildung
+\ref{interval-between_b_a-multiple} zu sehen. F"ur
 Interval\ref{interval-between_b_a-multiple} gilt \[ val(t) =
 \begin{cases}
 null & t < 1\\
@@ -249,7 +249,7 @@ null  & t >= 7
 \end{cases}
 \]
 
-Für das
+F"ur das
 Komplement des Interval\ref{interval-between_b_a-multiple} gilt:
 \[
 comp.val = \begin{cases}
@@ -279,9 +279,9 @@ After-Events}
  
  
 \subsection{Vereinigung von Intervallen}
-Für die Vereinigung von Intervallen ist es sinnvoll, den Wert des letzen
+F"ur die Vereinigung von Intervallen ist es sinnvoll, den Wert des letzen
 \before{\_}-Events zu speichern. Damit hat man immer Zugriff auf den Wert des
-letzten Events, der die Bedingung erfüllt hat. 
+letzten Events, der die Bedingung erf"ullt hat. 
 
 \begin{figure}[h]
  \centering 
@@ -306,7 +306,7 @@ letzten Events, der die Bedingung erfüllt hat.
 \label{interval-or}
 \end{figure}
   
-Für das in Abb\ref{interval-or} zu sehende Interval\ref{interval-or}
+F"ur das in Abb\ref{interval-or} zu sehende Interval\ref{interval-or}
 between(A,B) || between(A',B') gilt also die folgende Belegung des Wertes:
 \[
 val(t) = \begin{cases}
@@ -317,7 +317,7 @@ null & t > 9 \\
 \end{cases}
 \]
 
-Und für das Komplement von Interval\ref{interval-or} gilt die Belegung:
+Und f"ur das Komplement von Interval\ref{interval-or} gilt die Belegung:
 \[
 val(t) = \begin{cases}
 null & t < 9 \\
@@ -354,7 +354,7 @@ between(B',A')}
 \end{figure}
 
 Wie in Abb. \ref{interval-and} zu sehen, ergibt sich das folgende Zeitliche
-Verhalten für den Wert von Interval\ref{interval-and} \[
+Verhalten f"ur den Wert von Interval\ref{interval-and} \[
 val(t)=\begin{cases}
 null & t < 3 \\
 (B,B') & t >=3 \; and t <= 7 \\
@@ -371,7 +371,7 @@ null & t <= 7\\
 
 \subsection{Differenz zweier Intervall-Events}
 Bei der Differenz zwischen zwei Intervall-Events ist der Wert des Intervalls das
-letzte Before-Event vor oder nach dem Schnitt. Für de
+letzte Before-Event vor oder nach dem Schnitt. F"ur de
 
 \begin{figure}[h]
  \centering 
@@ -405,7 +405,7 @@ between(B',A')}
 \label{interval-diff}
 \end{figure}
 
-Für Interval\ref{interval-diff} ergibt sich also folgende Belegung:
+F"ur Interval\ref{interval-diff} ergibt sich also folgende Belegung:
 \[
 val(t)=\begin{cases}
 null & t < 1 \\
@@ -416,7 +416,7 @@ null & t >9
 \end{cases}
 \]
 
-Für das Komplement von Interval\ref{interval-diff} ergibt sich der zeitliche
+F"ur das Komplement von Interval\ref{interval-diff} ergibt sich der zeitliche
 Werteverlauf:\[
 val(t)= \begin{cases}
 null & t < 3\\
