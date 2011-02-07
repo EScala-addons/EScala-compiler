@@ -1,0 +1,7 @@
+../../escala/test/files/events-exp-lang-neg/types-missing.scala:6: error: ':' expected but ')' found.
+  evt e2(x) = e1(x)
+          ^
+../../escala/test/files/events-exp-lang-neg/types-missing.scala:7: error: identifier expected but '}' found.
+}
+^
+two errors found

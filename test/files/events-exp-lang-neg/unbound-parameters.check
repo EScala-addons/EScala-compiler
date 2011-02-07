@@ -1,0 +1,7 @@
+../../escala/test/files/events-exp-lang-neg/unbound-parameters.scala:6: error: ValDef not found
+  evt e2(x: Int, y: Int) = e1(a,y)
+                              ^
+../../escala/test/files/events-exp-lang-neg/unbound-parameters.scala:7: error: ValDef not found
+  evt e3(x: Int, y: Int) = e1(x,b)
+                                ^
+two errors found
