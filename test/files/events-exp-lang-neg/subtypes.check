@@ -1,0 +1,9 @@
+subtypes.scala:22: error: type mismatch;
+ found   : A
+ required: B
+    o.e1(a1)
+         ^
+test/files/events-exp-lang-neg/subtypes.scala:23: error: too many arguments for method apply: (v: (A, B))Unit in class ImperativeEvent
+    o.e2(a1, a2)
+        ^
+two errors found

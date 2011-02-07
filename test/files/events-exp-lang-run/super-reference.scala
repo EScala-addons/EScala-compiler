@@ -13,5 +13,3 @@ object Test {
     o.e1()
   }
 }
-
-// vim: set ts=4 sw=4 et:

@@ -18,10 +18,12 @@ object Test {
     val o = new C
     val a = new A
     val b = new B
+    val b2 = new B
 
-    o.e2 += { (a: A, b: B) => println("e2") }
     o.e3 += { (a1: A, a2: A) => println("e3") }
+    o.e2 += { (b1: B, b2: B) => println("e22") }
 
     o.e1(a, b)
+    o.e1(b2, b)
   }
 }
