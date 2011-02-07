@@ -1,15 +1,17 @@
 package scala.events.pingpong
 import scala.collection.mutable.ListBuffer
 
-abstract class ModelObject {
+abstract class ModelObject(pos : (Int,Int)=(0,0)) {
 
-  var position: (Int, Int) = (0, 0)
+  var position = pos
   var velocity: (Int, Int) = (0, 0)
   /**
    * first value is width, second height
    */
   def boundingBox: (Int, Int)
 
+  
+  
   def isCollidingWith(other: ModelObject): Boolean = {
     val extended_pos = (Math.min(position._1, position._1 + velocity._1),
       Math.min(position._2, position._2 + velocity._2))
@@ -33,10 +35,11 @@ abstract class ModelObject {
 
 }
 
-case class Ball(var radius: Int) extends ModelObject {
+case class Ball(var radius: Int, pos: (Int, Int)) extends ModelObject(pos) {
+
   override def isCollidingWith(other: ModelObject) = {
     other match {
-      case Ball(r) => {
+      case Ball(r, p) => {
         val middle = (other.position._1 + other.boundingBox._1 / 2,
           other.position._2 + other.boundingBox._2 / 2)
         val myMiddle = (position._1 + velocity._1 + boundingBox._1 / 2,
@@ -50,45 +53,39 @@ case class Ball(var radius: Int) extends ModelObject {
   override def boundingBox = (2 * radius, 2 * radius)
 }
 
-abstract case class Bar(var length: Int) extends ModelObject {
+case class Bar(var length: Int, pos : (Int, Int)) extends ModelObject(pos) {
   val width = 5;
   velocity = (Math.random.intValue, Math.random.intValue)
   override def boundingBox = (width, length)
 }
-abstract case class Wall(val extent: Int) extends ModelObject {
+
+case class Wall(val length: Int, val pos: (Int, Int)) extends ModelObject(pos) {
   val height = 30;
-  override def boundingBox = (extent, height)
+  override def boundingBox = (length, height)
 }
 
-abstract case class Goal(val right: Boolean, val height: Int) extends ModelObject {
+case class Goal(val height: Int, pos : (Int,Int)) extends ModelObject(pos) {
   val width = 30
   override def boundingBox = (width, height)
 }
 
-object Bar1 extends Bar(10) {
-  position = (0, 50)
-}
+class World {
 
-object Bar2 extends Bar(10) {
-  position = (200, 50)
-}
+  val upperWall = new Wall(length = 300, pos = (-50, 0));
+  val lowerWall = new Wall(length = 300, pos = (-50, 100));
 
-object UpperWall extends Wall(300) {
-  position = (-50, 0)
-}
+  val player1Bar = new Bar(length = 10, pos = (0, 50));
+  val player2Bar = new Bar(length = 10, pos = (200, 50));
 
-object LowerWall extends Wall(300) {
-  position = (-50, 100)
-}
+  val player1Goal = new Goal(100 + upperWall.height, (-30,0))
+  val player2Goal = new Goal(100 + upperWall.height, (250,0))
 
-object Goal1 extends Goal(false, 100 + LowerWall.height) {
-  position = (-50, 0)
-}
-
-object Goal2 extends Goal(true, 100 + LowerWall.height) {
-  position = (250, 0)
-}
-
-object Ball {
-  val balls = new ListBuffer[Ball]
+  //val boundingBox : (Int,Int)
+  val objects = List(player1Bar,
+    player2Bar,
+    upperWall,
+    lowerWall,
+    player1Goal,
+    player2Goal,
+    new Ball(radius = 10, pos = (50, 50)))
 }

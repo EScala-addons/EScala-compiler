@@ -6,15 +6,10 @@ import javax.swing.Timer
 import scala.swing._
 
 object Main extends SimpleSwingApplication {
-	
-	Ball.balls += {
-		val b = new Ball(10);
-		b.position = (50,50); 
-		b.velocity = ((Math.random*30).intValue,10+Math.random.intValue);
-		b}
-	Clock.clk += (_ => Ball.balls.foreach(b => Mover.move(b)))
-	
-	def top = new MainFrame {
+		var world = new World();	var mover = new Mover(world)	
+	Clock.clk += (_ => world.objects.foreach(b => mover.move(b)))
+		def top = new MainFrame {				val resetAction = Action("reset"){reset};		val quitAction = Action("quit"){};				menuBar = new MenuBar {
+			contents += new Menu("Game") {				contents += new MenuItem(resetAction);				contents += new MenuItem(quitAction)			}		};		
 		val timer = new Timer(50,new ActionListener{
 			override def actionPerformed(ev: java.awt.event.ActionEvent):Unit = {Clock.clk()}
 		});		timer.start();		Clock.clk += (_ => repaint)
@@ -23,22 +18,14 @@ object Main extends SimpleSwingApplication {
 			preferredSize = new Dimension(500,500)
 			override def paintComponent(g: Graphics2D) = {
 				super.paintComponent(g)
-				//paint
-			
-				modelDraw(UpperWall,g)
-				modelDraw(LowerWall,g)
-				modelDraw(Bar1,g)
-				modelDraw(Bar2,g)
-				modelDraw(Goal1,g)
-				modelDraw(Goal2,g)
-				Ball.balls.foreach(b => modelDraw(b,g))
+				world.objects .foreach(drawable => modelDraw(drawable, g));
 			}
 		}
 	}
-	
+			def reset() = {		world = new World;		mover = new Mover(world) 	}	
 	def modelDraw(o : ModelObject, g : Graphics2D) = {
 		o match {
-			case Ball(r) => g.fillOval(o.position._1,o.position._2,r,r)
+			case Ball(r,position) => g.fillOval(o.position._1,o.position._2,r,r)
 			case _ => g.fillRect(o.position._1,o.position._2,o.boundingBox._1,o.boundingBox._2)
 		}
 	}
