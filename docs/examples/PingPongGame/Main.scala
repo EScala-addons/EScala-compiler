@@ -5,11 +5,13 @@ import java.awt.event.ActionListener
 
 import javax.swing.Timer
 
-import scala.swing._
+import scala.swing._;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 
 object Main extends SimpleSwingApplication {
 
-	var world = new World();
+	var world = new World(500,300);
 	var mover = new Mover(world)
 
 	Clock.clk += (_ => world.objects.foreach(b => mover.move(b)))
@@ -17,7 +19,7 @@ object Main extends SimpleSwingApplication {
   def top = new MainFrame {
 		
 		val resetAction = Action("reset"){reset};
-		val quitAction = Action("quit"){};
+		val quitAction = Action("quit"){System.exit(0)};
 		
 		menuBar = new MenuBar {
 			contents += new Menu("Game") {
@@ -25,6 +27,20 @@ object Main extends SimpleSwingApplication {
 				contents += new MenuItem(quitAction)
 			}
 		};
+		
+		this.peer.addKeyListener(new KeyListener() {
+		    def keyPressed(e:KeyEvent) {
+		      println(e + " key pressed")
+		    };
+		
+		    def keyReleased(e:KeyEvent) {
+		      println(e + " key released")
+		    };
+		
+		def keyTyped(e:KeyEvent) {
+		      println(e + " key typed")
+		    }
+		 });
 		
     val timer = new Timer(50, new ActionListener {
       override def actionPerformed(ev: java.awt.event.ActionEvent): Unit = { Clock.clk() }
@@ -65,9 +81,8 @@ object Main extends SimpleSwingApplication {
     }
 	}
 	
-	
 	def reset() = {
-		world = new World;
+		world = new World(500,300);
 		mover = new Mover(world) 
 	}
 	
