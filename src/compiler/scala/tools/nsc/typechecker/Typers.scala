@@ -1682,11 +1682,15 @@ trait Typers { self: Analyzer =>
               else
                 gen.mkTuple(edef.vparams.map((vdef) => Ident(vdef.symbol)))
 
-            Apply(
-              Select(fun,nme.map),
-              List(Function(
-                vparams1,
-                body)))
+            if(!(typed(fun).tpe <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
+              error(edef.rhs.pos, "rhs is not an event")
+              edef.rhs
+            } else
+              Apply(
+                Select(fun,nme.map),
+                List(Function(
+                  vparams1,
+                  body)))
           case Function(params, body) =>
             vparams = params ::: vparams
             mapTransform(body)
