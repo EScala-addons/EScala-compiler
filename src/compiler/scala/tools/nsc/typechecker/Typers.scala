@@ -1671,7 +1671,10 @@ trait Typers { self: Analyzer =>
 
         rhs match {
           case Apply(fun, args) =>
-            val vparams = sortValDefs(args);
+            if(vparams.length != args.length)
+              error(edef.pos, "unbound parameters")
+
+            val vparams1 = sortValDefs(args);
 
             val body = 
               if(edef.vparams.length == 1)
@@ -1682,7 +1685,7 @@ trait Typers { self: Analyzer =>
             Apply(
               Select(fun,nme.map),
               List(Function(
-                vparams,
+                vparams1,
                 body)))
           case Function(params, body) =>
             vparams = params ::: vparams
