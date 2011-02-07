@@ -1,6 +1,5 @@
 package scala.events.pingpong
 
-import scala.events.pingpong.World
 import scala.events.ImperativeEvent
 
 object Clock {

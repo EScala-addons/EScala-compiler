@@ -69,7 +69,7 @@ case class Goal(val height: Int, pos : (Int,Int)) extends ModelObject(pos) {
   override def boundingBox = (width, height)
 }
 
-class World {
+class World2 {
 
   val upperWall = new Wall(length = 300, pos = (-50, 0));
   val lowerWall = new Wall(length = 300, pos = (-50, 100));
@@ -88,4 +88,24 @@ class World {
     player1Goal,
     player2Goal,
     new Ball(radius = 10, pos = (50, 50)))
+}
+
+class World(size : (Int,Int)) {
+  val upperWall = new Wall(length = size._1, pos = (0, 0));
+  val lowerWall = new Wall(length = size._1, pos = (0, size._2-30));
+
+  val player1Bar = new Bar(length = size._2/4, pos = (50, size._2/2-size._2/8));
+  val player2Bar = new Bar(length = size._2/4, pos = (size._1-50, size._2/2-size._2/8));
+
+  val player1Goal = new Goal(size._2, (0,0))
+  val player2Goal = new Goal(size._2, (size._1-30,0))
+
+  //val boundingBox : (Int,Int)
+  val objects = List(player1Bar,
+    player2Bar,
+    upperWall,
+    lowerWall,
+    player1Goal,
+    player2Goal,
+    new Ball(radius = 10, pos = (size._1/2, size._2/2)))
 }
