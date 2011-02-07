@@ -1,5 +1,6 @@
 package scala.events.pingpong
-import scala.events._
+
+import scala.events.pingpong.World
 
 object Clock {
 
@@ -7,9 +8,9 @@ object Clock {
 
 }
 
-object Mover {
-
-  Clock.clk += (_ => {move(Bar1); move(Bar2) })
+class Mover(val world : World) {	
+	
+  Clock.clk += (_ => { move(world.player1Bar); move(world.player2Bar ) })
   Clock.clk += (_=> { Ball.balls.foreach(b => Mover.move(b)) })
 
   val moved = new ImperativeEvent[ModelObject]
@@ -27,14 +28,14 @@ object Mover {
     o.velocity = (-o.velocity._1, o.velocity._2)
   })
 
-  moved && (o => colliding(o, UpperWall)) += reverseYVelocity
-  moved && (o => colliding(o, LowerWall)) += reverseYVelocity
+  moved && (o => colliding(o, world.upperWall )) += reverseYVelocity
+  moved && (o => colliding(o, world.lowerWall )) += reverseYVelocity
 
   val ballMoved = moved && (o => o.isInstanceOf[Ball]) map ((o: ModelObject) => o.asInstanceOf[Ball])
 
-  ballMoved && (o => colliding(o, Bar1) || colliding(o, Bar2)) += reverseXVelocity
-  ballMoved && (o => colliding(o, Goal1)) += (_ => "Point for Player2")
-  ballMoved && (o => colliding(o, Goal2)) += (_ => "Point for Player1")
+  ballMoved && (o => colliding(o, world.player1Bar) || colliding(o, world.player2Bar)) += reverseXVelocity
+  ballMoved && (o => colliding(o,world.player1Goal )) += (_ => "Point for Player2")
+  ballMoved && (o => colliding(o,world.player2Goal )) += (_ => "Point for Player1")
 
   def colliding(o1: ModelObject, o2: ModelObject) = o1.isCollidingWith(o2) || o2.isCollidingWith(o1)
 
