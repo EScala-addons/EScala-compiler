@@ -1,5 +1,5 @@
 package scala.events.pingpong
-import scala.events.ImperativeEvent
+import scala.events._
 
 object Clock {
 
@@ -9,7 +9,9 @@ object Clock {
 
 object Mover {
 
-  Clock.clk += (_ => { move(Bar1); move(Bar2) })
+  Clock.clk += (_ => {move(Bar1); move(Bar2) })
+  Clock.clk += (_=> { Ball.balls.foreach(b => Mover.move(b)) })
+
   val moved = new ImperativeEvent[ModelObject]
 
   def move(o: ModelObject) {
@@ -31,9 +33,30 @@ object Mover {
   val ballMoved = moved && (o => o.isInstanceOf[Ball]) map ((o: ModelObject) => o.asInstanceOf[Ball])
 
   ballMoved && (o => colliding(o, Bar1) || colliding(o, Bar2)) += reverseXVelocity
-  ballMoved && (o => colliding(o,Goal1)) += (_ => "Point for Player2")
-  ballMoved && (o => colliding(o,Goal2)) += (_ => "Point for Player1")
+  ballMoved && (o => colliding(o, Goal1)) += (_ => "Point for Player2")
+  ballMoved && (o => colliding(o, Goal2)) += (_ => "Point for Player1")
 
   def colliding(o1: ModelObject, o2: ModelObject) = o1.isCollidingWith(o2) || o2.isCollidingWith(o1)
 
+}
+
+abstract class Player {
+  val upKeydown = new ImperativeEvent[Unit]
+  val upKeyup = new ImperativeEvent[Unit]
+  val downKeydown = new ImperativeEvent[Unit]
+  val downKeyup = new ImperativeEvent[Unit]
+
+  val up = between(upKeydown, upKeyup) //\ between(downKeydown, downKeyup)
+  val down = between(downKeydown, downKeyup) //\ between(upKeydown, upKeyup)
+
+}
+
+object Player1 extends Player {
+	println("Init Player1")
+  Clock.clk within down += (_=>{println("Bar1Down"); Bar1.velocity = (0, 10) })
+  Clock.clk within up += (_=>{ Bar1.velocity = (0, -10) })
+}
+object Player2 extends Player {
+  Clock.clk within down += (_=>{ Bar2.velocity = (0, 10) })
+  Clock.clk within up += (_=>{ Bar2.velocity = (0, -10) })
 }
