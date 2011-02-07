@@ -688,9 +688,13 @@ object Variable {
 /*
  * Implementation of an observable list
  */
-class VarList[T]() extends Iterable[T] {
+class VarList[T] private(private val buffer: ListBuffer[T]) extends Iterable[T] {
+
+  def this() = this(new ListBuffer[T])
+
+
   // Use list buffer for implementation
-  private val buffer = new ListBuffer[T]
+  // private val buffer = new ListBuffer[T]
 
   // delegate the iterator implementation
   override def iterator = buffer.iterator
@@ -709,6 +713,10 @@ class VarList[T]() extends Iterable[T] {
     buffer.foreach(v => elementRemoved(v))
     buffer.clear()
   }
+
+  def reverse: VarList[T] = new VarList(buffer.reverse)
+
+  //def find(fun: T => Boolean): Option[T] = buffer.find(fun)
 
   /*
    * A convenience operator creating an event based on the list
