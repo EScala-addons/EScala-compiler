@@ -62,7 +62,7 @@ trait Event[+T] {
   /**
    * Event is triggered except if the other one is triggered
    */
-  def \[U >: T](other: Event[U]) = new EventNodeExcept[U](this, other)
+  def \[U >: T,S](other: Event[S]) = new EventNodeExcept[U,S](this, other)
 
   /**
    * Events conjunction
@@ -77,7 +77,7 @@ trait Event[+T] {
   /**
    * Transform the event parameter
    */
-  def map[U, S >: T, V >: S](mapping: V => U) = new EventNodeMap[S, U](this, mapping)
+  def map[U, S >: T, V >: T <: S](mapping: S => U) = new EventNodeMap[V, U](this, mapping)
 
   /**
    * Event is triggered if the first event was already triggered but not the second one yet
@@ -584,7 +584,7 @@ class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
   }
 }
 
-class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
+class EventNodeExcept[T,U](accpeted: Event[T], except: Event[U]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
   
@@ -599,7 +599,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
     }
   }
   
-  lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+  lazy val onExcept = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)]) => {
     // the except event is received, set the id to
     if(this.id != id) {
       this.id = id
