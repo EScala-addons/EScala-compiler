@@ -1652,15 +1652,14 @@ trait Typers { self: Analyzer =>
           args.foldLeft(List[ValDef]())((rest: List[ValDef], ident: Tree) => {
             ident match {
               case Ident(name) =>
-                vparams.find((vdef) => (vdef.name == name)) match {
-                  case Some(vdef: ValDef) =>
-                    vdef.tpt match {
-                        case Ident(_) => rest :+ vdef
-                        case _ => rest :+ (treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType)
-                      }
-                  case _ => 
-                    error(ident.pos, "ValDef not found") // todo
-                    rest :+ ValDef(sym.owner.newValue(name) setInfo ErrorType)
+                val vdef : ValDef = vparams.find((vdef) => (vdef.name == name)) getOrElse { 
+                  error(ident.pos, "ValDef not found") // todo
+                  ValDef(sym.owner.newValue(name) setInfo ErrorType)
+                }
+
+                vdef.tpt match {
+                  case Ident(_) => rest :+ vdef
+                  case _ => rest :+ (treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType)
                 }
               case _ => 
                 error(ident.pos, "Args contains wrong Tree") // todo
@@ -1671,26 +1670,36 @@ trait Typers { self: Analyzer =>
 
         rhs match {
           case Apply(fun, args) =>
-            if(vparams.length != args.length)
-              error(edef.pos, "unbound parameters")
+            fun match {
+              case Select(event,nme.BARBAR) =>
+                Apply(
+                  Select(
+                    mapTransform(event),
+                    nme.BARBAR),
+                  args.map(mapTransform))
 
-            val vparams1 = sortValDefs(args);
+              case _ =>
+                if(vparams.length != args.length)
+                  error(edef.pos, "unbound parameters")
 
-            val body = 
-              if(edef.vparams.length == 1)
-                Ident(edef.vparams.head.symbol)
-              else
-                gen.mkTuple(edef.vparams.map((vdef) => Ident(vdef.symbol)))
+                val vparams1 = sortValDefs(args);
 
-            if(!(typed(fun).tpe <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
-              error(edef.rhs.pos, "rhs is not an event")
-              edef.rhs
-            } else
-              Apply(
-                Select(fun,nme.map),
-                List(Function(
-                  vparams1,
-                  body)))
+                val body = 
+                  if(edef.vparams.length == 1)
+                    Ident(edef.vparams.head.symbol)
+                  else
+                    gen.mkTuple(edef.vparams.map((vdef) => Ident(vdef.symbol)))
+
+                if(!(typed(fun).tpe <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
+                  error(edef.rhs.pos, "rhs is not an event")
+                  edef.rhs
+                } else
+                  Apply(
+                    Select(fun,nme.map),
+                    List(Function(
+                      vparams1,
+                      body)))
+            }
           case Function(params, body) =>
             vparams = params ::: vparams
             mapTransform(body)
