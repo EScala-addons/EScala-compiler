@@ -1,7 +1,7 @@
-parameters-missing.scala:6: error: ':' expected but ')' found.
-  evt e2(x) = e1
-          ^
-parameters-missing.scala:7: error: identifier expected but '}' found.
-}
-^
+parameters-missing.scala:6: error: Unexpected rhs
+  evt e2(x: Int) = e1
+                   ^
+parameters-missing.scala:8: error: unbound parameters
+  evt e3(x: Int) = e1(_)
+      ^
 two errors found

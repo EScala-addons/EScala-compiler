@@ -1,4 +1,0 @@
-parameters-missing3.scala:6: error: unbound parameters
-  evt e2(x: Int) = e1(_)
-      ^
-one error found
