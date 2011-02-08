@@ -1,7 +1,7 @@
-../../escala/test/files/events-exp-lang-neg/parameters-missing.scala:6: error: ':' expected but ')' found.
+parameters-missing.scala:6: error: ':' expected but ')' found.
   evt e2(x) = e1
           ^
-../../escala/test/files/events-exp-lang-neg/parameters-missing.scala:7: error: identifier expected but '}' found.
+parameters-missing.scala:7: error: identifier expected but '}' found.
 }
 ^
 two errors found

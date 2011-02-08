@@ -1,0 +1,4 @@
+parameters-missing2.scala:6: error: Unexpected rhs
+  evt e2(x: Int) = e1
+                   ^
+one error found

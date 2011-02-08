@@ -1,0 +1,3 @@
+error: inferred type arguments [Int,(Int, Int),Int] do not conform to method map's type parameter bounds [U,S >: (Int, Int),V >: S]
+error: inferred type arguments [(Int, Int, Int),(Int, Int),(Int, Int, Int)] do not conform to method map's type parameter bounds [U,S >: (Int, Int),V >: S]
+two errors found

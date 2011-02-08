@@ -3,7 +3,7 @@ class C1 {
 }
 
 class C2 extends C1 {
-  evt e2() = super.e1
+  evt e2() = super.e1()
 }
 
 object Test {
