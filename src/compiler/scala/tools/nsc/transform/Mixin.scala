@@ -934,6 +934,7 @@ abstract class Mixin extends InfoTransform with ast.TreeDSL {
         var fieldsTransient = 0
         for (f <- clazz0.info.decls.iterator if fieldWithBitmap(f)) {
           if (settings.debug.value) log(f.fullName + " -> " + fields)
+          println("\n*++++++*\n"+f.fullName + " -> " + fields)
           
           val (idx, _) =
               bitmapOperation(f, (fieldsTransient, fieldsTransient += 1),

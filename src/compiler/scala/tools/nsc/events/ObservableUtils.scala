@@ -51,6 +51,11 @@ trait ObservableUtil extends Transform
       Select(
         Ident(exec),
         newTypeName("BeforeExecution"))
+    println("\n+++++++++++++++")
+    println(makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition))
+    println("\n222222222222222")
+    println(makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition))
+    println("\n+++++++++++++++")
     makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
@@ -69,7 +74,7 @@ trait ObservableUtil extends Transform
       /*Select(
         Ident(exec),
         newTypeName("BeforeSet"))*/
-    makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
+    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
 
   protected[events] def newAfterSetEvent(tparams: List[Tree]) = {
@@ -78,7 +83,7 @@ trait ObservableUtil extends Transform
       /*Select(
         Ident(exec),
         newTypeName("AfterSet"))*/
-    makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
+    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
   
   protected[events] def newExecutionEvent(beforeTparams: List[Tree], afterTparams: List[Tree]) =

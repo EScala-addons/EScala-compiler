@@ -1620,15 +1620,15 @@ trait Typers { self: Analyzer =>
     
    	
    	def typedSetEvent(ev: SetEvent, mode: Int, pt: Type): Tree = {  
-println("given event OWN: " + ev.kind + ", " + ev.field)
+//println("given event OWN: " + ev.kind + ", " + ev.field)
    		// Feldreferenzuntersuchung:
    		val typedRef = typed(ev.field)
-println("typedRef OWN: " + typedRef)
+//println("typedRef OWN: " + typedRef)
    		val typedEvent = treeCopy.SetEvent(ev, ev.kind, typedRef)
-println("typedEvent OWN: " + typedEvent)
+//println("typedEvent OWN: " + typedEvent)
    		val sym = typedRef.symbol
-println("sym OWN: " + sym + "..... " + sym.tpe)
-println("typedRef.tpe: " + typedRef.tpe)
+//println("sym OWN: " + sym + "..... " + sym.tpe)
+//println("typedRef.tpe: " + typedRef.tpe)
        val dataType : Either[Type,(Type, Type)] =
         sym.tpe match {
           case meth @ PolyType(params, rtpe) =>
@@ -1637,27 +1637,28 @@ println("typedRef.tpe: " + typedRef.tpe)
             println("paramType, rtpe " + paramType + ", " + rtpe)
             ev.kind match {
                 case BeforeSet() => Left(paramType)
-                case AfterSet() => Left(tupleType(List(paramType, rtpe)))
+                case AfterSet() => Left(paramType) // rtpe wrong Param! Need Type Unit .... 
             }
           case _ => 
             error(sym.pos, "UNKNOWN FIELD-EVENT EXPRESSION")
             Left(ErrorType)
       }      
-println("dataType OWN: " + dataType)
+//println("dataType OWN: " + dataType)
       //check that the method is observable or defined in the class or in a parent class
       val isLocal = typedRef match {
         case Select(This(_), _) | Select(Super(_, _), _) => true
         case _ => false
       }
-println("checking conditions isMethod, isInstrumented, isLocal: " + sym.isMethod + ", " + sym.isInstrumented + ", " + isLocal)
+//println("checking conditions isMethod, isInstrumented, isLocal, isObservable: " + sym.isMethod + ", " + sym.isInstrumented + ", " + isLocal + ", " + sym.isObservable)
       if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
         error(typedRef.pos, "the argument must be an observable method or a local method")
       }
       
+      
       val eventType = 
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))      
-println("eventType OWN: " + eventType)
+//println("eventType OWN: " + eventType)
    		// Tree return:
    		typedEvent.setType(eventType)
    	}

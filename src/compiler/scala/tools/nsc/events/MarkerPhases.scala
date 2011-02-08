@@ -3,6 +3,7 @@ package events
 
 import symtab._
 
+
 import scala.collection.mutable.{HashMap,MultiMap,Set}
 
 trait MarkerPhases {
@@ -90,6 +91,8 @@ println("3 TOINSTRUMENT: " + toInstrument + "\nMETHODSTOINSTRUMENT: " + methodsT
 
       object traverser extends Traverser {
         override def traverse(tree: Tree) {
+        	//println("TRAVERSER in MarkerPhases - Tree: " + tree)
+        	// + ",\nsymbol + type: " + tree.symbol + " + " + tree.symbol.tpe)
           tree match {
             case cd: ClassDef => 
               if(settings.Yeventsdebug.value)
@@ -102,6 +105,42 @@ println("3 TOINSTRUMENT: " + toInstrument + "\nMETHODSTOINSTRUMENT: " + methodsT
                 println("referencing method " + meth.symbol + " in class " + currentThis)
               val declaringClass = meth.symbol.owner
               toInstrument.addBinding(meth.symbol, currentThis)
+             case SetEvent(kind, field) if(!field.symbol.isInstrumented) =>
+             	println("----> field instrumented already? " + field.symbol.isInstrumented)
+              // so far we are sure that a non instrumented referenced method is defined in this class or in a parent class
+              //if(settings.Yeventsdebug.value)
+              
+                println("referenced field " + field.symbol + " in " + field.symbol.owner)
+              	val fieldSymbol = field.symbol
+              	
+              	/*
+              	val setterRef = analyzer.Typer.typed(
+                atPos(tree.pos) {
+                  field match {
+                    case Select(prefix, fieldSymbol) =>
+                    	println("PREFIX -___-___- " + prefix + ", ---> " + fieldSymbol )
+                      val tester = Select(prefix, newTermName(field.symbol + "_$eq")) setSymbol NoSymbol 
+                      println("\n#######\ntester: " + tester + ", " + tester.symbol)
+                      tester
+                    case _ =>
+                      EmptyTree
+                  }
+                }
+                )
+              	
+              	
+              	//var test = Select(prefix, newTermName(field.symbol + "_"))
+              	println("-----\nsetter: " + setterRef.tpe + "\n-----")
+              	*/
+              	
+              	// nme.getterToSetter(nme.getterName(field.symbol.name))
+              	val setterName = nme.getterToSetter(nme.getterName(field.symbol.name))
+              	println("____created SetterName: " + setterName)
+              	val setterSym = field.symbol.owner.info.decl(setterName)
+              	println("____created SetterSym: " + setterSym)
+              	
+              	//toInstrument.addBinding(setterSym, currentThis)
+              	toInstrument.addBinding(setterSym, field.symbol.owner)
             case _ => super.traverse(tree)
           }
         }

@@ -11,6 +11,12 @@ trait EventUtil {
   
   import global._
 
+	def buildBeforeSetEventName(meth: Symbol) =
+    internalBuildField(meth, "$before")
+
+  def buildAfterSetEventName(meth: Symbol) =
+    internalBuildField(meth, "$after")
+
   def buildBeforeEventName(meth: Symbol) =
     internalBuild(meth, "$before")
 
@@ -33,17 +39,49 @@ trait EventUtil {
         )
         // and the final name
         meth.name + paramString + suffix
+       
       case pt @ PolyType(tparams, result) =>
       	var myList = List(pt.typeSymbol.rawname)
-      	val paramString = myList.foldLeft("_$eq$")(
+      	val paramString = myList.foldLeft("$")(
           (prefix, suf) => prefix + suf
         )
         println("------ paramString: ---------- " + paramString)
         meth.name + paramString + suffix
         //meth.name + "_="
+        
       case _ => ""
      
     }
+  }
+  
+  private def internalBuildField(meth: Symbol, suffix: String) = {
+  	println("-----\nOWN: internalBuild, meth + meth.tpe: " + meth + ",\n" + meth.tpe + "\n" + meth.tpe.typeSymbol.rawname  + "\n-----")
+    meth.tpe match {
+      case mt @ MethodType(params, retType) =>
+        // build the string representing the parameters
+        
+        val getterName = nme.setterToGetter(meth.name)
+        
+        val paramString = mt.paramTypes.foldLeft("")(
+          (prefix, pt) => prefix + "$" + pt.typeSymbol.rawname
+        )
+        // and the final name
+        getterName + paramString + suffix
+        /*
+      case pt @ PolyType(tparams, result) =>
+      	val getterName = nme.setterToGetter(pt.typeSymbol.name)
+      	var myList = List(getterName)
+      	val paramString = myList.foldLeft("")(
+          (prefix, suf) => prefix + suf
+        )
+        println("------ paramString: ---------- " + paramString)
+        meth.name + paramString + suffix
+        //meth.name + "_="
+        */
+      case _ => ""
+     
+    }
+  
   }
     
   /*

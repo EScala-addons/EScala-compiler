@@ -1104,6 +1104,7 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
     
     /** The symbol accessed by this accessor function, but with given owner type */
     final def accessed(ownerTp: Type): Symbol = {
+println("error symbol: " + this + " --> hasAccFlag? " + this.hasAccessorFlag + ", owner? " + this.owner)
       assert(hasAccessorFlag)
       ownerTp.decl(nme.getterToLocal(if (isSetter) nme.setterToGetter(name) else name))
     }

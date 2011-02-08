@@ -240,6 +240,9 @@ abstract class ObservableInstrumentation extends ObservableUtil {
                                      newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName), pos)
               var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
                                     newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
+                                    
+                                    
+                                    
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
@@ -251,6 +254,8 @@ abstract class ObservableInstrumentation extends ObservableUtil {
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
               
+              
+              println("beforeEv: " + beforeEv)
               // the wrapper method
 
               // list of parameters

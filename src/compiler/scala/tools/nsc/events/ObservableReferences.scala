@@ -104,7 +104,7 @@ println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ",
                 atPos(tree.pos) {
                   field match {
                     case Select(prefix, fieldSymbol) =>
-                    	println("PREFIX -___-___- " + prefix + ", ---> " + fieldSymbol )
+                    	println("PREFIX -___-___- " + prefix + ", ---> " + fieldSymbol  + "\nFIELDTYPE: " + field.tpe)
                     	println("USING EVENTNAME: " + eventName)
                       val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol
                       println("tester: " + tester)

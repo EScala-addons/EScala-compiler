@@ -160,21 +160,22 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
 //println("tupledGenericParam: " + tupledGenericParam);
             
             // the event modifiers
-              val modifiers = 
-                  (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) 
-                  //| (
-                    //if(!sym.isObservable && !sym.isPrivate)
+             val modifiers = 
+                  (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | (
+                    if(!sym.isObservable && !sym.isPrivate)
                       // only instrumented => protected events
-                      //PROTECTED //| LOCAL
-                    //else
+                      PROTECTED //| LOCAL
+                    else
                       // the method is observable or private => same visibility
-                      //FINAL
-                  //)
+                      FINAL
+                  )
+                  
+                  
               
 println("SYMBOL in instrumentation: " + sym)
 
-              val beforeEvName = buildBeforeEventName(sym)
-              val afterEvName = buildAfterEventName(sym)
+              val beforeEvName = buildBeforeSetEventName(sym)
+              val afterEvName = buildAfterSetEventName(sym)
 //println("sym: ___________________ " + sym)
 //println("name: ___________________ " + name)
 //println("beforeEvName: ------------------- " + beforeEvName)
@@ -184,8 +185,10 @@ println("SYMBOL in instrumentation: " + sym)
               
               
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
-              var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
-                                     newAfterSetEvent(tupledGenericParam ::: List(retType)), pos)
+              var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam),
+                                     newAfterSetEvent(tupledGenericParam), pos)
+                                     
+						
 
               // enter the declaration of the events in the class declarations 
               namer.enterSyntheticSym(beforeEv)
@@ -199,6 +202,8 @@ println("SYMBOL in instrumentation: " + sym)
 //println("AFTER TYPING created Events:")
 //println("beforeEvent: " + beforeEv)
 //println("afterEvent: " + afterEv)
+              //beforeEv.symbol.setFlag(ACCESSOR)
+              //afterEv.symbol.setFlag(ACCESSOR)
               
 
               // list of parameters
@@ -223,7 +228,7 @@ println("SYMBOL in instrumentation: " + sym)
                   
              println("tupledEvArgs (evArgs.size >1?: " + tupledEvArgs)
               
-              val wrapperBody =
+              var wrapperBody =
                   atPos(pos)(Block(
                             Apply(
                                 Ident(beforeEv.symbol),
@@ -232,11 +237,11 @@ println("SYMBOL in instrumentation: " + sym)
                             Nil,
                             Apply(
                                 Ident(afterEv.symbol),
-                                tupledEvArgs :: List(Literal(()))
+                                tupledEvArgs :: Nil
                             )
                         ))
-                
-                
+                //wrapperBody = localTyper.typed(wrapperBody).asInstanceOf[Block]
+                /*
                 println("WRAPPER BODY: " + wrapperBody + "\n_____\n")
                 var wrapperMeth = atPos(pos)(DefDef(mods, name,
                      tparams,
@@ -245,12 +250,12 @@ println("SYMBOL in instrumentation: " + sym)
               	wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
               	
               	println("WRAPPER METH FieldInstru: " + wrapperMeth + "\n_____\n")
-              	
+              	*/
                 
                 
                 synthesized = beforeEv :: afterEv :: synthesized
 
-        	treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperMeth)
+        	localTyper.typed(treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperBody).setType(null))
         	//super.transform(tree)
        	
         case _ => super.transform(tree)
