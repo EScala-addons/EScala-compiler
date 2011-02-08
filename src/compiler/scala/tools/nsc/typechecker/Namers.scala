@@ -452,7 +452,7 @@ trait Namers { self: Analyzer =>
 
             // TODO what value has to be set as info?
             val getter = enterAccessorMethod(tree, name, getterFlags(mods.flags), mods)
-            setInfo(getter)(namerOf(getter).getterTypeCompleter2(ed))
+            setInfo(getter)(namerOf(getter).getterTypeCompleter(ed))
             
             //val sym = owner.newEvent(tree.pos, name).setFlag(mods.flags)
             tree.symbol = {
@@ -584,8 +584,8 @@ trait Namers { self: Analyzer =>
       validate(sym)
     }
 
-    // @ESCALA @EXP-LANG blablatest
-    def getterTypeCompleter2(ed: EventDef) = mkTypeCompleter(ed) { sym =>
+    // @ESCALA @EXP-LANG overload function to be applied to EventDefs
+    def getterTypeCompleter(ed: EventDef) = mkTypeCompleter(ed) { sym =>
       if (settings.debug.value) log("defining " + sym)
       val tp = typeSig(ed)
       sym.setInfo(PolyType(List(), tp))
@@ -666,7 +666,7 @@ trait Namers { self: Analyzer =>
       vparamss.map(_.map(enterValueParam))
     }
 
-    // @ESCALA completely extract 'enterValueParam' to be able to be called globally?
+    // @ESCALA @EXP-LANG extraction out of above function because EventDef only has vparams: List[ValDef] 
     def enterValueParam(owner: Symbol)(param: ValDef): Symbol = {
       param.symbol = setInfo(
         enterInScope{
