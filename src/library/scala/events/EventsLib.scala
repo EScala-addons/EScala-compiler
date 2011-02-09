@@ -98,11 +98,13 @@ trait Event[+T] {
  */
 abstract class EventNode[T] extends Event[T] {
   protected val sinks = new ListBuffer[Sink]
-  protected[events] val _reactions = new ListBuffer[T => Unit]
+  protected[events] val _reactions = new ListBuffer[(T, T => Unit) => Unit]
+//  protected[events] val _reactions = new ListBuffer[T => Unit]
 
   /*
    * Register a reaction to the event
    */
+
   def +=(sink: Sink) {
     sinks += sink
     // deploy the event if the first reaction/sink is registered
@@ -123,21 +125,30 @@ abstract class EventNode[T] extends Event[T] {
   /*
    * Register a reaction to the event
    */
-  def +=(react: T => Unit) {
+
+  def +=(react: (T, T => Unit) => Unit) {
     _reactions += react
     // deploy the event if the first reaction/sink is registered
     if (_reactions.size == 1 && sinks.size == 0)
       deploy
   }
 
+  def +=(react: T => Unit) {
+    +=((v: T, proceed: T => Unit) => react(v))
+  }
+
   /*
    * Unregister a reaction
    */
-  def -=(react: T => Unit) {
+  def -=(react: (T, T => Unit) => Unit) {
     _reactions -= react
-    // undeploy the event if the last reaction/sink is unregistered
+    // deploy the event if the first reaction/sink is registered
     if (sinks.size == 0 && _reactions.size == 0)
       undeploy
+  }
+
+  def -=(react: T => Unit) {
+    -=((v: T, proceed: T => Unit) => react(v))
   }
 
   /**
@@ -153,15 +164,18 @@ abstract class EventNode[T] extends Event[T] {
   /** Collects the reactions registered with this event and associates the current event trace.
    *  It then propagates to sinks.
    */
-  protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
+  protected[events] def reactions(id: Int, v: T, proceed: T => Unit, reacts: ListBuffer[(() => Unit, Trace)]) {
     eventTrace.withValue(this :: eventTrace.value) {
       // collect the reactions registered with this event
-      _reactions.foreach(react => reacts += ((() => react(v)) -> eventTrace.value))
+      _reactions.foreach(react => reacts += ((() => react(v, proceed)) -> eventTrace.value))
       // propagate to sinks adding this event to the event trace
       sinks.foreach(sink => sink(id, v, reacts))
     }
   }
 
+  protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
+    reactions(id, v, (t: T) => {}, reacts)
+  }
 }
 
 protected[events] object eventTrace extends DynamicVariable[List[Event[_]]](Nil)
@@ -197,7 +211,7 @@ class ImperativeEvent[T] extends EventNode[T] {
       // collect matching reactions
       val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
 
-      reactions(EventIds.newId(), v, reacts)
+      reactions(EventIds.newId(), v, (t: T) => {}, reacts)
       // once reactions are collected, we are after the triggering
       afterTrigger(v)
       // execute the collected reactions
@@ -208,6 +222,37 @@ class ImperativeEvent[T] extends EventNode[T] {
               react()
             /*} catch {
               case e => 
+                println("Event trace:")
+                println(eventTrace.value.mkString("", "\n", "\n"))
+                throw e
+            }*/
+          }
+        }
+      )
+    } else {
+      afterTrigger(v)
+    }
+  }
+
+  def apply(v: T, proceed: T => Unit) = {
+    beforeTrigger(v)
+    // does something only if the event is deployed, i.e. if some reactions or sinks
+    // are registered
+    if(deployed) {
+      // collect matching reactions
+      val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
+
+      reactions(EventIds.newId(), v, proceed, reacts)
+      // once reactions are collected, we are after the triggering
+      afterTrigger(v)
+      // execute the collected reactions
+      reacts.foreach(
+        (react: () => Unit, trace: Trace) => {
+          eventTrace.withValue(trace) {
+            //try {
+              react()
+            /*} catch {
+              case e =>
                 println("Event trace:")
                 println(eventTrace.value.mkString("", "\n", "\n"))
                 throw e
@@ -584,6 +629,7 @@ class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
   }
 }
 
+/*
 class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
@@ -613,7 +659,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
   override def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
     eventTrace.withValue(this :: eventTrace.value) {
       // collect the reactions of this event
-      _reactions.foreach(react => myReacts += (() => react(v), eventTrace.value))
+      _reactions.foreach(react => myReacts += (() => react(v, proceed), eventTrace.value))
       // collect the reactions of the sinks
       sinks.foreach(sink => sink(id, v, myReacts))
     }
@@ -631,6 +677,7 @@ class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode
     except -= onExcept
   }
 }
+*/
 
 class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) extends EventNode[T] {
 
@@ -665,7 +712,7 @@ class Variable[T](private var v: T) {
     if(this.v != v) {
       val old = this.v
       this.v = v
-      changed(old,v)
+      changed((old,v))
     }
   }
 
@@ -775,7 +822,7 @@ class Observable[T, U](body: T => U) extends (T => U) {
   def apply(t: T): U = {
     before(t)
     val res = body(t)
-    after(t, res)
+    after((t, res))
     res
   }
 }

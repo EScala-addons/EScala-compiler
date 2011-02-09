@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 
 <project name="sabbus" default="build">
   <description>
@@ -188,7 +188,7 @@ PROPERTIES
 
   <!-- if ANT_OPTS is already set by the environment, it will be unaltered,
        but if it is unset it will take this default value. -->
-  <property name="env.ANT_OPTS" value="-Xms1536M -Xmx1536M -Xss1M -XX:MaxPermSize=192M -XX:+UseParallelGC" />
+  <property name="env.ANT_OPTS" value="-Xms1024M -Xmx1024M -Xss1M -XX:MaxPermSize=192M -XX:+UseParallelGC" />
   
   <!--  to find max heap usage: -Xaprof ; currently at 980M for locker.comp -->
   <echo message="Forking with JVM opts: ${env.ANT_OPTS} ${jvm.opts}" />

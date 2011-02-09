@@ -595,13 +595,30 @@ trait Typers { self: Analyzer =>
             case _ =>
           }
         }
+
+        var name : Name = null
+//        println("-----------------------------------------------------------------------")
+//        print("makeAccessible --> tree matches ")
         val qual = typedQualifier { atPos(tree.pos.focusStart) {
           tree match {
-            case Ident(_) => Ident(nme.PACKAGEkw)
-            case Select(qual, _) => Select(qual, nme.PACKAGEkw)
-            case SelectFromTypeTree(qual, _) => Select(qual, nme.PACKAGEkw)
+            case Ident(name) => val treeIdent = Ident(nme.PACKAGEkw)
+//              println("Ident(ID=" + treeIdent.id + "): ")
+//              println(treeIdent)
+              treeIdent
+            case Select(qual, name) => val treeSelect1 = Select(qual, nme.PACKAGEkw)
+//              println("Select(ID=" + treeSelect1.id + "): ")
+//              println(treeSelect1)
+              treeSelect1
+            case SelectFromTypeTree(qual, name) => val treeSelect2 = Select(qual, nme.PACKAGEkw)
+//            println("SelectFromTypeTree(ID=" + treeSelect2.id + "): ")
+//            println(treeSelect2)
+            treeSelect2
           }
         }}
+//        println("Qualifier: " + qual)
+//        println("Name: " + name)
+//        println("-----------------------------------------------------------------------")
+
         val tree1 = atPos(tree.pos) {
           tree match {
             case Ident(name) => Select(qual, name)
@@ -671,6 +688,7 @@ trait Typers { self: Analyzer =>
      *  @return     ...
      */
     def stabilizeFun(tree: Tree, mode: Int, pt: Type): Tree = {
+
       val sym = tree.symbol
       val pre = tree match {
         case Select(qual, _) => qual.tpe
@@ -848,8 +866,7 @@ trait Typers { self: Analyzer =>
           }
         else
           typer1.typed(typer1.applyImplicitArgs(tree), mode, pt)
-      case mt: MethodType
-      if (((mode & (EXPRmode | FUNmode | LHSmode)) == EXPRmode) && 
+      case mt: MethodType if (((mode & (EXPRmode | FUNmode | LHSmode)) == EXPRmode) &&
           (context.undetparams.isEmpty || (mode & POLYmode) != 0)) =>
 
         val meth = tree match {
@@ -960,7 +977,13 @@ trait Typers { self: Analyzer =>
             case other => 
               other
           }
-          typed(atPos(tree.pos)(Select(qual, nme.apply)), mode, pt)
+//          println("-----------------------------------------------------------------------")
+//          println("adapt Tree (ID=" + tree.id +") @ " + tree.pos.line + ":" + tree.pos.column + " --> " + tree)
+//          println("Name before: " + nme)
+          val newSelect = atPos(tree.pos)(Select(qual, nme.apply))
+//          println("new Select (ID=" + newSelect.id + ") --> " + newSelect.getClass().getName() + ":")
+//          println(newSelect)
+          typed(newSelect, mode, pt)
         } else if (!context.undetparams.isEmpty && (mode & POLYmode) == 0) { // (9)
           assert((mode & HKmode) == 0) //@M
           instantiate(tree, mode, pt)
@@ -2167,7 +2190,7 @@ trait Typers { self: Analyzer =>
 
     def typedImport(imp : Import) : Import = (transformed remove imp) match {
       case Some(imp1: Import) => imp1
-      case None => println("unhandled impoprt: "+imp+" in "+unit); imp
+      case None => println("unhandled import: "+imp+" in "+unit); imp
     }
 
     def typedStats(stats: List[Tree], exprOwner: Symbol): List[Tree] = {
@@ -3702,7 +3725,7 @@ trait Typers { self: Analyzer =>
           reallyExists(sym) &&
           ((mode & PATTERNmode | FUNmode) != (PATTERNmode | FUNmode) || !sym.isSourceMethod || sym.hasFlag(ACCESSOR))
         }
-        
+
         if (defSym == NoSymbol) {
           var defEntry: ScopeEntry = null // the scope entry of defSym, if defined in a local scope
 
@@ -3809,6 +3832,7 @@ trait Typers { self: Analyzer =>
             }
           }
         }
+
         if (defSym.owner.isPackageClass) pre = defSym.owner.thisType
         if (defSym.isThisSym) {
           typed1(This(defSym.owner) setPos tree.pos, mode, pt)
@@ -3816,9 +3840,11 @@ trait Typers { self: Analyzer =>
           val tree1 = if (qual == EmptyTree) tree
                       else atPos(tree.pos)(Select(qual, name))
                     // atPos necessary because qualifier might come from startContext
+
           val (tree2, pre2) = makeAccessible(tree1, defSym, pre, qual)
           // assert(pre.typeArgs isEmpty) // no need to add #2416-style check here, right?
-          stabilize(tree2, pre2, mode, pt)
+
+	        stabilize(tree2, pre2, mode, pt)
         }
       }
 
@@ -3921,7 +3947,7 @@ trait Typers { self: Analyzer =>
           typedEvtDef(edef)*/
 
         case ev @ ExecEvent(kind, meth) =>
-          typedExecEvent(ev, mode, pt)       
+		typedExecEvent(ev, mode, pt)       
         // @ESCALA END
 
         case tdef @ TypeDef(_, _, _, _) =>
@@ -4288,6 +4314,7 @@ trait Typers { self: Analyzer =>
           throw ex
       }
       finally {
+
         deindentTyping()
         if (Statistics.enabled) {
           val t = currentTime()

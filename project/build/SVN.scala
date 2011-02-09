@@ -14,7 +14,7 @@ class SVN(root: Path) {
    * It assumes that svn or git is installed on the running computer. Return 0 if it was not
    * able to found the revision number
    */
-  def getRevisionNumber: Int = getSvn orElse getGit getOrElse 0  
+  def getRevisionNumber: Int = getGit getOrElse 0  
   def getSvn: Option[Int] = {
     /** Doing this the hard way trying to suppress the svn error message
      *  on stderr.  Could not figure out how to do it simply in sbt.
