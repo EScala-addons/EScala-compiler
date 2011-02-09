@@ -173,9 +173,9 @@ abstract class EventNode[T] extends Event[T] {
     }
   }
 
-  protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
-    reactions(id, v, (t: T) => {}, reacts)
-  }
+//  protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
+//    reactions(id, v, (t: T) => {}, reacts)
+//  }
 }
 
 protected[events] object eventTrace extends DynamicVariable[List[Event[_]]](Nil)
