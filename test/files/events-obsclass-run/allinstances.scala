@@ -1,6 +1,6 @@
 import scala.events.allInstances
 
-observable class Klass(var param: String) {
+observable class Klass (val param: String) {
 }
 
 object Test {
