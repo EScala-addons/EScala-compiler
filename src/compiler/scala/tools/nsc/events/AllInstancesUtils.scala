@@ -16,4 +16,6 @@ trait AllInstancesUtil {
   lazy val ModEvents = definitions.getModule("scala.events")
   lazy val MethAllInstances = definitions.getMember(ModEvents,
                                                     "allInstances")
+  lazy val MethAnyInstance = definitions.getMember(ModEvents,
+                                                    "anyInstance")
 }

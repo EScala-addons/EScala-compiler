@@ -46,15 +46,15 @@ abstract class AllInstances extends Transform
       val sym = tree.symbol
       tree match {
         // Matches "allInstances[generic].event"
-        case sel @ Select(TypeApply(allInstances, (generic: Tree) :: Nil), event) =>
+        case sel @ Select(TypeApply(anyInstance, (generic: Tree) :: Nil), event) =>
         /*case sel @ Apply(TypeApply(allInstances, (generic: Tree) :: Nil),
          *                (event: Tree) :: Nil
          *          )
          */
 
-          if (allInstances.symbol == MethAllInstances) {
+          if (anyInstance.symbol == MethAnyInstance) {
             if (settings.Yeventsdebug.value)
-              println("Encountered the allInstances symbol. Parameter: "+generic)
+              println("Encountered the anyInstance symbol. Parameter: "+generic)
             /*
              * TODOs:
              *     found". Why ?

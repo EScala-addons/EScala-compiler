@@ -1,4 +1,4 @@
-import scala.events.allInstances
+import scala.events.anyInstance
 
 class TransactionManager {
 
@@ -13,7 +13,7 @@ class TransactionManager {
         }
     }
 
-    evt e_bcredit[Unit] = beforeExec(allInstances[Transaction].credit)
+    evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
     
     e_bcredit += beforeCredit _
 

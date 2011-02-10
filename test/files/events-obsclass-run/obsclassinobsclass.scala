@@ -1,4 +1,4 @@
-import scala.events.allInstances
+import scala.events.anyInstance
 
 class TransactionManager {
 
@@ -21,9 +21,9 @@ class TransactionManager {
             }
         }
 
-       evt e_blog[Unit] = beforeExec(allInstances[LogTransaction].write)
+       evt e_blog[Unit] = beforeExec(anyInstance[LogTransaction].write)
        e_blog += beforeLog _
-       evt e_alog[Unit] = afterExec(allInstances[LogTransaction].write)
+       evt e_alog[Unit] = afterExec(anyInstance[LogTransaction].write)
        e_alog += afterLog _
        
        def beforeLog() {
@@ -35,7 +35,7 @@ class TransactionManager {
         }
     }
 
-    evt e_bcredit[Unit] = beforeExec(allInstances[Transaction].credit)
+    evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
     
     e_bcredit += beforeCredit _
 

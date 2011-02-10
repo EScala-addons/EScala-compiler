@@ -1,4 +1,4 @@
-import scala.events.allInstances
+import scala.events.anyInstance
 
 observable class Transaction {
 
@@ -13,7 +13,7 @@ observable class Transaction {
 
 class TransactionManager {
 
-    evt e_bcredit[Unit] = beforeExec(allInstances[Transaction].credit)
+    evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
     
     e_bcredit += beforeCredit _
 
@@ -31,7 +31,7 @@ object Test {
         t1.credit
         t2.credit
         t2.debit
-        //System.out.println("Objects : "+allInstances[Transaction])
+        //System.out.println("Objects : "+anyInstance[Transaction])
     }
 }
 
