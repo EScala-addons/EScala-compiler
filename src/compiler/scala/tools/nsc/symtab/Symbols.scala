@@ -150,9 +150,6 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       newValue(pos, nme.this_).setFlag(SYNTHETIC)
     final def newImport(pos: Position) =
       newValue(pos, nme.IMPORT)
-    //@ESCALA
-    final def newEvent(pos: Position, name: Name) =
-      new EventSymbol(this, pos, name).setFlag(EVENT)
 
     /** @param pre   type relative to which alternatives are seen.
      *  for instance:
@@ -1780,35 +1777,6 @@ trait Symbols extends reflect.generic.Symbols { self: SymbolTable =>
       res
     }
   }
-
-  /** @ESCALA A class for events symbols */
-  class EventSymbol(initOwner: Symbol, initPos: Position, initName: Name)
-  extends TermSymbol(initOwner, initPos, initName) {
-
-    //private var mtpePeriod = NoPeriod
-    //private var mtpePre: Type = _
-    //private var mtpeResult: Type = _
-    //private var mtpeInfo: Type = _
-
-    override def cloneSymbolImpl(owner: Symbol): Symbol = 
-      new EventSymbol(owner, pos, name).copyAttrsFrom(this)
-
-//    def typeAsMemberOf(pre: Type): Type = {
-//      if (mtpePeriod == currentPeriod) {
-//        if ((mtpePre eq pre) && (mtpeInfo eq info)) return mtpeResult
-//      } else if (isValid(mtpePeriod)) {
-//        mtpePeriod = currentPeriod
-//        if ((mtpePre eq pre) && (mtpeInfo eq info)) return mtpeResult
-//      }
-//      val res = pre.computeMemberType(this)
-//      mtpePeriod = currentPeriod
-//      mtpePre = pre
-//      mtpeInfo = info
-//      mtpeResult = res
-//      res
-//    }
-  }
-  //@ESCALA END
 
   /** A class of type symbols. Alias and abstract types are direct instances
    *  of this class. Classes are instances of a subclass.
