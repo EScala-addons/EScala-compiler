@@ -11,7 +11,7 @@ trait AllInstancesUtil {
   import symtab.Flags._
 
   /*
-   * Symbol allInstances[C]
+   * Symbols allInstances[C] and anyInstance[C]
    */
   lazy val ModEvents = definitions.getModule("scala.events")
   lazy val MethAllInstances = definitions.getMember(ModEvents,

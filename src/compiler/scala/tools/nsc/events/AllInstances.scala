@@ -45,62 +45,38 @@ abstract class AllInstances extends Transform
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
       tree match {
-        // Matches "allInstances[generic].event"
+        // Matches "anyInstance[generic].event"
         case sel @ Select(TypeApply(anyInstance, (generic: Tree) :: Nil), event) =>
-        /*case sel @ Apply(TypeApply(allInstances, (generic: Tree) :: Nil),
-         *                (event: Tree) :: Nil
-         *          )
-         */
 
           if (anyInstance.symbol == MethAnyInstance) {
             if (settings.Yeventsdebug.value)
               println("Encountered the anyInstance symbol. Parameter: "+generic)
-            /*
-             * TODOs:
-             *     found". Why ?
-             *   - generic$all.all.any(_ => _.event) returns an
-             *     "EventNodeExists" but the ValDef that takes this value
-             *     has been typed beforehand and doesn't have this type. (in
-             *     the case of "evt blah =
-             *     beforeEvent(allInstances[C].event)", the type is
-             *     ImperativeEvent for instance)
-             *      - Attempts to use another syntax (allInstances[C](event))
-             *     do not work: "event" doesn't refer to a member of an
-             *     instance of C, here ("symbol event no found").
-             *      - Attempts to modify the dummy function "allInstances[C]:
-             *      C" to make it return an EventNodeExists did not make it:
-             *      EventNodeExists takes parameters... how to get them ?
-             *     Maybe we will have to put sth. in the parser, after all ?
-             */
-            // generic$all.all.any
             val oldNamer = namer
             namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
 
+            // generic$all
             val objname = generic.symbol.rawname+"$all"
             val objall = Ident(generic.symbol.owner.info.decl(objname))
 
 
+            // generic$all.all.any
             val allMemberAny = Select(
                     Select(objall,
                     newTermName("all")
                   ),
                   newTermName("any")
             )
-            //println("allMemberAny = " + allMemberAny)
 
             // _ => _.event
             val mapEvent = Function(
               List(ValDef(NoMods, "_", generic, EmptyTree)),
               Select(
-                //Ident(newTermName("_")), event.symbol
                 Ident("_"), event
               )
             )
-            //println("mapEvent = " + mapEvent)
 
             // generic$all.all.any(((_: C) => _.event))
             val anyApply = Apply(allMemberAny, List(mapEvent))
-            //println("anyApply = " + anyApply)
             namer.enterSyntheticSym(anyApply)
             namer = oldNamer
             localTyper.typed(atPos(sel.pos)(anyApply))
