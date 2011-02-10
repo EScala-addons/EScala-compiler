@@ -44,33 +44,23 @@ abstract class ObservableClass extends Transform
     import symtab.Flags._
 
     private var obsobjects: List[Tree] = null
-    private var clazz: ClassDef = null
     
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
       tree match {
           case pd: PackageDef =>
-                var oldobsobjects = obsobjects
+                val oldobsobjects = obsobjects
                 obsobjects = List()
                 val tpack = super.transform(pd).asInstanceOf[PackageDef]                 
 
-                val oldNamer = namer
-                namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
                 //add the observable classes object
                 //and generate result
-                obsobjects.foreach(obj =>namer.enterSyntheticSym(obj))
-                val result = treeCopy.PackageDef(tpack, tpack.pid, 
-                        obsobjects ::: tpack.stats)
-
-                    
+                val result = treeCopy.PackageDef(tpack, tpack.pid, obsobjects ::: tpack.stats)
 
                 obsobjects = oldobsobjects
-                namer = oldNamer
                 result
           case cd @ ClassDef(mods, name, tparams, impl) =>
             // transform the class body // TODO ???
-            val oldclazz = clazz
-            clazz = cd
             val oldNamer = namer
 
             if (sym.isInstrumented) {
@@ -79,32 +69,48 @@ abstract class ObservableClass extends Transform
                   println("Transform of observable class called for :  " + name)
               }
               val pos = sym.pos
-              val parents = List(genAllObjectTpt(TypeTree(sym.tpe)), TypeTree(ScalaObjectClass.tpe))
 
               // Create newobj
+              val parents = List(genAllObjectTpt(TypeTree(sym.tpe)), TypeTree(ScalaObjectClass.tpe))
               val newobj = atPos(pos)(ModuleDef ( NoMods, 
                                       name+"$all", 
                                       Template(parents,emptyValDef, NoMods, List(Nil), List(Nil), Nil, pos)
                                       ))
+              // Enter the objects in the symbol table and type it
               namer.enterSyntheticSym(newobj)
-              //println("dcls du package: " + sym.owner.info.decls)
               obsobjects = localTyper.typed(newobj).asInstanceOf[ModuleDef] :: obsobjects
 
-              // Add self to allobjects in the constructor
-              var apply = atPos(pos)(localTyper.typed(Apply(Select(Ident(name+"$all"),newTermName("register")),List(This(sym)))))
+              // Same as in package in case of class in class
+              val oldobsobjects = obsobjects
+              obsobjects = List()
+              val tclazz = super.transform(cd).asInstanceOf[ClassDef]
 
+              // Add self to allobjects in the constructor by modifying template
+              // While we are modifying template, we add the obsobjects
+              var template = tclazz.impl
+              val apply = atPos(pos)(localTyper.typed(Apply(Select(Ident(name+"$all"),newTermName("register")),List(This(sym)))))
+              template = treeCopy.Template(template, template.parents,
+                                        template.self, obsobjects ::: (apply :: template.body))
+
+              //Return the classdef with the new template
+              val result = treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
+                                                      tclazz.tparams, template)
+              namer = oldNamer
+              obsobjects = oldobsobjects
+              result
+            } else {
+              // Same as in package in case of class in class
+              val oldobsobjects = obsobjects
+              obsobjects = List()
               val tclazz = super.transform(cd).asInstanceOf[ClassDef]
               var template = tclazz.impl
               template = treeCopy.Template(template, template.parents,
-                                        template.self, apply :: template.body)
+                         template.self, obsobjects ::: template.body)
+              //Return the classdef with the new template
               val result = treeCopy.ClassDef(tclazz, tclazz.mods, tclazz.name,
-              tclazz.tparams, template)
-              namer = oldNamer
-
-              clazz = oldclazz
+                                                      tclazz.tparams, template)
+              obsobjects = oldobsobjects
               result
-            } else {
-                super.transform(tree)
             }
           case _ => super.transform(tree)
         }
