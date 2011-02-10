@@ -45,6 +45,24 @@ abstract class AllInstances extends Transform
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
       tree match {
+        // Matches "allInstances[generic]"
+        case ta @ TypeApply(allInstances, (generic: Tree) :: Nil)
+        if (allInstances.symbol == MethAllInstances) =>
+          if (settings.Yeventsdebug.value)
+            println("Encountered the allinstances symbol. Parameter: "+generic)
+          val oldNamer = namer
+          namer = analyzer.newNamer(namer.context.make(tree, sym, sym.info.decls))
+
+          // generic$all
+          val objname = generic.symbol.rawname+"$all"
+          val objall = Ident(generic.symbol.owner.info.decl(objname))
+          // generic$all.all
+          val allMember = Select(objall, newTermName("all"))
+          
+          namer.enterSyntheticSym(allMember)
+          namer = oldNamer
+          localTyper.typed(atPos(ta.pos)(allMember))
+
         // Matches "anyInstance[generic].event"
         case sel @ Select(TypeApply(anyInstance, (generic: Tree) :: Nil), event) =>
 
