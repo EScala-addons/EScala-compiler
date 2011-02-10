@@ -1647,21 +1647,21 @@ trait Typers { self: Analyzer =>
 
       // inserts map function that transforms the parameter lists
       def mapTransform(rhs: Tree) : Tree = {
-
         def sortValDefs(args: List[Tree]): List[ValDef] = {
           args.foldLeft(List[ValDef]())((rest: List[ValDef], ident: Tree) => {
             ident match {
               case Ident(name) =>
-                val vdef : ValDef = vparams.find((vdef) => (vdef.name == name)) getOrElse { 
+                val vdef = vparams.find((vdef) => (vdef.name == name)) getOrElse { 
                   error(ident.pos, "ValDef not found") // todo
                   ValDef(sym.owner.newValue(name) setInfo ErrorType)
                 }
 
-
-                vdef.tpt match {
-                  case Ident(_) => rest :+ (new ValDef(vdef.mods, vdef.name, vdef.tpt, vdef.rhs) setType vdef.tpe)
-                  case _ => rest :+ (treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType)
+                val tpt = vdef.tpt match {
+                  case Ident(_) => vdef.tpt
+                  case _ => Ident(AnyClass)
                 }
+
+                rest :+ (new ValDef(vdef.mods, vdef.name, tpt, vdef.rhs) setType vdef.tpe)
               case _ => 
                 error(ident.pos, "Args contains wrong Tree") // todo
                 rest
@@ -1673,15 +1673,18 @@ trait Typers { self: Analyzer =>
           case Apply(fun, args) =>
             fun match {
               case Select(event,nme.BARBAR) =>
+                // Or-Event
                 Apply(
                   Select(
                     mapTransform(event),
                     nme.BARBAR),
                   args.map(mapTransform))
-
               case _ =>
                 if(vparams.length != args.length)
                   error(edef.pos, "unbound parameters")
+
+                // Type of bound event, may be used for shortcutting equal events
+                val tpe1 = typed(fun).tpe
 
                 val body = 
                   if(edef.vparams.length == 1) 
@@ -1692,10 +1695,9 @@ trait Typers { self: Analyzer =>
                 val vparams1 = sortValDefs(args)
 
                 val function = typed(new Function(vparams1,body))
-
                 function.symbol.owner = edef.symbol
 
-                if(!(typed(fun).tpe <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
+                if(!(tpe1 <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
                   error(edef.rhs.pos, "rhs is not an event")
                   edef.rhs
                 } else
@@ -1704,6 +1706,8 @@ trait Typers { self: Analyzer =>
                     List(function))
             }
           case Function(params, body) =>
+            // Event contains wildcards and the parser generates a function
+            // Collect parameters and transform remaining event
             vparams = params ::: vparams
             mapTransform(body)
           case _ => 
