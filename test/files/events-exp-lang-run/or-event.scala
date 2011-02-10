@@ -4,7 +4,7 @@ class C {
   imperative evt e1[Int,String]
   imperative evt e2[String,Int]
 
-  evt e3[Int,String] = e1.map((n:Int,s:String)=>(n,s)) || e2.map((s:String,n:Int)=>(n,s))
+  evt e3(n: Int,s: String) = e1(n,s) || e2(s,n)
 }
 
 object Test {

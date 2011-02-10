@@ -1657,8 +1657,9 @@ trait Typers { self: Analyzer =>
                   ValDef(sym.owner.newValue(name) setInfo ErrorType)
                 }
 
+
                 vdef.tpt match {
-                  case Ident(_) => rest :+ vdef
+                  case Ident(_) => rest :+ (new ValDef(vdef.mods, vdef.name, vdef.tpt, vdef.rhs) setType vdef.tpe)
                   case _ => rest :+ (treeCopy.ValDef(vdef, vdef.mods, vdef.name, Ident(AnyClass), vdef.rhs) setType NoType)
                 }
               case _ => 
@@ -1682,13 +1683,17 @@ trait Typers { self: Analyzer =>
                 if(vparams.length != args.length)
                   error(edef.pos, "unbound parameters")
 
-                val vparams1 = sortValDefs(args);
-
                 val body = 
-                  if(edef.vparams.length == 1)
-                    Ident(edef.vparams.head.symbol)
+                  if(edef.vparams.length == 1) 
+                    new Ident(edef.vparams.head.name)
                   else
-                    gen.mkTuple(edef.vparams.map((vdef) => Ident(vdef.symbol)))
+                    gen.mkTuple(edef.vparams.map(vdef => new Ident(vdef.name)))
+
+                val vparams1 = sortValDefs(args)
+
+                val function = typed(new Function(vparams1,body))
+
+                function.symbol.owner = edef.symbol
 
                 if(!(typed(fun).tpe <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
                   error(edef.rhs.pos, "rhs is not an event")
@@ -1696,9 +1701,7 @@ trait Typers { self: Analyzer =>
                 } else
                   Apply(
                     Select(fun,nme.map),
-                    List(Function(
-                      vparams1,
-                      body)))
+                    List(function))
             }
           case Function(params, body) =>
             vparams = params ::: vparams
