@@ -1669,6 +1669,14 @@ trait Typers { self: Analyzer =>
           })
         }
 
+        def equalByNames(args: List[Tree], vparams: List[ValDef]) : Boolean = {
+          args.corresponds(vparams)((arg: Tree,vdef: ValDef) =>
+              vdef.name == (arg match {
+                case Ident(name) => name
+                case _ => return false
+              }))
+        }
+
         rhs match {
           case Apply(fun, args) =>
             fun match {
@@ -1680,27 +1688,29 @@ trait Typers { self: Analyzer =>
                     nme.BARBAR),
                   args.map(mapTransform))
               case _ =>
-                // Type of bound event, may be used for shortcutting equal events
                 val tpe1 = typed(fun).tpe
-
-                val body = 
-                  if(edef.vparams.length == 1) 
-                    new Ident(edef.vparams.head.name) setPos edef.vparams.head.pos
-                  else
-                    gen.mkTuple(edef.vparams.map(vdef => (new Ident(vdef.name) setPos vdef.pos)))
-
-                val vparams1 = sortValDefs(args)
-
-                val function = typed(new Function(vparams1,body))
-                function.symbol.owner = edef.symbol
 
                 if(!(tpe1 <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
                   error(edef.rhs.pos, "event expected, found "+ tpe1)
                   edef.rhs
-                } else
+                } else if (tpe1 <:< tpe && equalByNames(args, edef.vparams)) {
+                  fun
+                } else {
+                  val body = 
+                    if(edef.vparams.length == 1) 
+                      new Ident(edef.vparams.head.name) setPos edef.vparams.head.pos
+                    else
+                      gen.mkTuple(edef.vparams.map(vdef => (new Ident(vdef.name) setPos vdef.pos)))
+
+                  val vparams1 = sortValDefs(args)
+
+                  val function = typed(new Function(vparams1,body))
+                  function.symbol.owner = edef.symbol
+
                   Apply(
                     Select(fun,nme.map),
                     List(function))
+                }
             }
           case Function(params, body) =>
             // Event contains wildcards and the parser generates a function
