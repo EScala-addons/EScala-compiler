@@ -1,4 +1,4 @@
-bind-function.scala:9: error: rhs is not an event
+bind-function.scala:9: error: event expected, found Unit
   evt e1() = m()
               ^
 one error found

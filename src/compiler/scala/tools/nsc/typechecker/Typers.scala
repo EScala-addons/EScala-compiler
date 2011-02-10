@@ -1652,7 +1652,7 @@ trait Typers { self: Analyzer =>
             ident match {
               case Ident(name) =>
                 val vdef = vparams.find((vdef) => (vdef.name == name)) getOrElse { 
-                  error(ident.pos, "ValDef not found") // todo
+                  error(ident.pos, "not used: value "+name)
                   ValDef(sym.owner.newValue(name) setInfo ErrorType)
                 }
 
@@ -1663,7 +1663,7 @@ trait Typers { self: Analyzer =>
 
                 rest :+ (new ValDef(vdef.mods, vdef.name, tpt, vdef.rhs) setType vdef.tpe)
               case _ => 
-                error(ident.pos, "Args contains wrong Tree") // todo
+                error(ident.pos, "illegal expression")
                 rest
             }
           })
@@ -1680,17 +1680,14 @@ trait Typers { self: Analyzer =>
                     nme.BARBAR),
                   args.map(mapTransform))
               case _ =>
-                if(vparams.length != args.length)
-                  error(edef.pos, "unbound parameters")
-
                 // Type of bound event, may be used for shortcutting equal events
                 val tpe1 = typed(fun).tpe
 
                 val body = 
                   if(edef.vparams.length == 1) 
-                    new Ident(edef.vparams.head.name)
+                    new Ident(edef.vparams.head.name) setPos edef.vparams.head.pos
                   else
-                    gen.mkTuple(edef.vparams.map(vdef => new Ident(vdef.name)))
+                    gen.mkTuple(edef.vparams.map(vdef => (new Ident(vdef.name) setPos vdef.pos)))
 
                 val vparams1 = sortValDefs(args)
 
@@ -1698,7 +1695,7 @@ trait Typers { self: Analyzer =>
                 function.symbol.owner = edef.symbol
 
                 if(!(tpe1 <:< appliedType(definitions.getClass("scala.events.Event").tpe, List(AnyClass.tpe)))){
-                  error(edef.rhs.pos, "rhs is not an event")
+                  error(edef.rhs.pos, "event expected, found "+ tpe1)
                   edef.rhs
                 } else
                   Apply(
@@ -1711,7 +1708,7 @@ trait Typers { self: Analyzer =>
             vparams = params ::: vparams
             mapTransform(body)
           case _ => 
-            error(edef.rhs.pos, "Unexpected rhs") // todo
+            error(edef.rhs.pos, "unexpected expression")
             edef.rhs
         }
       }

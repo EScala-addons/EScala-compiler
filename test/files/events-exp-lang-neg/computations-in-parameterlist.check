@@ -1,5 +1,8 @@
-computations-in-parameterlist.scala:6: error: Args contains wrong Tree
+computations-in-parameterlist.scala:6: error: illegal expression
   evt e2(a: Int, b: Int) = e1(a+b, b)
                                ^
-error: inferred type arguments [(Int, Int),(Int, Int),Int] do not conform to method map's type parameter bounds [U,S >: (Int, Int),V >: S]
-two errors found
+computations-in-parameterlist.scala:6: error: not found: value a
+  evt e2(a: Int, b: Int) = e1(a+b, b)
+         ^
+error: inferred type arguments [Nothing,(Int, Int),Int] do not conform to method map's type parameter bounds [U,S >: (Int, Int),V >: S]
+three errors found

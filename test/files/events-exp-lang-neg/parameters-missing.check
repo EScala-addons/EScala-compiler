@@ -1,7 +1,7 @@
-parameters-missing.scala:6: error: Unexpected rhs
+parameters-missing.scala:6: error: unexpected expression
   evt e2(x: Int) = e1
                    ^
-parameters-missing.scala:8: error: unbound parameters
+parameters-missing.scala:8: error: not found: value x
   evt e3(x: Int) = e1(_)
-      ^
+         ^
 two errors found

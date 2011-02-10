@@ -1,7 +1,13 @@
-unbound-parameters.scala:6: error: ValDef not found
+unbound-parameters.scala:6: error: not used: value a
   evt e2(x: Int, y: Int) = e1(a,y)
                               ^
-unbound-parameters.scala:7: error: ValDef not found
+unbound-parameters.scala:6: error: not found: value x
+  evt e2(x: Int, y: Int) = e1(a,y)
+         ^
+unbound-parameters.scala:7: error: not used: value b
   evt e3(x: Int, y: Int) = e1(x,b)
                                 ^
-two errors found
+unbound-parameters.scala:7: error: not found: value y
+  evt e3(x: Int, y: Int) = e1(x,b)
+                 ^
+four errors found
