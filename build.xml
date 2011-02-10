@@ -1612,6 +1612,21 @@ BOOTRAPING TEST AND TEST SUITE
     </target>
     <!-- END @LS events -->
 
+  <!-- @LS events -->
+  <target name="test.events.observableclass.suite" depends="pack.done">
+     <property name="partest.srcdir" value="files" />
+     <partest showlog="yes" erroronfailed="yes" javacmd="${java.home}/bin/java"
+              timeout="2400000" javaccmd="${javac.cmd}" 
+              srcdir="${partest.srcdir}"
+              scalacopts="${scalac.args.optimise}">
+        <compilationpath>
+          <path refid="pack.classpath"/>
+          <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
+        </compilationpath>
+        <runtests  dir="${partest.dir}/${partest.srcdir}/events-obsclass-run" includes="*.scala"/>
+      </partest>
+    </target>
+    <!-- END @LS events -->
 
   <target name="test.scaladoc" depends="pack.done">
     <partest erroronfailed="yes" scalacopts="${scalac.args.optimise}">

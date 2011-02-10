@@ -1,7 +1,15 @@
-package truie.toto
-
-import truie.pipo.Transaction
 import scala.events.allInstances
+
+observable class Transaction {
+
+    observable def credit() {
+        System.out.println("Credit")
+    }
+
+    observable def debit() {
+        System.out.println("Debit")
+    }
+}
 
 class TransactionManager {
 
@@ -23,6 +31,7 @@ object Test {
         t1.credit
         t2.credit
         t2.debit
+        //System.out.println("Objects : "+allInstances[Transaction])
     }
 }
 
