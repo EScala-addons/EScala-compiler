@@ -80,6 +80,11 @@ trait Event[+T] {
   def map[U, S >: T, V >: T <: S](mapping: S => U) = new EventNodeMap[V, U](this, mapping)
 
   /**
+   * Transform the event parameter independently of the parameter value
+   */
+  def map[U, S >: T](mapping: () => U) = new EventNodeMap[S, U](this, _ => mapping())
+
+  /**
    * Event is triggered if the first event was already triggered but not the second one yet
    */
    //def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
