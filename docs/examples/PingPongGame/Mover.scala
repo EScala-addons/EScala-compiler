@@ -21,8 +21,8 @@ class Mover(val world : World) {
     o.velocity = (-o.velocity._1, o.velocity._2)
   })
 
-  moved && (o => colliding(o, world.upperWall )) += reverseYVelocity
-  moved && (o => colliding(o, world.lowerWall )) += reverseYVelocity
+  moved && (o => colliding(o, world.upperWall )) += {o => reverseYVelocity(o); o.position = (o.position._1,world.upperWall.position._2 + world.upperWall.boundingBox._2 + 2)}
+  moved && (o => colliding(o, world.lowerWall )) += {o => reverseYVelocity(o); o.position = (o.position._1,world.lowerWall.position._2 - o.boundingBox._2 - 2)}
 
   val ballMoved = moved && (o => o.isInstanceOf[Ball]) map ((o: ModelObject) => o.asInstanceOf[Ball])
 

@@ -72,25 +72,28 @@ case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
 
 class Player(moveUpKeyCode : Int, moveDownKeyCode : Int, world: World, bar: ModelObject, goal: ModelObject) {
   
-  val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)  
+  val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode) 
+  val releaseMoveUp = world.keyReleased && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)
   val pressMoveDown = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
+  val releaseMoveDown = world.keyReleased && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
+
   
   var releaseTime : Long = 0;
   
   pressMoveUp += ((_) => releaseTime = System.currentTimeMillis+120)
   pressMoveDown += ((_) => releaseTime = System.currentTimeMillis+120)
   
-  val moveBarUp = new BetweenEvent(pressMoveUp, world.clock && ((t : Long) => t > releaseTime));
-  val moveBarDown = new BetweenEvent(pressMoveDown, world.clock && ((t : Long) => t > releaseTime));
+  val moveBarUp = new BetweenEvent(pressMoveUp, ((releaseMoveUp then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTime));
+  val moveBarDown = new BetweenEvent(pressMoveDown, ((releaseMoveDown then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTime));
   
-  moveBarUp.before += ((_) => {
+  moveBarUp.before || (world.clock strictlyWithin moveBarUp) += ((_) => {
 	  bar.velocity = (0,-5)
   })
   moveBarUp.after += ((_) => {
 	  bar.velocity = (0,0)
   })
   
-  moveBarDown.before += ((_)=>bar.velocity =(0,5))
+  moveBarDown.before || (world.clock strictlyWithin moveBarDown) += ((_)=>bar.velocity =(0,5))
   moveBarDown.after += ((_)=> bar.velocity  = (0,0))
   
 }
