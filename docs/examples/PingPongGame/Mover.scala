@@ -27,8 +27,8 @@ class Mover(val world : World) {
   val ballMoved = moved && (o => o.isInstanceOf[Ball]) map ((o: ModelObject) => o.asInstanceOf[Ball])
 
   ballMoved && (o => colliding(o, world.player1Bar) || colliding(o, world.player2Bar)) += reverseXVelocity
-  ballMoved && (o => colliding(o,world.player1Goal )) += (_ => "Point for Player2")
-  ballMoved && (o => colliding(o,world.player2Goal )) += (_ => "Point for Player1")
+  ballMoved && (o => colliding(o,world.player1Goal )) += (o => {println("Point for Player2"); world.resetBall(o)})
+  ballMoved && (o => colliding(o,world.player2Goal )) += (o => {println("Point for Player1"); world.resetBall(o)})
 
   def colliding(o1: ModelObject, o2: ModelObject) = o1.isCollidingWith(o2) || o2.isCollidingWith(o1)
 }

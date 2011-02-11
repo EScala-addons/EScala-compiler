@@ -78,13 +78,14 @@ class Player(moveUpKeyCode : Int, moveDownKeyCode : Int, world: World, bar: Mode
   val releaseMoveDown = world.keyReleased && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
 
   
-  var releaseTime : Long = 0;
+  var releaseTimeUp : Long = 0;
+  var releaseTimeDown : Long = 0;
   
-  pressMoveUp += ((_) => releaseTime = System.currentTimeMillis+120)
-  pressMoveDown += ((_) => releaseTime = System.currentTimeMillis+120)
+  pressMoveUp += ((_) => releaseTimeUp = System.currentTimeMillis+50)
+  pressMoveDown += ((_) => releaseTimeDown = System.currentTimeMillis+50)
   
-  val moveBarUp = new BetweenEvent(pressMoveUp, ((releaseMoveUp then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTime));
-  val moveBarDown = new BetweenEvent(pressMoveDown, ((releaseMoveDown then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTime));
+  val moveBarUp = new BetweenEvent(pressMoveUp, ((releaseMoveUp then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTimeUp));
+  val moveBarDown = new BetweenEvent(pressMoveDown, ((releaseMoveDown then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTimeDown));
   
   moveBarUp.before || (world.clock strictlyWithin moveBarUp) += ((_) => {
 	  bar.velocity = (0,-5)
@@ -128,4 +129,14 @@ class World(val size: (Int, Int)) {
   
   val mover = new Mover(this)  
   clock += (_ => this.objects.foreach(b => mover.move(b)))
+  
+  objects.foreach((o:ModelObject) => o match {
+	  case Ball(_,_) => resetBall(o.asInstanceOf[Ball])
+	  case _ =>
+  } )
+  
+  def resetBall(ball : Ball) = {
+	  ball.position = (size._1 / 2, size._2 / 2)
+	  ball.velocity = (ball.velocity._1 + (Math.random * 10 - 5).intValue,ball.velocity._2 + (Math.random * 10 - 5).intValue)
+  }
 }
