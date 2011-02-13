@@ -55,7 +55,14 @@ abstract class AllInstances extends Transform
 
           // generic$all
           val objname = generic.symbol.rawname+"$all"
-          val objall = Ident(generic.symbol.owner.info.decl(objname))
+          val objsymbol = generic.symbol.owner.info.decl(objname)
+          if (objsymbol == NoSymbol) {
+            unit.error(tree.pos, objname + " not found. Make sure " +
+                       generic.symbol.rawname + " is observable.")
+            tree
+          }
+          val objall = Ident(objsymbol)
+          
           // generic$all.all
           val allMember = Select(objall, newTermName("all"))
           
@@ -74,8 +81,13 @@ abstract class AllInstances extends Transform
 
             // generic$all
             val objname = generic.symbol.rawname+"$all"
-            val objall = Ident(generic.symbol.owner.info.decl(objname))
-
+            val objsymbol = generic.symbol.owner.info.decl(objname)
+            if (objsymbol == NoSymbol) {
+              unit.error(tree.pos, objname + " not found. Make sure " +
+                         generic.symbol.rawname + " is observable.")
+              tree
+            }
+            val objall = Ident(objsymbol)
 
             // generic$all.all.any
             val allMemberAny = Select(
