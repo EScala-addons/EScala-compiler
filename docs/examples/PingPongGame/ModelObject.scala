@@ -69,6 +69,28 @@ case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
   override def boundingBox = (width, height)
 }
 
+abstract class Present(pos: (Int, Int)) extends ModelObject(pos) {
+  override def boundingBox = (20, 20)
+  
+  def hit(collidingObj : ModelObject, world : World) = {
+	  println("The present was hit by the ball")
+  }
+  
+  override def toString = {
+	  "Present"
+  }
+}
+
+class IncreaseBallSpeedPresent(pos : (Int,Int)) extends Present(pos) {
+	override def hit(collidingObj : ModelObject, world : World) = {
+		world.objects.filter(obj => obj.isInstanceOf[Ball]).foreach(obj => obj.velocity  = (obj.velocity._1 *2, obj.velocity._2*2));
+	}
+	
+	override def toString = {
+		"IncreaseBallSpeed"+super.toString;
+	}
+}
+
 class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelObject, goal: ModelObject) {
 
   val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)
@@ -83,8 +105,8 @@ class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelO
    * Therefore, a Timer event between a release and a press marks the real keyRelease
    */
 
-  val moveBarUp = between(pressMoveUp, world.clock within between(releaseMoveUp, pressMoveUp));
-  val moveBarDown = between(pressMoveDown, world.clock within between(releaseMoveDown, pressMoveDown));
+  val moveBarUp = new BetweenEvent(pressMoveUp, world.clock within between(releaseMoveUp, pressMoveUp));
+  val moveBarDown = new BetweenEvent(pressMoveDown, world.clock within between(releaseMoveDown, pressMoveDown));
 
   moveBarUp.before || (world.clock strictlyWithin moveBarUp) += ((_) => {
     bar.velocity = (0, -5)
@@ -118,29 +140,50 @@ class World(val size: (Int, Int), resetKeyCode : Int = KeyEvent.VK_R) {
   val player1 = new Player(87, 83, this, player1Bar, player1Goal)
   val player2 = new Player(38, 40, this, player2Bar, player2Goal)
 
-  val objects = List(player1Bar,
-    player2Bar,
-    upperWall,
-    lowerWall,
-    player1Goal,
-    player2Goal,
-    new Ball(radius = 10, pos = (size._1 / 2, size._2 / 2)))
+  var objects = new ListBuffer[ModelObject]();
+  objects.append(player1Bar)
+  objects.append(player2Bar)
+  objects.append(upperWall)
+  objects.append(lowerWall)
+  objects.append(player1Goal)
+  objects.append(player2Goal)
+  objects.append(new Ball(radius = 10, pos = (size._1 / 2, size._2 / 2)))
 
   val mover = new Mover(this)
-  clock += (_ => this.objects.foreach(b => mover.move(b)))
 
-def reset =  objects.foreach((o: ModelObject) => o match {
+  clock += (_ => this.objects.foreach(b => mover.move(b)))
+  reset
+  keyPressed && (e => e.getKeyCode == resetKeyCode) += (_ => reset)
+
+  def displayPresent(p: Present) = {
+	objects += p
+    
+    //Display it for a given amount of time
+
+	//If the ball moves around, it can hit the present
+	val collision = mover.ballMoved && (b  => p.isCollidingWith(b)) 
+	
+	//The present should disappear after a given amount of time or after hitting the ball
+	var visibleUntil = System.currentTimeMillis() + 5000;
+    var visible = to(clock && (time => time > visibleUntil) || collision)
+    
+    val hide = ( t : Unit ) => {
+    	objects -= p;
+    	println("hide it");
+    	//visible.after -= hide
+    }
+    visible.after += hide
+    collision += (obj => p.hit(obj, this)); 
+  }
+  
+  def reset = objects.foreach((o: ModelObject) => o match {
     case Ball(_, _) => resetBall(o.asInstanceOf[Ball])
     case _ =>
   })
-  
-  reset
-  
-  keyPressed && (e => e.getKeyCode == resetKeyCode) += (_ => reset)
 
   def resetBall(ball: Ball) = {
-	  val angle = Math.random * 360;
-	   val speed = 10.0;
+    val angle = Math.random * 360;
+    val speed = 10.0;
     ball.position = (size._1 / 2, size._2 / 2)
     ball.velocity = ((speed * Math.sin(angle)).intValue, (speed * Math.cos(angle)).intValue)
   }
