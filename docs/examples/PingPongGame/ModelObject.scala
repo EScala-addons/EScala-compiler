@@ -84,8 +84,11 @@ class Player(moveUpKeyCode : Int, moveDownKeyCode : Int, world: World, bar: Mode
   pressMoveUp += ((_) => releaseTimeUp = System.currentTimeMillis+50)
   pressMoveDown += ((_) => releaseTimeDown = System.currentTimeMillis+50)
   
-  val moveBarUp = new BetweenEvent(pressMoveUp, ((releaseMoveUp then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTimeUp));
-  val moveBarDown = new BetweenEvent(pressMoveDown, ((releaseMoveDown then world.clock) map ((p : (_,Long)) => p._2)) && ((t : Long) => t > releaseTimeDown));
+  val guard1 = between(releaseMoveUp,pressMoveUp);
+  val guard2 = between(releaseMoveDown,pressMoveDown);
+  
+  val moveBarUp = new BetweenEvent(pressMoveUp, (releaseMoveUp then (world.clock within guard1)) );
+  val moveBarDown = new BetweenEvent(pressMoveDown, (releaseMoveDown then (world.clock) within guard2)) ;
   
   moveBarUp.before || (world.clock strictlyWithin moveBarUp) += ((_) => {
 	  bar.velocity = (0,-5)
