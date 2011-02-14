@@ -9,7 +9,7 @@ import java.awt.event.KeyEvent;
 
 object Main extends SimpleSwingApplication {
 
-  var world = new World(500, 300);
+  var world = new World((500, 300),KeyEvent.VK_F2);
 
   def top = new MainFrame {
 
@@ -61,7 +61,7 @@ object Main extends SimpleSwingApplication {
 
   def reset() = {
     println("reset")
-    world = new World(top.size.width, top.size.height);
+    world = new World((top.size.width, top.size.height),KeyEvent.VK_F2);
   }
 
   def modelDraw(o: ModelObject, g: Graphics2D) = {

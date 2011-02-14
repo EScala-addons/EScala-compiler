@@ -70,45 +70,42 @@ case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
   override def boundingBox = (width, height)
 }
 
-class Player(moveUpKeyCode : Int, moveDownKeyCode : Int, world: World, bar: ModelObject, goal: ModelObject) {
-  
-  val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode) 
+class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelObject, goal: ModelObject) {
+
+  val pressMoveUp = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)
   val releaseMoveUp = world.keyReleased && ((evt: KeyEvent) => evt.getKeyCode == moveUpKeyCode)
   val pressMoveDown = world.keyPressed && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
   val releaseMoveDown = world.keyReleased && ((evt: KeyEvent) => evt.getKeyCode == moveDownKeyCode)
 
-  
-  var releaseTimeUp : Long = 0;
-  var releaseTimeDown : Long = 0;
-  
-  pressMoveUp += ((_) => releaseTimeUp = System.currentTimeMillis+50)
-  pressMoveDown += ((_) => releaseTimeDown = System.currentTimeMillis+50)
-  
-  val guard1 = between(releaseMoveUp,pressMoveUp);
-  val guard2 = between(releaseMoveDown,pressMoveDown);
-  
-  val moveBarUp = new BetweenEvent(pressMoveUp, (releaseMoveUp then (world.clock within guard1)) );
-  val moveBarDown = new BetweenEvent(pressMoveDown, (releaseMoveDown then (world.clock) within guard2)) ;
-  
+  /**
+   * as the Timer events are dispatched in the same event queue as the key events,
+   * and the repeated keyRelease and keyPress events always occur one after the other,
+   * a timer event after a release will always be after the keyPress if it is a repeated event.
+   * Therefore, a Timer event between a release and a press marks the real keyRelease
+   */
+
+  val moveBarUp = between(pressMoveUp, world.clock within between(releaseMoveUp, pressMoveUp));
+  val moveBarDown = between(pressMoveDown, world.clock within between(releaseMoveDown, pressMoveDown));
+
   moveBarUp.before || (world.clock strictlyWithin moveBarUp) += ((_) => {
-	  bar.velocity = (0,-5)
+    bar.velocity = (0, -5)
   })
   moveBarUp.after += ((_) => {
-	  bar.velocity = (0,0)
+    bar.velocity = (0, 0)
   })
-  
-  moveBarDown.before || (world.clock strictlyWithin moveBarDown) += ((_)=>bar.velocity =(0,5))
-  moveBarDown.after += ((_)=> bar.velocity  = (0,0))
-  
+
+  moveBarDown.before || (world.clock strictlyWithin moveBarDown) += ((_) => bar.velocity = (0, 5))
+  moveBarDown.after += ((_) => bar.velocity = (0, 0))
+
 }
 
-class World(val size: (Int, Int)) {
+class World(val size: (Int, Int), resetKeyCode : Int) {
 
   /// Events
   val keyPressed = new ImperativeEvent[KeyEvent]
   val keyReleased = new ImperativeEvent[KeyEvent]
   val clock = new ImperativeEvent[Long]
-  
+
   /// Values
   val upperWall = new Wall(length = size._1, pos = (0, 0));
   val lowerWall = new Wall(length = size._1, pos = (0, size._2 - 30));
@@ -129,17 +126,23 @@ class World(val size: (Int, Int)) {
     player1Goal,
     player2Goal,
     new Ball(radius = 10, pos = (size._1 / 2, size._2 / 2)))
-  
-  val mover = new Mover(this)  
+
+  val mover = new Mover(this)
   clock += (_ => this.objects.foreach(b => mover.move(b)))
+
+def reset =  objects.foreach((o: ModelObject) => o match {
+    case Ball(_, _) => resetBall(o.asInstanceOf[Ball])
+    case _ =>
+  })
   
-  objects.foreach((o:ModelObject) => o match {
-	  case Ball(_,_) => resetBall(o.asInstanceOf[Ball])
-	  case _ =>
-  } )
+  reset
   
-  def resetBall(ball : Ball) = {
-	  ball.position = (size._1 / 2, size._2 / 2)
-	  ball.velocity = (ball.velocity._1 + (Math.random * 10 - 5).intValue,ball.velocity._2 + (Math.random * 10 - 5).intValue)
+  keyPressed && (e => e.getKeyCode == resetKeyCode) += (_ => reset)
+
+  def resetBall(ball: Ball) = {
+	  val angle = Math.random * 360;
+	   val speed = 10.0;
+    ball.position = (size._1 / 2, size._2 / 2)
+    ball.velocity = ((speed * Math.sin(angle)).intValue, (speed * Math.cos(angle)).intValue)
   }
 }
