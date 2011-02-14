@@ -14,22 +14,7 @@ package object events {
   private[events] def not_strictlyWithin[T](e: Event[T], ie: IntervalEvent[_]): Event[T] =
     (e && (_ => !ie.active)) || e.and(ie.after, (t: T, s: Any) => t)
 
-  def from[T](e: Event[T]) = new BetweenEvent[T](e, emptyevent) {
-
-    lazy val cleanUp: (Any => Unit) = ((_: Any) => {
-      before.asInstanceOf[PunktualNode[T]].undeploy;
-      after.asInstanceOf[PunktualNode[T]].undeploy;
-      realStart -= cleanUp
-    })
-
-    override def deploy = {
-      if (!active) {
-        super.deploy
-      }
-      realStart += cleanUp
-    }
-
-  }
+  def from[T](e: Event[T]) = new BetweenEvent[T](e, emptyevent)
   def to[T](e: Event[T]) = from(e).complement
 
   def causedBy[T](e: Event[T]) = new CausedByFilter(e)

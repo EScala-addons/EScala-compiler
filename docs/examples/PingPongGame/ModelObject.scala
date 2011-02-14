@@ -167,13 +167,15 @@ class World(val size: (Int, Int), resetKeyCode : Int = KeyEvent.VK_R) {
 	var visibleUntil = System.currentTimeMillis() + 5000;
     var visible = to(clock && (time => time > visibleUntil) || collision)
     
-    val hide = ( t : Unit ) => {
+    lazy val onCollision = ((obj:ModelObject )=> p.hit(obj, this))
+    lazy val hide : (Unit => Unit) = ( t : Unit ) => {
     	objects -= p;
     	println("hide it");
-    	//visible.after -= hide
+    	visible.after -= hide
+    	collision -= onCollision
     }
     visible.after += hide
-    collision += (obj => p.hit(obj, this)); 
+    collision += onCollision; 
   }
   
   def reset = objects.foreach((o: ModelObject) => o match {
