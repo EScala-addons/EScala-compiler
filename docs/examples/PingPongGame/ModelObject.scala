@@ -4,9 +4,8 @@ import java.awt.event.KeyEvent
 import scala.collection.mutable.ListBuffer
 import scala.events._
 
-abstract class ModelObject(pos: (Int, Int) = (0, 0)) {
+abstract class ModelObject(var position: (Int, Int) = (0, 0)) {
 
-  var position = pos
   var velocity: (Int, Int) = (0, 0)
   /**
    * first value is width, second height
@@ -80,7 +79,7 @@ class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelO
   /**
    * as the Timer events are dispatched in the same event queue as the key events,
    * and the repeated keyRelease and keyPress events always occur one after the other,
-   * a timer event after a release will always be after the keyPress if it is a repeated event.
+   * a timer event after a release will always be directly after the keyPress if it is a repeated event.
    * Therefore, a Timer event between a release and a press marks the real keyRelease
    */
 
@@ -99,7 +98,7 @@ class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelO
 
 }
 
-class World(val size: (Int, Int), resetKeyCode : Int) {
+class World(val size: (Int, Int), resetKeyCode : Int = KeyEvent.VK_R) {
 
   /// Events
   val keyPressed = new ImperativeEvent[KeyEvent]

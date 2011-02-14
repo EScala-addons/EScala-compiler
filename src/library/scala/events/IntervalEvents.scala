@@ -10,7 +10,7 @@ trait IntervalEvent[Start] {
   def start: Event[Start]
   def end: Event[_]
 
-  private lazy val realStart: Event[Start] = new BeforeNode[Start](start && (_ => !active) && startCondition _ )
+  protected lazy val realStart: Event[Start] = new BeforeNode[Start](start && (_ => !active) && startCondition _ )
   private lazy val realEnd: Event[_] = new BeforeNode[Any](end && (_ => active) && endCondition _ )
 
   private final var default: Start = _
@@ -150,7 +150,7 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
 
   }
 
-  override def undeploy {
+  override protected[events] def undeploy {
     punktEv -= onEvt
     ref --
   }
