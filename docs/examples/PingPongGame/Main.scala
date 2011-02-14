@@ -15,11 +15,15 @@ object Main extends SimpleSwingApplication {
 
     val resetAction = Action("reset") { reset };
     val quitAction = Action("quit") { System.exit(0) };
-
+    val fastPresentAction = Action("become faster") {world.displayPresent(new IncreaseBallSpeedPresent((80,80)))};
+ 
     menuBar = new MenuBar {
       contents += new Menu("Game") {
         contents += new MenuItem(resetAction);
         contents += new MenuItem(quitAction)
+      }
+      contents += new Menu("Presents") {
+    	  contents += new MenuItem(fastPresentAction)
       }
     };
 
