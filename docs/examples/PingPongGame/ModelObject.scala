@@ -71,24 +71,58 @@ case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
 
 abstract class Present(pos: (Int, Int)) extends ModelObject(pos) {
   override def boundingBox = (20, 20)
-  
-  def hit(collidingObj : ModelObject, world : World) = {
-	  println("The present was hit by the ball")
+
+  def hit(collidingObj: Ball, world: World) = {
+    println("The present was hit by the ball")
   }
-  
+
   override def toString = {
-	  "Present"
+    "Present"
   }
 }
 
-class IncreaseBallSpeedPresent(pos : (Int,Int)) extends Present(pos) {
-	override def hit(collidingObj : ModelObject, world : World) = {
-		world.objects.filter(obj => obj.isInstanceOf[Ball]).foreach(obj => obj.velocity  = (obj.velocity._1 *2, obj.velocity._2*2));
-	}
-	
-	override def toString = {
-		"IncreaseBallSpeed"+super.toString;
-	}
+class IncreaseBallSpeedPresent(pos: (Int, Int)) extends Present(pos) {
+  override def hit(collidingObj: Ball, world: World) = {
+    world.objects.filter(obj => obj.isInstanceOf[Ball]).foreach(obj => obj.velocity = (obj.velocity._1 * 2, obj.velocity._2 * 2));
+  }
+
+  override def toString = {
+    "IncreaseBallSpeed" + super.toString;
+  }
+}
+
+class DoubleBallPresent(pos: (Int, Int)) extends Present(pos) {
+
+	//dont need Intervals here...
+  override def hit(collidingObj: Ball, world: World) = {
+    val mover = world.mover
+    val newBall = new Ball(collidingObj.radius, (0, 0))
+    world.objects += newBall
+    world.resetBall(newBall)
+    val ballHitsGoal = mover.goal1Hit && (b => b == newBall) || (mover.goal2Hit && (b => b == newBall))
+    lazy val fun2: (Ball => Unit) = { (_: Ball) => println("remove Ball"); world.objects -= newBall; ballHitsGoal -= fun2 }
+    ballHitsGoal += fun2
+  }
+}
+
+class ReversePlayerControlsPresent(pos: (Int, Int), world: World) extends Present(pos) {
+  val hit = new ImperativeEvent[Unit]
+  val deactivate = (world.mover.goal1Hit || world.mover.goal2Hit) then (world.mover.goal1Hit || world.mover.goal2Hit)
+  val interval = between(hit, deactivate)
+
+  val reverse = ((b: Bar) => b.velocity = (0, -b.velocity._2))
+
+  val revertEvent1 = (world.clock within interval) map ((_:Any) => world.player1Bar)
+  val revertEvent2 = (world.clock within interval) map ((_:Any) => world.player2Bar)
+
+  override def hit(collidingObj: Ball, world: World) = {
+    revertEvent1 += reverse
+    revertEvent2 += reverse
+    // make sure everything is deregistered...
+    lazy val fun : (Any => Unit) = {_ => revertEvent1 -= reverse; revertEvent2 -= reverse; deactivate -= fun }
+    deactivate += fun
+    hit()
+  }
 }
 
 class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelObject, goal: ModelObject) {
@@ -120,7 +154,7 @@ class Player(moveUpKeyCode: Int, moveDownKeyCode: Int, world: World, bar: ModelO
 
 }
 
-class World(val size: (Int, Int), resetKeyCode : Int = KeyEvent.VK_R) {
+class World(val size: (Int, Int), resetKeyCode: Int = KeyEvent.VK_R) {
 
   /// Events
   val keyPressed = new ImperativeEvent[KeyEvent]
@@ -156,28 +190,28 @@ class World(val size: (Int, Int), resetKeyCode : Int = KeyEvent.VK_R) {
   keyPressed && (e => e.getKeyCode == resetKeyCode) += (_ => reset)
 
   def displayPresent(p: Present) = {
-	objects += p
-    
+    objects += p
+
     //Display it for a given amount of time
 
-	//If the ball moves around, it can hit the present
-	val collision = mover.ballMoved && (b  => p.isCollidingWith(b)) 
-	
-	//The present should disappear after a given amount of time or after hitting the ball
-	var visibleUntil = System.currentTimeMillis() + 5000;
+    //If the ball moves around, it can hit the present
+    val collision = mover.ballMoved && (b => p.isCollidingWith(b))
+
+    //The present should disappear after a given amount of time or after hitting the ball
+    var visibleUntil = System.currentTimeMillis() + 5000;
     var visible = to(clock && (time => time > visibleUntil) || collision)
-    
-    lazy val onCollision = ((obj:ModelObject )=> p.hit(obj, this))
-    lazy val hide : (Unit => Unit) = ( t : Unit ) => {
-    	objects -= p;
-    	println("hide it");
-    	visible.after -= hide
-    	collision -= onCollision
+
+    lazy val onCollision = ((obj: Ball) => p.hit(obj, this))
+    lazy val hide: (Unit => Unit) = (t: Unit) => {
+      objects -= p;
+      println("hide it");
+      visible.after -= hide
+      collision -= onCollision
     }
     visible.after += hide
-    collision += onCollision; 
+    collision += onCollision;
   }
-  
+
   def reset = objects.foreach((o: ModelObject) => o match {
     case Ball(_, _) => resetBall(o.asInstanceOf[Ball])
     case _ =>

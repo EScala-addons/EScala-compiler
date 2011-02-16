@@ -1,4 +1,5 @@
 package scala.events.pingpong
+import scala.events.pingpong._
 
 import scala.swing.event._
 import java.awt.event.ActionListener
@@ -16,7 +17,9 @@ object Main extends SimpleSwingApplication {
     val resetAction = Action("reset") { reset };
     val quitAction = Action("quit") { System.exit(0) };
     val fastPresentAction = Action("become faster") {world.displayPresent(new IncreaseBallSpeedPresent((80,80)))};
- 
+ val doublePresentAction = Action("double fun") {world.displayPresent(new DoubleBallPresent((100,100)))}
+ val revertPresentAction = Action("revert!!") {world.displayPresent(new ReversePlayerControlsPresent((100,100),world))}
+    
     menuBar = new MenuBar {
       contents += new Menu("Game") {
         contents += new MenuItem(resetAction);
@@ -24,6 +27,8 @@ object Main extends SimpleSwingApplication {
       }
       contents += new Menu("Presents") {
     	  contents += new MenuItem(fastPresentAction)
+    	   contents += new MenuItem(doublePresentAction)
+    	   contents += new MenuItem(revertPresentAction)
       }
     };
 
