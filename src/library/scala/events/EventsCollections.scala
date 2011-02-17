@@ -27,7 +27,7 @@ class EventNodeListExists[T, U](list: List[T], evf: T => Event[U]) extends Event
 
   override def toString = getClass.getName
 
-    protected override def pullFkt(Id: Int): Option[U] = {
+    protected override def pullParents(Id: Int): Option[U] = {
     list.foreach(target => evf(target).pullIsActivated(Id) match {
       case Some(v) => return Some(v)
       case None =>

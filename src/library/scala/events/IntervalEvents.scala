@@ -142,7 +142,7 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
     reactions(id, v, reacts)
   }
 
-  override def toString = punktEv.toString
+ // override def toString = punktEv.toString
 
   override def deploy {
     ref ++;
@@ -154,13 +154,8 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
     punktEv -= onEvt
     ref --
   }
-
-  /*protected[events] override def redeploy {
-    super.redeploy
-    punktEv.redeploy
-  }*/
   
-  protected override def pullFkt(Id : Int): Option[T] = punktEv.pullIsActivated(Id)
+  protected override def pullParents(Id : Int): Option[T] = punktEv.pullIsActivated(Id)
 }
 
 class BetweenEvent[T](val start: Event[T], val end: Event[_]) extends IntervalEvent[T] {
@@ -185,8 +180,8 @@ protected[events] class ActiveOverridingInterval[T](start: Event[T],
  * @author Michael
  *
  */
-protected[events] class BeforeNode[T](evt : Event[T]) extends EventNode[T]{
-	override def pullFkt(id : Int) = evt.pullIsActivated(id)
+protected[events] class BeforeNode[T](ev : Event[T]) extends EventNode[T]{
+	override def pullParents(id : Int) = ev.pullIsActivated(id)
 	
 	lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
 			val newReacts = new ListBuffer[(() => Unit, Trace)]
@@ -195,11 +190,11 @@ protected[events] class BeforeNode[T](evt : Event[T]) extends EventNode[T]{
 		}
 	
 	override def deploy{
-		evt += onEvt
+		ev += onEvt
 	}
 	
 	override def undeploy {
-		evt -= onEvt
+		ev -= onEvt
 	}
 }
 

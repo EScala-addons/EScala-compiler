@@ -86,16 +86,16 @@ trait Event[+T] {
   /**
    * Event inside an Interval
    */
-  def within(ie: IntervalEvent[_]) : Event[T] = events.within(this, ie, (t:T,_:Any) => t)
+  def within(ie: IntervalEvent[_]): Event[T] = events.within(this, ie, (t: T, _: Any) => t)
 
   /**
-   * Event inside an Interval. This method gives the possibility to access the 
+   * Event inside an Interval. This method gives the possibility to access the
    * interval's value
    * @param ie
    * @param merge function that processes this event's value and the Interval's value
    * @return
    */
-  def within[S,U](ie: IntervalEvent[S], merge: (T,S) => U): Event[U] = events.within(this,ie,merge)
+  def within[S, U](ie: IntervalEvent[S], merge: (T, S) => U): Event[U] = events.within(this, ie, merge)
   /**
    * Event outside an Interval
    */
@@ -119,7 +119,11 @@ trait Event[+T] {
 
 /*
  *  Base class for events.
- *  Maintains sinks and reactions and
+ *  Maintains sinks and reactions
+ *  
+ *  Note that most subclasses take call-by-name parameters. This is important for
+ *  recursive definitions. Be aware of this and try to avoid this as much as you can.
+ *  Especially, rather use functions provided by Event than instantiating your own EventNodes
  */
 abstract class EventNode[T] extends Event[T] {
   protected val sinks = new ListBuffer[Sink]
@@ -174,7 +178,8 @@ abstract class EventNode[T] extends Event[T] {
    */
   protected def undeploy: Unit
 
-  /** Collects the reactions registered with this event and associates the current event trace.
+  /**
+   * Collects the reactions registered with this event and associates the current event trace.
    *  It then propagates to sinks.
    */
   protected[events] def reactions(id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) {
@@ -189,31 +194,36 @@ abstract class EventNode[T] extends Event[T] {
     }
   }
 
-  protected var lastPulledId: Int = -1
-  protected var wasLastActivated: Boolean = false
+  private var lastPulledId: Int = -1
+  private var wasLastActivated: Boolean = false
   protected var lastValue: T = _
   /**
    * helper function for pulling the parent's state, override this
    * to adapt the pull-behavior
    * @return <ul><li>None if the parents are not activated (== this one neither)</li>
    * 			<li>Some(v) otherwise, where v is the value that would get passed to
-   * 			reactions 
+   * 			reactions
    */
-  protected def pullFkt(Id: Int): Option[T]
-  
+  protected def pullParents(Id: Int): Option[T]
+
   protected[events] override final def pullIsActivated(Id: Int): Option[T] = {
-    if (wasLastActivated && Id == lastPulledId) Some(lastValue)
-    if(!wasLastActivated && Id == lastPulledId) None
+    if (Id == lastPulledId)
+      return if (wasLastActivated) Some(lastValue) else None
     else {
-      pullFkt(Id) match {
+      lastPulledId = Id
+      wasLastActivated = true
+      /* By definition, the event is active if found on a circular path
+       * this makes both sense for difference (pull is in the except path) and
+       * lazy And (it makes sense to assume that it happens at the same time as itself).
+       * Some definition must be done, as circular pulls are possible, to avoid side-effects
+       * from earlier pulls as well as infinite recursion
+       */
+      pullParents(Id) match {
         case None => {
-          lastPulledId = Id
           wasLastActivated = false
           return None
         }
         case Some(v) => {
-          lastPulledId = Id
-          wasLastActivated = true
           lastValue = v
           return Some(v)
         }
@@ -244,6 +254,7 @@ object EventIds {
 class ImperativeEvent[T] extends EventNode[T] {
 
   private var deployed = false
+  private var lastId = 0
 
   /*
   * Trigger the event
@@ -253,10 +264,11 @@ class ImperativeEvent[T] extends EventNode[T] {
     // does something only if the event is deployed, i.e. if some reactions or sinks
     // are registered
     if (deployed) {
+      lastId = EventIds.newId()
       // collect matching reactions
       val reacts: ListBuffer[(() => Unit, Trace)] = new ListBuffer
 
-      reactions(EventIds.newId(), v, reacts)
+      reactions(lastId, v, reacts)
       // once reactions are collected, we are after the triggering
       afterTrigger(v)
       // execute the collected reactions
@@ -285,20 +297,28 @@ class ImperativeEvent[T] extends EventNode[T] {
 
   protected override def undeploy { deployed = false }
 
-  protected override def pullFkt(Id: Int): Option[T] = {
-    if (wasLastActivated && lastPulledId == Id)
+  protected override def pullParents(Id: Int): Option[T] = {
+    if (lastId == EventIds.lastId)
       Some(lastValue)
     else None
   }
 
-  override def toString = getClass.getName
+  // override def toString = getClass.getName
 
 }
 
 /*
  * Implementation of event conjunction
  */
-class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) => T) extends EventNode[T] {
+class EventNodeAnd[T1, T2, T](event1: => Event[T1], event2: => Event[T2], merge: (T1, T2) => T) extends EventNode[T] {
+
+  /*
+	 * event1 and event2 are call-by-name to support lazy evaluation = recursive dependencies
+	 * if no recursive dependencies are needed, one has to take care not to pass some
+	 * function or complex expression in this constructor
+	 */
+  lazy val ev1 = event1
+  lazy val ev2 = event2
 
   // The id of the last received event
   var id: Int = 0
@@ -360,7 +380,7 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
 
   }
 
-  protected override def pullFkt(Id: Int): Option[T] = {
+  protected override def pullParents(Id: Int): Option[T] = {
 
     val v1 = ev1.pullIsActivated(Id)
     if (v1 == None) return None
@@ -377,7 +397,10 @@ class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) =>
 /*
  * Implementation of event disjunction
  */
-class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T] {
+class EventNodeOr[T](event1: => Event[_ <: T], event2: => Event[_ <: T]) extends EventNode[T] {
+
+  lazy val ev1 = event1
+  lazy val ev2 = event2
 
   // The id of the last received event
   var id: Int = 0
@@ -413,7 +436,7 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
 
   override def toString = "(" + ev1 + " || " + ev2 + ")"
 
-  protected override def pullFkt(Id: Int): Option[T] = {
+  protected override def pullParents(Id: Int): Option[T] = {
     val v1 = ev1.pullIsActivated(Id)
     if (v1 != None) return v1
     val v2 = ev2.pullIsActivated(Id)
@@ -426,8 +449,9 @@ class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T
 /*
  * Implements transformation of event parameter
  */
-class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
+class EventNodeMap[T, U](event: => Event[T], f: T => U) extends EventNode[U] {
 
+  lazy val ev = event
   /*
    * Reaction to the referenced event
    */
@@ -450,7 +474,7 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
     ev -= onEvt
   }
 
-  protected override def pullFkt(Id: Int): Option[U] = {
+  protected override def pullParents(Id: Int): Option[U] = {
     ev.pullIsActivated(Id) match {
       case None => None
       case Some(v) => Some(f(v))
@@ -464,7 +488,9 @@ class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
 /*
  * Implements filtering event by a predicate
  */
-class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
+class EventNodeFilter[T](event: => Event[T], f: T => Boolean) extends EventNode[T] {
+
+  lazy val ev = event
 
   /*
    * Reaction to the referenced event
@@ -490,7 +516,7 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
     ev -= onEvt
   }
 
-  protected override def pullFkt(Id: Int): Option[T] = {
+  protected override def pullParents(Id: Int): Option[T] = {
     ev.pullIsActivated(Id) match {
       case None => None
       case Some(v) =>
@@ -500,7 +526,7 @@ class EventNodeFilter[T](ev: Event[T], f: T => Boolean) extends EventNode[T] {
     }
   }
 
-  override def toString = "(" + ev + " && <predicate>)"
+  // override def toString = "(" + ev + " && <predicate>)"
 
 }
 
@@ -554,7 +580,7 @@ class EventNodeRef[T, U](target: Variable[T], evf: T => Event[U]) extends EventN
     target.changed -= onTargetChanged
   }
 
-  protected override def pullFkt(Id: Int): Option[U] = ev.pullIsActivated(Id)
+  protected override def pullParents(Id: Int): Option[U] = ev.pullIsActivated(Id)
 
   override def toString = getClass.getName
 
@@ -604,7 +630,7 @@ class EventNodeExists[T, U](list: VarList[T], evf: T => Event[U]) extends EventN
     list.elementRemoved -= onElementRemoved
   }
 
-  protected override def pullFkt(Id: Int): Option[U] = {
+  protected override def pullParents(Id: Int): Option[U] = {
     list.foreach(target => evf(target).pullIsActivated(Id) match {
       case Some(v) => return Some(v)
       case None =>
@@ -619,7 +645,9 @@ class EventNodeExists[T, U](list: VarList[T], evf: T => Event[U]) extends EventN
 /*
  * Implementation of event sequence operator
  */
-class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) => V) extends EventNode[V] {
+class EventNodeSequence[T, U, V](evt1: => Event[T], evt2: => Event[U], merge: (T, U) => V) extends EventNode[V] {
+  lazy val ev1 = evt1
+  lazy val ev2 = evt2
 
   // the id of the last received event1
   // -1 if event1 was not received yet (or after last event2)
@@ -669,7 +697,7 @@ class EventNodeSequence[T, U, V](ev1: Event[T], ev2: => Event[U], merge: (T, U) 
     ev2 -= onEvt2
   }
 
-  protected override def pullFkt(Id: Int): Option[V] = {
+  protected override def pullParents(Id: Int): Option[V] = {
     if (this.id != -1 && this.id != Id) {
       ev2.pullIsActivated(Id) match {
         case Some(v) => return Some(merge(this.v1, v))
@@ -703,12 +731,15 @@ class EventNodeCond[T](event: => Event[T]) extends EventNode[T] {
     getEvent(event) -= onEvt
   }
 
-  protected override def pullFkt(Id: Int): Option[T] = getEvent(event).pullIsActivated(Id)
+  protected override def pullParents(Id: Int): Option[T] = getEvent(event).pullIsActivated(Id)
 
 }
 
-class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode[T] {
+class EventNodeExcept[T](accept: => Event[T], excpt: => Event[_]) extends EventNode[T] {
 
+	lazy val accepted: Event[T] = accept
+	lazy val except : Event[_] = excpt
+	
   lazy val onAccepted = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     if (pullIsActivated(id) != None) {
       reactions(id, v, reacts)
@@ -716,9 +747,7 @@ class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode
   }
 
   lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
-    // the except event is received, set the id to
-    lastPulledId = id
-    wasLastActivated = false
+    // stub just for deploying the underlying event (push is much better than pull)
   }
 
   override def deploy {
@@ -731,7 +760,7 @@ class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode
     except -= onExcept
   }
 
-  protected override def pullFkt(Id: Int): Option[T] = {
+  protected override def pullParents(Id: Int): Option[T] = {
     if (except.pullIsActivated(Id) == None)
       accepted.pullIsActivated(Id) else None
   }
