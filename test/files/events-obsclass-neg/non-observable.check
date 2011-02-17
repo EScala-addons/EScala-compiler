@@ -1,0 +1,4 @@
+non-observable.scala:7: error: Klass$all not found. Make sure Klass is observable.
+        val all = allInstances[Klass]
+                              ^
+one error found

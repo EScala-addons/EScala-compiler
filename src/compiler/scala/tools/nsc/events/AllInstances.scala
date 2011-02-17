@@ -59,7 +59,7 @@ abstract class AllInstances extends Transform
           if (objsymbol == NoSymbol) {
             unit.error(tree.pos, objname + " not found. Make sure " +
                        generic.symbol.rawname + " is observable.")
-            tree
+            return EmptyTree
           }
           val objall = Ident(objsymbol)
           
@@ -85,7 +85,7 @@ abstract class AllInstances extends Transform
             if (objsymbol == NoSymbol) {
               unit.error(tree.pos, objname + " not found. Make sure " +
                          generic.symbol.rawname + " is observable.")
-              tree
+              return EmptyTree
             }
             val objall = Ident(objsymbol)
 
