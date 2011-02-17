@@ -22,7 +22,7 @@ Abb. \ref{event_node_lifecycle} zu sehen.
 
 
 Es gibt, wie in Abb.\ref{interval_events_structure} zwei Klassen von
-Interval-Event-Nodes: BetweenEvents und ExecutionEvents. BetweenEvents sind vom
+Intervall-Event-Nodes: BetweenEvents und ExecutionEvents. BetweenEvents sind vom
 Auftreten des StartEvents bis zum Auftreten des ersten End-Events aktiv, wenn
 eine Reaction registiert wurde. Das Execution-Event dient dazu, die Ausf"uhrung
 einer Funktion zu protokollieren. Wenn das Execution-Event eine Funktion
@@ -44,27 +44,30 @@ Funktion ausgel"ost wird.
 Mithilfe von Event-Nodes k"onnen mehrere Events zu komplexeren Events
 zusammengefasst werden. So ist es beispielsweise m"oglich, alle Events einer
 Filter-Bedingung zu unterziehen. Das resultierende Event wird nur dann
-ausgel"ost, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu true
-auswertet. 
+ausgel"ost, wenn ein zu filterndes Event auftritt dessen Filterbedingung zu
+wahr auswertet. 
 
-Der aus mehreren Event-Knoten bestehende Abhänigkeitsgraph soll nachfolgend als Event-Graph bezeichnet werden. Ein Event-Graph besteht aus mindestens einem Event-Node. 
-Mehrere Event-Nodes können mit gerichteten Kanten verbunden sein. Es gibt zwei Arten von Kanten im Event-Graphen. Unbeschriftete Kanten
-zeigen die ``Flussrichtung'' von Events an. Kanten die mit pull() beschriftet
-sind, zeigen die zu prüfenden Abhängigkeiten bei einer Pull-Operation an.
+Der aus mehreren Event-Knoten bestehende Abhänigkeitsgraph soll nachfolgend als
+Event-Graph bezeichnet werden. Ein Event-Graph besteht aus mindestens einem
+Event-Node. Mehrere Event-Nodes können mit gerichteten Kanten verbunden sein. 
+Es gibt zwei Arten von Kanten im Event-Graphen. Unbeschriftete Kanten zeigen 
+die ``Flussrichtung'' von Events an. Kanten die mit pull() beschriftet sind, 
+zeigen die zu prüfenden Abhängigkeiten bei einer Pull-Operation an. 
 Except-Event-Knoten haben die Beschriftung ``$\backslash$''.
 
-Intervall-Events k"onnen uneingeschr"ankt auch als Knoten im Event-Graph
-vorkommen. Eine Liste der m"oglichen Filterfunktionen und die dazugeh"origen
+Wenn Intervall-Events im Eventgraph verwendet werden sollen, müssen die zum
+Intervall gehörigen before- oder after-Events in den Eventgraph eingefügt
+werden. Eine Liste der m"oglichen Filterfunktionen und die dazugeh"origen 
 Definitionen findet sich im Kapitel \ref{definitions}.
 
-\subsection{Auswertung des Event-Graphen}
+\subsection{Auswertung des Eventgraphen}
 
 Bei der Auswertung eines Event-Graphen gibt es zwei mögliche Vorgehensweisen.
 Zum einen kann man Events sammeln, die bei einem Knoten des Event-Graphen
 ankommen und dann weiterleiten, wenn gewisse Bedingungen erfüllt sind. Hierbei handelt es sich um
 eine Push-basierte Implementierungen. Es werden n"amlich nur "Anderungen gepusht.
 
-Beim Zweiten Ansatz werden keinen Ändeurngen weitergeleitet. Stattdessen wird
+Beim Zweiten Ansatz werden keine Änderungen weitergeleitet. Stattdessen wird
 der Event-Graph traversiert um herauszufinden, ob Änderungen passiert sind. Dieser
 Ansatz wird nachfolgend als Pull-basiert bezeichnet.
 

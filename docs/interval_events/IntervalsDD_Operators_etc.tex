@@ -18,6 +18,7 @@
 \newcommand{\aktiv}[1]{\textit{active(#1)}}
 \newcommand{\Interval}[1]{\textbf{interval#1}}
 \newcommand{\comp}[1]{\textit{comp(#1)}}
+\newcommand{\val}[1]{\textit{value(#1)}}
 
 \hypersetup{%
   pdftitle={TUD Corporate-Design f"ur {\LaTeX}}, pdfauthor={C. v. Loewenich und
@@ -43,53 +44,37 @@
 
 \tableofcontents
 
-\section{Todos}
-\begin{enumerate}
-  \item Dokumentation der Beispiele
-  \item Dokumentation der Implmentierung
-  \item Finden des Missing-Deploy-Bugs 
-\end{enumerate}
-
 \section{Grundlegende Definitionen}
 \label{definitions}
 Sei \before{\Interval} : Event das Ereignis, das den Beginn des Intervalls int angibt
-und \after{\Interval} : Event jenes, welches das Ende von int angibt. Dies kann in
-unterschiedlicher Form erfolgen:
+und \after{\Interval} : Event jenes, welches das Ende des Intervalls angibt.
+Hierbei sind folgende Event-Sequenzen zulässig:
 \begin{itemize}
-\item einmal \before{\_} zu Beginn und einmal \after{\_} am Ende (Standard in der jetzigen Fassung)
-\item mehrfaches \before{\_} und ein \after{\_} am Ende (Use case? Wohl meist nicht erw"unscht)
-\item verschachtelte, paarweise passende \before{\_} und \after{\_} Ereignisse (Bsp. Exec)
-\item beliebige \before{\_} und \after{\_} Events innerhalb des Intervals
+\item einmal \before{\_} zu Beginn und einmal \after{\_} am Ende
+\item mehrfaches \before{\_} und ein \after{\_} am Ende 
+\item verschachtelte, paarweise passende \before{\_} und \after{\_} Ereignisse
+%\item beliebige \before{\_} und \after{\_} Events innerhalb des Intervals
 \end{itemize}
 Ausserdem gebe \aktiv\Interval{} : boolean an, ob das Intervall aktiv ist.
 In der jetzigen Fassung bedeutet dies einfach, ob man sich zeitlich innerhalb des
-Intervalls befindet. Das Umschalten wude bisher als Sink realisiert. Dies f"uhrt
-jedoch zu Indeterminismus, sodass e \&\& within(between(e,e')) beim ersten Vorkommen 
-von e nicht unbedingt immer ausgef"uhrt wird. Dies ist unsch"on und sollte vermieden werden.
-
-Daher sollte active eine andere Semantik erhalten und als reaction aktualisiert
-werden. So kann sichergestellt werden, dass der Zustand von active zu jedem
-Zeitpunkt bekannt ist. Die Semantik "andert sich also wie in Abbildung
-\ref{active_bit_behaviour} gezeigt. Dies ist keine Einschr"ankung, wie im
-weiteren gezeigt werden wird.
+Intervalls befindet. 
+Der Wert des Active-Flags hat dabei die in Abb.
+\ref{active_bit_behaviour} gezeigte Semantik. Zum Zeitpunkt des
+Before-Events ist \aktiv\Interval{} noch nicht gesetzt. Dies ist keine
+Einschr"ankung, wie im weiteren gezeigt werden wird. 
 
 \begin{figure}[h]
  \centering 
-\psset{unit=1cm}
+\psset{unit=1cm} 
 \begin{pspicture}(0,0)(10,2)
 \psgrid[subgriddiv=1,griddots=10,gridlabels=7pt,](0,0)(10,2)
 %{
 %	\pspolygon[fillcolor=greenyellow,fillstyle=solid,linestyle=none](0,0)(0,1)(1,1)(1,0)
 
-	\rput(1.2,1.7){\psframebox*[framearc=.3]{B}}
-	\rput(9.2,1.7){\psframebox*[framearc=.3]{A}}
-	\rput(0.2,1.55){\psframebox*[framearc=.3]{Fr"uher}}
-	\psline[linewidth=1pt]{[-]}(1,1.5)(9,1.5)
-
 	\rput(1.2,0.7){\psframebox*[framearc=.3]{B}}
 	\rput(9.2,0.7){\psframebox*[framearc=.3]{A}}
-	\rput(0.2,0.55){\psframebox*[framearc=.3]{Aktuell}}
-	\psline[linewidth=1pt]{]-]}(1,0.5)(9,0.5)
+	\rput(0.2,1.05){\psframebox*[framearc=.3]{Aktiv}} 
+	\psline[linewidth=1pt]{]-]}(1,1)(9,1)
 %}
 \end{pspicture}
 \caption{Wert des Aktiv-Bits}
@@ -97,52 +82,40 @@ weiteren gezeigt werden wird.
 \end{figure}
 
 
-F"ur alle Intervalle muss gelten, dass active nur bei einem \before{\_} oder
+F"ur alle Intervalle muss gelten, dass active nur beim \before{\_} oder
 \after{\_} Event umgeschaltet wird, wobei \aktiv{\_} nur von einem \before{\_}
 Event gesetzt und von einem \after{\_} Event zur"uckgesetzt werden kann.
 Ausserdem sollten ausserhalb des Intervalls keine isolierten Events auftreten.
 
 \section{Operatoren}
-Im folgenden werden einige Operatoren sowie ihre m"ogliche Imlementierung und
-evtl. Schw"achen des jeweiligen Ansatzes diskutiert.
+Im folgenden werden die auf Intervall-Events verfügbaren Operatoren definiert:
 
-\subsection{Komplement comp\Interval : Intervall}
+\subsection{Komplement \comp\Interval : Intervall}
 \begin{itemize}
 \item \before{\comp{\Interval}} <=> \after{\Interval}
-\item \after{\comp{\Interval}} <=> \before{\Interval} \&\& ! \aktiv{\Interval}
+\item \after{\comp{\Interval}} <=> \before{\Interval} 
 \item \aktiv{\comp{\Interval}} <=> ! \aktiv{\Interval}
 \end{itemize}
-Probleme: An den Schnittpunkten ist ein Event laut dieser Definition sowohl in
-int als auch \comp{\Interval}. Bei verschachtelten Events gibt es unerw"unschte,
-isolierte before(\comp{\Interval})-Events.
-
-m"ogliche L"osungen: Komplement als Methode von Intervall Event "uberladbar
-machen, und in Spezialf"allen gesondert behandeln. F"ur das Schnittpunkt-Problem
-gibt es (noch) keine L"osung, ist evtl. auch positiv (siehe Differenz)
-
-Bemerkung: die zus"atzlichen Bedingungen an after und active existieren aufgrund
-der Nicht-Standard-Intervalle. Die explizite Definition von active ist wichtig damit das Komplement auch anfangs aktiv sein kann.
+Bei der Implementierung wird ein neues Intervall-Event erzeugt, bei dem das 
+Before-Event mit dem After-Event getauscht ist. Das Komplement bietet keinen
+Zugriff auf den Value des Intervall-Events.
 
 \subsection{Vereinigung \Interval{1} || \Interval{2} : Intervall}
-Die Semantik der ||-Vereinigung soll eine Vereinigung der Zeitpunkte von \Interval{1}
-und \Interval{2} sein, also w"are, falls \Interval{1} ein Exec Event w"are, \Interval{1} || \Interval{1} ein Standard Intervall.
+Die Semantik der ||-Vereinigung ist die Vereinigung der Zeitpunkte von
+\Interval{1} und \Interval{2}.
 \begin{itemize}
 \item \before{\Interval{1} || \Interval{2}}  <=> (\before{\Interval{1}} ||
 \before{\Interval{2}}) \&\& !
 \aktiv{\Interval{1} || \Interval{2}}
-\item \after{\Interval{1} || \Interval{2}} <=> ((\before{comp(\Interval{1})}
-\&\& ! \aktiv{\Interval 2}) || (\before{\comp{\Interval{2}}} \&\& !
-\aktiv{\Interval{1}}) || (\before{\comp{\Interval{1}}} \&\&
-\before{\comp{\Interval{2}}})) \textbackslash \before{\Interval{1} ||
-\Interval{} 2}
-\end{itemize}
-Anmerkung: statt \after{\Interval{1}} wurde hier \before{\comp{\Interval{1}}}
-verwendet. In der jetzigen Fassung ist dies "aquivalent, allerdings bietet diese Formulierung den
-Vorteil, dass falls die Probleme f"ur Komplement gel"ost werden, auch zum gr"o\ss ten
-Teil die Probleme mit Vereinigung verschwinden.
+%(((after && (_ => !ie.active)) || 
+% (ie.after && (_ => !active)) || 
+% (after and ie.after))) \ (before || ie.before), active || 
+% ie.active, _value)
+\item \after{\Interval{1} || \Interval{2}} <=> \after{\Interval{1}} \&\&
+!\aktiv{\Interval{2}} || \after{\Interval{2}} \&\& !\aktiv{\Interval{1}} ||
+\after{\Interval{1}} \&\& \after{\Interval{2}}except(\before{\Interval{1}}||\before{\Interval{2}})
 
-Problem: Verschachtelte Events, "aahnlich wie bei Komplement. Eine L"osung f"ur
-das Problem mit Komplement l"ost auch dieses Problem.
+\end{itemize}
 
 \subsection{Schnitt \Interval{1} \&\& \Interval{2} : Intervall}
 \begin{itemize}
@@ -153,22 +126,14 @@ das Problem mit Komplement l"ost auch dieses Problem.
 \before{\comp{\Interval{2}}}
 \item \aktiv{\Interval{1} \&\& \Interval{2}} <=> \aktiv{\Interval{1}} \&\& \aktiv{\Interval{2}}
 \end{itemize}
-Anmerkungen: zu \before{\comp{\_}} siehe Anm. zur Vereinigung
 
 \subsection{Differenz \Interval{1} \textbackslash\ \Interval{2} : Interval}
-Alle Zeitpunkte, die in \Interval{1} liegen, nicht aber in \Interval{2} (ausser Start bzw.
-Endzeitpunkt, siehe Anm.). Wegen dieser Einschr"ankung kann es sinnvoll sein,
-eine Bedingung an einen Zeitpunkt "uber eine Verbindung von within und !within
-auszudr"ucken.
+Alle Zeitpunkte, die in \Interval{1} liegen, nicht aber in \Interval{2}:
+\begin{itemize}
+  \item  \Interval{1} \textbackslash\ \Interval{2} <=> \Interval{1} \&\&
+  comp(\Interval{2})
+\end{itemize}
 
-\Interval{1} \textbackslash\ \Interval{2} <=> \Interval{1} \&\& comp(\Interval{2})
-
-Anmerkung: Wie bei Komplement erw"ahnt, sind die Eckpunkte von \Interval{1} und \Interval{2}
-evtl. f"alschlicherweise mit in \Interval{1} \textbackslash\ \Interval{2}. Dies
-l"asst sich nicht l"osen, solange keine M"oglichkeit gefunden wird, offene Intervalle zu
-modellieren (z.B. "uber explizite before-Trigger o."a.). U.U. ist dies aber auch
-keine schlechte Eigenschaft, so dass ein Wechsel int -> \comp{\Interval{}}
-atomar zu einem bestimmten Zeitpunkt stattfindet.
 
 \subsection{within(\Interval{},e) : Event}
 within(\Interval{},e) <=> (e \&\& \aktiv{\Interval}) || (e \&\& \before{\Interval})
@@ -182,7 +147,6 @@ StrictlyWithin(\Interval{},e) <=> (e \&\& \aktiv{\Interval}) \textbackslash\ \af
 \subsection{ !strictlyWithin(\Interval{},e) : Event }
 !strictlyWithin(\Interval{},e) <=> (e \&\& ! \aktiv{\Interval}) || (e \&\& \after{\Interval})
 
-Problem: Auch hier werden bei verschachtelten Intervallen multiple \after{\_} Events mit aufgenommen.
 
 \subsection{weitere Anmerkungen}
 Der Umstand, dass sich int und \comp{\Interval{}} zwei Zeitpunkte teilen, mag
@@ -192,23 +156,22 @@ unintuitiv erscheinen, allerdings  bietet dies nicht nur Nachteile. So ist int
 after Ereignisse aus.
 
   \section{An Events gebundene Werte}
-Es ist m"oglich, beliebige Werte an Events zu binden. Diese M"oglichkeit soll
-auch f"ur Intervall-Events existieren. Wann im Intervall welche Werte gelten,
-h"angt von der Art des Intervalls ab. 
+Es ist m"oglich, beliebige Werte an Events zu binden. Diese M"oglichkeit
+existiert auch f"ur Intervall-Events. Wann im Intervall welche Werte
+gelten, h"angt von der Art des Intervalls ab. 
 
-Auf den aktellen Wert des Intervalls wird "uber die Eigenschaft val zugegriffen.
-Wenn also nachfolgend <Intervall>.val geschrieben steht, soll auf den aktuellen
-Wert des Intervall-Events zugegriffen werden.
+Auf den aktellen Wert des Intervalls wird "uber \val(\Interval{})
+zugegriffen. 
 
 Nachfolgend wird das Standartverhalten der Intervall-Operatoren dargestellt.
-Nat"urlich kann das Verhalten der Operatoren bei Bedarf abge"andert werden. Dann
+Allerdings kann das Verhalten der Operatoren bei Bedarf abge"andert werden. Dann
 muss beim Intervall-Event-Knoten eine Benutzerdefinierte Merge-Funktion
 angegeben werden, die Values der Events aggregiert.
 
 \subsection{Intervall zwischen dem Event B und dem Event A)}
 F"ur between-Intervalle wie in Abbildung \ref{interval-between_b_a} gilt der Wert des
-Before-Events bis zum End-Event. Dannach hat das Intervall den Wert null. Wenn der Wert des After-Events ben"otigt
-wird, kann dieser "uber das Komplement des Intervalls erhalten werden. Beim
+Before-Events bis zum End-Event. Dannach hat das Intervall den Wert null. Der
+Wert des After-Events wird allerdings nicht im Komplement gespeichert. Beim
 Intervall\ref{interval-between_b_a} gilt also:
 \[
 val(t) = \begin{cases}
@@ -238,8 +201,7 @@ null & t >= 9
 
 
 Wenn die \before{\_}-Events mehrfach auftreten, hat das
-between-Intervall als Wert den Wert des ersten \before{\_} oder des ersten
-\after{\_}-Events. Ein Beispiel hierf"ur ist in Abbildung
+between-Intervall den Wert des ersten \before{\_}-Events. Ein Beispiel hierf"ur ist in Abbildung
 \ref{interval-between_b_a-multiple} zu sehen. F"ur
 Interval\ref{interval-between_b_a-multiple} gilt \[ val(t) =
 \begin{cases}
@@ -249,14 +211,6 @@ null  & t >= 7
 \end{cases}
 \]
 
-F"ur das
-Komplement des Interval\ref{interval-between_b_a-multiple} gilt:
-\[
-comp.val = \begin{cases}
-null & t < 7\\
-A.val & t >= 7
-\end{cases}
- \]
 \begin{figure}[h]
  \centering 
 \psset{unit=1cm}
@@ -316,14 +270,6 @@ A'.val & t >=3 \; and t < 9 \\
 null & t > 9 \\
 \end{cases}
 \]
-
-Und f"ur das Komplement von Interval\ref{interval-or} gilt die Belegung:
-\[
-val(t) = \begin{cases}
-null & t < 9 \\
-A'.val & t >= 9
-\end{cases}
-\]
   
   \subsection{Schnittmenge zwischen Intervallen}
 Bei der Schnittmenge zwischen zwei Intervall-Events werden die Event-Werte der
@@ -362,16 +308,9 @@ null & t > 7
 \end{cases}
 \]
 
-Das Komplement von Intervall \ref{interval-and} hat die Belegung: \[
-val(t) = \begin{cases}
-null & t <= 7\\
-(A', A) & t > 7
-\end{cases} 
-\]
-
 \subsection{Differenz zweier Intervall-Events}
-Bei der Differenz zwischen zwei Intervall-Events ist der Wert des Intervalls das
-letzte Before-Event vor oder nach dem Schnitt. F"ur de
+Bei der Differenz zwischen zwei Intervall-Events ist der Wert des Intervalls
+gleich dem Wert des letzten Before-Events vor oder nach dem Schnitt.
 
 \begin{figure}[h]
  \centering 
@@ -400,12 +339,12 @@ letzte Before-Event vor oder nach dem Schnitt. F"ur de
 	\psline[linewidth=1pt]{[-]}(6,0.5)(9,0.5)
 %}
 \end{pspicture}
-\caption{Schnittmenge zweier Intervall-Events: between(B,A) and
-between(B',A')}
+\caption{between(B,A) except between(B',A')}
 \label{interval-diff}
 \end{figure}
 
-F"ur Interval\ref{interval-diff} ergibt sich also folgende Belegung:
+F"ur Interval\ref{interval-diff} = between(B,A) except between(B', A') ergibt
+sich also folgende Belegung:
 \[
 val(t)=\begin{cases}
 null & t < 1 \\
@@ -416,17 +355,70 @@ null & t >9
 \end{cases}
 \]
 
-F"ur das Komplement von Interval\ref{interval-diff} ergibt sich der zeitliche
-Werteverlauf:\[
-val(t)= \begin{cases}
-null & t < 3\\
-B' & t \in [3,5]\\
-null & t > 6
-\end{cases}
-\]
-
-\include{examples}
 \include{implementation}
+\include{examples}
+
+\section{Resümee}
+Durch die Verwendung von Intervall-Events kann man zustandsbasierte
+Probleme deklarativ lösen. Man spart sich dann die imperative Implementierung
+eines Zustandsautomaten. Dies verbessert die Verständlichkeit des Quellcodes und
+verringert somit die Wartungskosten für ein Software-Projekt. 
+
+Allerdings bringt die Verwendung von Intervall-Events auch Probleme mit sich.
+Die Deregistrierung von Events obliegt nämlich dem Benutzer. Wenn ein Benutzer
+nicht länger benötigte Events nicht wieder vom Event-Graph abkoppelt, dann
+können die zu den Events gehörenden Objekte nicht freigegeben werden. Dies hat
+zur Folge, dass der Speicherverbrauch der Anwendung möglicherweise immer weiter
+ansteigt. 
+
+Die Intervall-Events können nicht automatisch deregistriert werden, da nicht
+bekannt ist, ob der Benutzer noch Interesse am Intervall-Event hat. Es könnte
+sein, dass ein Intervall-Event nur ein einziges mal für den Benutzer von
+Interesse ist. Möglicherweise benötigt der Benutzer das Intervall-Event aber
+mehrfach. Wichtig ist daher, dem Benutzer die Deregistrierung der Events
+nahezulegen.
+
+\section{Ausblick}
+Der nachfolgende Ausblick betrifft Events im Allgemeinen und Intervall-Events im
+speziellen.
+
+Zukünftig sollte sich die Intervall-Events-Library in zwei Richtungen
+weiterentwickeln. Zum einen ist es wichtig den Benutzer bei der Deregistrierung
+von nicht mehr benötigten Intervall-Events zu unterstützen. Und zum anderen kann
+die Intervall-Events-Library ihr volles Potential nur ausspielen, wenn
+die Implementierung effizient in Multithreading-Szenarien funktioniert.
+
+\subsection{Konzepte zur Vereinfachung der Deregistrierung von Reactions}
+
+Möglicherweise könnte man eine Datenfluss-Analyse im Kontrollfluss-Graph
+vornehmen, um nach Events zu suchen. Wenn ein Event gefunden wurde, auf den eine Reaction
+registriert wurden, muss sichergestellt werden, dass auch eine Reaction wieder
+entfernt wird. Allerdings ist das ein "`Best-Efford"'-Ansatz. Man kann auf diese
+Weise nicht in allen Fällen sicherstellen, dass die verwendeten Events immer
+korrekt aufgeräumt werden.
+
+Außerdem könnte man dem Benutzer Zugriff auf den Funktionszeiger von
+anonymen Funktionen bereitstllen. Wenn Intervall-Events in Methoden verwendet
+werden, sind diese Intevalle dann meist nur selten aktiv und müssen nach 
+zeitlich kurzer Zeit wieder deregistriert werden. Allerdings sollten dabei 
+keine anonymen Funktionen verwendet werden. Anonyme Funktionen können nämlich 
+nicht deregistriert werden, da keine Möglichkeit besteht, an den Funktionszeiger
+der anonymen Funktion zu kommen, um diese wieder zu deregistrieren.
+
+\subsection{Effiziente und skalierbare Funktionsweise in
+Multithreading-Szenarien}
+Die Threadsicherheit ist eine überaus wünschenswerte Eigenschaft für
+Intervall-Events. In der Zukunft werden Interaktionen zwischen verschiedenen 
+Thread zunehmend immer wichtiger. Das Konzept der Events und der
+Intervall-Events ist natürlich nicht auf sequenzielle Prozesse beschränkt und
+skaliert sehr gut auch auf Thread- und Prozess-Ebene. Diese Tatsache
+manifestiert sich in der Existenz von Messageoriented
+Middleware. 
+
+Um die Intervall-Events-Implementierung Multithreading-sicher zu machen, muss
+geprüft werden, ob alle Zustandsänderungen des Aktiv-Zustands eines
+Intervall-Events multithreading-sicher sind. Weiterhin muss die Events-Library
+Multithreading-sicher sein.
 
 \listoffigures\addcontentsline{toc}{section}{\listfigurename}
 \end{document}
