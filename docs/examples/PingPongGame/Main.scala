@@ -16,9 +16,22 @@ object Main extends SimpleSwingApplication {
 
     val resetAction = Action("reset") { reset };
     val quitAction = Action("quit") { System.exit(0) };
-    val fastPresentAction = Action("become faster") {world.displayPresent(new IncreaseBallSpeedPresent((80,80)))};
- val doublePresentAction = Action("double fun") {world.displayPresent(new DoubleBallPresent((100,100)))}
- val revertPresentAction = Action("revert!!") {world.displayPresent(new ReversePlayerControlsPresent((100,100),world))}
+    
+    val fastPresentAction = Action("become faster") 
+    {
+    	
+    	world.displayPresent(new IncreaseBallSpeedPresent((80,80)))
+    }
+    
+    val doublePresentAction = Action("double fun") 
+    {
+    	world.displayPresent(new DoubleBallPresent((100,100)))
+    }
+    
+    val revertPresentAction = Action("revert!!") 
+    {
+    	world.displayPresent(new ReversePlayerControlsPresent((100,100),world))
+    }
     
     menuBar = new MenuBar {
       contents += new Menu("Game") {

@@ -60,12 +60,12 @@ case class Bar(var length: Int, pos: (Int, Int)) extends ModelObject(pos) {
 }
 
 case class Wall(val length: Int, val pos: (Int, Int)) extends ModelObject(pos) {
-  val height = 30;
+  val height = 50;
   override def boundingBox = (length, height)
 }
 
 case class Goal(val height: Int, pos: (Int, Int)) extends ModelObject(pos) {
-  val width = 30
+  val width = 50
   override def boundingBox = (width, height)
 }
 
@@ -162,13 +162,13 @@ class World(val size: (Int, Int), resetKeyCode: Int = KeyEvent.VK_R) {
   val clock = new ImperativeEvent[Long]
 
   /// Values
-  val upperWall = new Wall(length = size._1, pos = (0, 0));
-  val lowerWall = new Wall(length = size._1, pos = (0, size._2 - 30));
+  val upperWall = new Wall(length = size._1, pos = (-25, -20));
+  val lowerWall = new Wall(length = size._1, pos = (-25, size._2 - 30));
 
   val player1Bar = new Bar(length = size._2 / 4, pos = (50, size._2 / 2 - size._2 / 8));
   val player2Bar = new Bar(length = size._2 / 4, pos = (size._1 - 50, size._2 / 2 - size._2 / 8));
 
-  val player1Goal = new Goal(size._2, (0, 0))
+  val player1Goal = new Goal(size._2, (-20, 0))
   val player2Goal = new Goal(size._2, (size._1 - 30, 0))
 
   val player1 = new Player(87, 83, this, player1Bar, player1Goal)
@@ -192,6 +192,11 @@ class World(val size: (Int, Int), resetKeyCode: Int = KeyEvent.VK_R) {
   def displayPresent(p: Present) = {
     objects += p
 
+    //Generate a random positon for the present:
+    val x = (0.1*this.size._1 + Math.random*this.size._1*0.8);
+    val y = 0.3*this.size._2 + Math.random*this.size._2*0.4;
+    p.position = (x.toInt,y.toInt)
+    
     //Display it for a given amount of time
 
     //If the ball moves around, it can hit the present
