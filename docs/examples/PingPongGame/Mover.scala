@@ -1,7 +1,6 @@
 package scala.events.pingpong
 
 import scala.events.BetweenEvent
-import scala.events.pingpong.World
 import scala.events.ImperativeEvent
 
 class Mover(val world : World) {	
@@ -17,7 +16,7 @@ class Mover(val world : World) {
   val reverseYVelocity = ((o: ModelObject) => {
     o.velocity = (o.velocity._1, -o.velocity._2)
   })
-  val reverseXVelocity = ((o: ModelObject) => {
+  val reverseXVelocity = ((o: ModelObject) => { 
     o.velocity = (-o.velocity._1, o.velocity._2)
   })
 
@@ -27,8 +26,11 @@ class Mover(val world : World) {
   val ballMoved = moved && (o => o.isInstanceOf[Ball]) map ((o: ModelObject) => o.asInstanceOf[Ball])
 
   ballMoved && (o => colliding(o, world.player1Bar) || colliding(o, world.player2Bar)) += reverseXVelocity
-  ballMoved && (o => colliding(o,world.player1Goal )) += (o => {println("Point for Player2"); world.resetBall(o)})
-  ballMoved && (o => colliding(o,world.player2Goal )) += (o => {println("Point for Player1"); world.resetBall(o)})
+  val goal1Hit = ballMoved && (o => colliding(o,world.player1Goal ))
+  goal1Hit += (o => {println("Point for Player2"); world.resetBall(o)})
+  
+  val goal2Hit = ballMoved && (o => colliding(o,world.player2Goal ))
+  goal2Hit += (o => {println("Point for Player1"); world.resetBall(o)})
 
   def colliding(o1: ModelObject, o2: ModelObject) = o1.isCollidingWith(o2) || o2.isCollidingWith(o1)
 }
