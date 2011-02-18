@@ -303,22 +303,15 @@ class ImperativeEvent[T] extends EventNode[T] {
     else None
   }
 
-  // override def toString = getClass.getName
+   override def toString = getClass.getName
 
 }
 
 /*
  * Implementation of event conjunction
  */
-class EventNodeAnd[T1, T2, T](event1: => Event[T1], event2: => Event[T2], merge: (T1, T2) => T) extends EventNode[T] {
+class EventNodeAnd[T1, T2, T](ev1: Event[T1], ev2: Event[T2], merge: (T1, T2) => T) extends EventNode[T] {
 
-  /*
-	 * event1 and event2 are call-by-name to support lazy evaluation = recursive dependencies
-	 * if no recursive dependencies are needed, one has to take care not to pass some
-	 * function or complex expression in this constructor
-	 */
-  lazy val ev1 = event1
-  lazy val ev2 = event2
 
   // The id of the last received event
   var id: Int = 0
@@ -397,10 +390,8 @@ class EventNodeAnd[T1, T2, T](event1: => Event[T1], event2: => Event[T2], merge:
 /*
  * Implementation of event disjunction
  */
-class EventNodeOr[T](event1: => Event[_ <: T], event2: => Event[_ <: T]) extends EventNode[T] {
+class EventNodeOr[T](ev1: Event[_ <: T], ev2: Event[_ <: T]) extends EventNode[T] {
 
-  lazy val ev1 = event1
-  lazy val ev2 = event2
 
   // The id of the last received event
   var id: Int = 0
@@ -449,9 +440,8 @@ class EventNodeOr[T](event1: => Event[_ <: T], event2: => Event[_ <: T]) extends
 /*
  * Implements transformation of event parameter
  */
-class EventNodeMap[T, U](event: => Event[T], f: T => U) extends EventNode[U] {
-
-  lazy val ev = event
+class EventNodeMap[T, U](ev: Event[T], f: T => U) extends EventNode[U] {
+	
   /*
    * Reaction to the referenced event
    */
@@ -645,8 +635,8 @@ class EventNodeExists[T, U](list: VarList[T], evf: T => Event[U]) extends EventN
 /*
  * Implementation of event sequence operator
  */
-class EventNodeSequence[T, U, V](evt1: => Event[T], evt2: => Event[U], merge: (T, U) => V) extends EventNode[V] {
-  lazy val ev1 = evt1
+class EventNodeSequence[T, U, V](ev1: Event[T], evt2: => Event[U], merge: (T, U) => V) extends EventNode[V] {
+
   lazy val ev2 = evt2
 
   // the id of the last received event1
@@ -735,10 +725,7 @@ class EventNodeCond[T](event: => Event[T]) extends EventNode[T] {
 
 }
 
-class EventNodeExcept[T](accept: => Event[T], excpt: => Event[_]) extends EventNode[T] {
-
-	lazy val accepted: Event[T] = accept
-	lazy val except : Event[_] = excpt
+class EventNodeExcept[T](accepted: Event[T], except: Event[_]) extends EventNode[T] {
 	
   lazy val onAccepted = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
     if (pullIsActivated(id) != None) {
@@ -764,6 +751,25 @@ class EventNodeExcept[T](accept: => Event[T], excpt: => Event[_]) extends EventN
     if (except.pullIsActivated(Id) == None)
       accepted.pullIsActivated(Id) else None
   }
+
+}
+
+class EventNodeLazy[T](e : => Event[T]) extends EventNode[T]{
+	
+	lazy val ev : Event[T] =  {val _e : Event[T] = e; if(_e == null) emptyevent else e}
+	
+	  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
+    reactions(id, v, reacts)
+  }
+
+  override def deploy {
+    ev += onEvt
+  }
+  override def undeploy {
+    ev -= onEvt
+  }
+
+  protected override def pullParents(Id: Int): Option[T] = ev.pullIsActivated(Id)
 
 }
 
