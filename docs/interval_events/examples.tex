@@ -1,4 +1,12 @@
 \section{Beispiele}
+
+Das Ziel dieses Abschnittes ist es, dem Benutzer die Verwendung von
+Intervall-Events näherzubringen. Dazu wird gezeigt, an welchen Stellen sich
+Intervall-Events sinnvoll einsetzten lassen. Bis auf das letzte Beispiel
+existieren für alle Beispiele zwei Implementierungen. Eine Implementierung die
+Intervall-Events verwendet und eine Implementierung die möglichst keine Events
+verwendet.
+
 \subsection{Implementierung eines Zustandsautomaten}
 Zwei Beispiele zeigen die Verwendung von Intervall-Events bei der
 Implementierung von Zustandsautomaten. Zustandsautomaten k"onnen hervoragend
@@ -6,21 +14,22 @@ durch die Verwendung von IntervallEvents implementiert werden, da
 Zustandsautomaten immer vom Zustand abh"anige Reaktionen auf Events zeigen.
 
 Zur Implementierung kann jeder Zustand des Automaten als ein Intervall
-abgebildet werden. Nun kann man Entry-Actions als before-Event an ein Intervall
-und Exit-Actions als ein after-Event an das Intervall binden. Transition-Actions
-k"onnen wahlweise an das Before- oder das After-Event gebunden werden.
-Self-Transitions werden als Vereinigung zwischen dem Intervall-Event und dem
-ausl"osenden Event der Self-Transition abgebildet. 
+abgebildet werden. Alle in einen Zustand eingehende Transitionen werden dabei
+als Start-Events des Intervalls verwendet und alle vom Zustand ausgehende
+Transitionen werden als End-Event des Intervalls verwendet. Alternativ könnte
+man auch die \after{}-Events des vorherigen Zustandsintervalls als Startevent
+des nächsten Zustandes verwenden.
 
 Durch diese Vorgehensweise ergibt sich eine bessere Wartbarkeit des
 Quellcodes, da das Programmverhalten nicht mehr imperativ durch If-Statements
 oder das Statemachine-Pattern beschrieben wird. Viel mehr wird das
 Programmverhalten deklarativ durch Intevall-Events spezifiziert.
 
-Im Rahme dieser Arbeit wurden zwei Zustandsautomaten implementiert. Bei dem
-ersten Zustandsautomaten handelt es sich um das vereinfachte Verhalten eines
-Filetransfer-Servers dessen Verbindungen offen oder geschlossen sein k"onnen. Der
-resultierende Zustandsautomat ist in Abb. \ref{filetransfer_behaviour} zu sehen.
+Im Rahme dieser Arbeit wurden zwei Zustandsautomaten implementiert. Der erste
+Zustandsautomat besteht aus zwei Zuständen und soll dem Benutzer die
+Vorgehensweise zur Implementierung eines Zustandsautomaten an einem stark
+vereinfachten Beispiel zeigen. Der resultierende Zustandsautomat ist in Abb.
+\ref{filetransfer_behaviour} zu sehen.
 
 %\usepackage{graphics} is needed for \includegraphics
 \begin{figure}[htp]
@@ -31,7 +40,27 @@ resultierende Zustandsautomat ist in Abb. \ref{filetransfer_behaviour} zu sehen.
 \end{center}
 \end{figure}
 
-\subsubsection{SimpleWebshop-Verhalten}
+
+Im SimpleWebshop-Beispiel wird noch eine dritte Herangehensweise an die
+Implementierung eines Zustandsautomaten mit Intervall-Events gezeigt. Häufig
+lässt sich die Anzahl der benötigten Zustände und Transitionen durch die
+Verwendung von paralellen oder hierarchischen Zustandsautomaten reduzieren.
+Damit wird das Modell leichter verständlich aber die Implementierung des Modells
+erschwert. 
+Besonders die Implementierung von paralellen Zustandsautomaten ist zumeist sehr
+unpraktisch. Der Zugriff auf den aktuellen Zustand der paralellen
+Zustandsautomaten und das Verteilen von Events bereitet nämlich meist
+Probleme. Daher werden oft zur Implementierung die Produktautomaten gebildet um
+die paralellen Zustände aus dem Modell zu entfernen.
+
+Dies ist bei der Verwendung von Intervall-Events zur Impelmentierung eines
+Zustandsautomaten allerdings nicht zwingend notwendig. Man implementiert einfach
+die paralellen Zustandsautomaten. Die Verteilung der Events zum Ändern der
+Zustände und der Zugriff auf benachbarte Zustandsautomaten ist einfach möglich.
+
+Die Implementierung eines solchen Zustandsautomaten wie in Abb.
+\ref{webshop_behaviour} dargestellt findet sich im Beispiel
+interval\_simplewebhop.
 
 %\usepackage{graphics} is needed for \includegraphics
 \begin{figure}[htp]
@@ -43,6 +72,15 @@ resultierende Zustandsautomat ist in Abb. \ref{filetransfer_behaviour} zu sehen.
 \end{figure}
 
 \subsection{Implementierung einer FileTransfer-Komponente}
+In viele Fällen wird ein Softwareentwickler keinen Zustandsautomaten
+spezifizieren bevor die Software-Entwicklung beginnt. Viele zu lösende Probleme
+lassen sich nämlich durch zwei oder drei Zustände beschreiben, sodass der
+Entwickler nicht erst auf die Idee kommt, eine Zustandsmaschine zu
+implementieren. Daher stellt sich die Frage, ob Intervall-Events auch in der
+Praxis relevant sich um dem Entwickler beim Lösen von alltäglichen Problemen zu
+helfen. Das nächste Beispiel zeigt daher die praktische Verwendung von
+Intervall-Events:
+
 Mit File-Sharing-Programmen können Benutzer über ein Computernetzwerk
 Dateien austauschen. Wenn ein Benutzer eine Dateiübertragung anfordert, dann
 fordert das File-Sharing-Programm von unterschiedlichen Hosts Teile der Datei
@@ -103,3 +141,22 @@ abzubilden. Geschenke beispielsweise sollen nur für eine definierte Zeit
 vorhanden sein. Diese Funktion wurde durch ein Intervall-Event realisiert, das
 vom Beginn der Sichtbarkeit für eine gewisse Zeit aktiv ist. 
 
+\subsection{Zusammenfassung}
+Fasst man die Beispiele zu einem Fazit zusammen, so lässt sich sagen, dass durch
+die Verwendung von Intervall-Events ein deklaratives Implementieren von
+zustandsbasierten Problemen möglich ist. Dies verbessert die Lesbarkeit und die
+Wartbarkeit des Quellcodes. Allerdings gibt müssen zwei Schwierigkeiten bei der
+Verwendung von Intervall-Events bedacht werden: Zum einen ist Vorsicht bei der
+Verwendung von rekursiven Definitionen geboten. Eine Verwendung dieser
+Konstrukte erfordert das Markieren des Start-Intervalls mit \textit{lazy} und
+die Definition eines Startevents um eine korrekte Initialisierung der rekursiven
+Definition vorzunehmen.
+
+Zum andere ist es wichtig, ein exaktes Event-Modell für eingehende und
+ausgehende Events zu erstellen. Es ist wichtig, zwischen Events die Transitionen
+auslösen können und Events die Aktionen zur folge haben zu trennen. Ist diese
+Trennung nicht exakt genug, dann könnten eventuell Aktionen ausgeführt werden,
+die im akutellen Intervall nicht zulässig sind. 
+
+Beachtet man diese Entwurfskriteren, so ist es durch Intervall-Events möglich,
+auf einem hohe Abstraktionsnivea Software zu entwicklen. 

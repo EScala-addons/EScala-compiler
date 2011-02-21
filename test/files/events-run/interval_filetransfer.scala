@@ -8,14 +8,11 @@ import java.util.UUID
  * 
  * @author Frank Englert
  *
- * Dieses Beispiel wurde aus einem Peer-to-Peer-Programm portiert. Ziel dieser Klasse ist es, Dateitransfer-Meldungen zu verarbeiten.
- * Eine Dateitransfer-Meldung ist entweder 
- * * Ein FileChunkRequest zum Anfordern eines Teils der Datei
- * * Ein FileChunkResponse als Antwort auf einen FileChunkRequest
- * * Ein FileHeaderRequest zum initiieren eines Dateitransfers
- * * Ein FileHeaderResponse mit allen Chunks der Datei
+ * This example was ported from a java p2p application. The application shares files between
+ * differen hosts in a computer network. The filetransfer-component takes file messages and 
+ * writes them to disk. 
  * 
- * Der Ablauf der Dateiübertragung ist wie folgt:
+ * The Communication looks like the following steps
  * 
  * Client			Server
  * --------------------------
@@ -29,7 +26,8 @@ import java.util.UUID
  * FileChunkReqeust	 ->
  * 				<-	FileChunkResponse(data : Array[byte])
  * 
- * Die Dateiübertragung ist abgeschlossen, wenn alle Chunks beim Client angekommen sind.
+ * The transfer is finished, when all chunks are received by the client.
+ * 
  * 
  */
 object FileMessageKind extends Enumeration {
@@ -39,6 +37,16 @@ object FileMessageKind extends Enumeration {
 
 import FileMessageKind._
 
+/**
+ * A file message can either be:
+ * * a FileChunkRequest to request an arbitrary file token
+ * * a FileChunkResponse as response for a file chunk request
+ * * a FileHeaderRequest to initiate a file transfer
+ * * a FileHeaderResponse a response of the FileHeaderRequest containing all file chunks that are available.
+ * 
+ * @author Frank Englert
+ *
+ */
 class FileMessage(id : UUID, payload : String, remoteHost : Servant, kind : FileMessageKind) {
 	val Id = id
 	val Payload = payload
@@ -46,6 +54,15 @@ class FileMessage(id : UUID, payload : String, remoteHost : Servant, kind : File
 	val Kind = kind
 }
 
+/**
+ * The Servant provides an interface to interconnet the components of the application. In real live the 
+ * meesages to send or to receive would be serialized and streamed over a network connection to a foreign host.
+ * But in this example the file server and the file host are members of the same process. So we can connect the 
+ * components directly without transferring the messages over the net.
+ * 
+ * @author Frank Englert
+ *
+ */
 trait Servant {
 	def receive(msg : FileMessage, from : Servant) {
 		
@@ -199,7 +216,11 @@ class StateDrivenFileTransfer extends Servant{
 	}
 }
 
-object ChordFileTransferRun {
+class TestFileServer {
+	
+}
+
+object Run {
 	def main(args : Array[String]) : Unit = {
 		
 	}
