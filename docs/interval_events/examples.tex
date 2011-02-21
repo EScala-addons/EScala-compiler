@@ -2,9 +2,9 @@
 
 Das Ziel dieses Abschnittes ist es, dem Benutzer die Verwendung von
 Intervall-Events näherzubringen. Dazu wird gezeigt, an welchen Stellen sich
-Intervall-Events sinnvoll einsetzten lassen. Bis auf das letzte Beispiel
+Intervall-Events sinnvoll einsetzen lassen. Bis auf das letzte Beispiel
 existieren für alle Beispiele zwei Implementierungen. Eine Implementierung die
-Intervall-Events verwendet und eine Implementierung die möglichst keine Events
+Intervall-Events verwendet und eine Implementierung die keine Events
 verwendet.
 
 \subsection{Implementierung eines Zustandsautomaten}
@@ -41,7 +41,7 @@ vereinfachten Beispiel zeigen. Der resultierende Zustandsautomat ist in Abb.
 \end{figure}
 
 
-Im SimpleWebshop-Beispiel wird noch eine dritte Herangehensweise an die
+Im SimpleWebshop-Beispiel wird eine weitere Herangehensweise an die
 Implementierung eines Zustandsautomaten mit Intervall-Events gezeigt. Häufig
 lässt sich die Anzahl der benötigten Zustände und Transitionen durch die
 Verwendung von paralellen oder hierarchischen Zustandsautomaten reduzieren.
@@ -54,9 +54,10 @@ Probleme. Daher werden oft zur Implementierung die Produktautomaten gebildet um
 die paralellen Zustände aus dem Modell zu entfernen.
 
 Dies ist bei der Verwendung von Intervall-Events zur Impelmentierung eines
-Zustandsautomaten allerdings nicht zwingend notwendig. Man implementiert einfach
-die paralellen Zustandsautomaten. Die Verteilung der Events zum Ändern der
-Zustände und der Zugriff auf benachbarte Zustandsautomaten ist einfach möglich.
+Zustandsautomaten allerdings nicht zwingend notwendig. Die direkte
+Implementierung eines paralellen Zustandsautomaten ist ohne Probleme möglich.
+Die Verteilung der Events zum Ändern der Zustände und der Zugriff auf
+benachbarte Zustandsautomaten ist einfach. 
 
 Die Implementierung eines solchen Zustandsautomaten wie in Abb.
 \ref{webshop_behaviour} dargestellt findet sich im Beispiel
@@ -126,7 +127,6 @@ werden:
   hätte man möglicherweise eine zu hohe Frame-Rate.
 \end{itemize}
 
-
 Diese Ansatz ist allerdings nicht Event-Orientiert und wurde daher im Beispiel
 nicht verwendet. Stattdesen wird im Beispiel ein Timer verwendet, der alle 50ms
 eine Positionsänderung der Objekte und und das Neuzeichnen der Spielfläche auslöst.
@@ -152,9 +152,9 @@ Konstrukte erfordert das Markieren des Start-Intervalls mit \textit{lazy} und
 die Definition eines Startevents um eine korrekte Initialisierung der rekursiven
 Definition vorzunehmen.
 
-Zum andere ist es wichtig, ein exaktes Event-Modell für eingehende und
+Zum anderen ist es wichtig, ein exaktes Event-Modell für eingehende und
 ausgehende Events zu erstellen. Es ist wichtig, zwischen Events die Transitionen
-auslösen können und Events die Aktionen zur folge haben zu trennen. Ist diese
+auslösen können und Events die Aktionen zur Folge haben zu trennen. Ist diese
 Trennung nicht exakt genug, dann könnten eventuell Aktionen ausgeführt werden,
 die im akutellen Intervall nicht zulässig sind. 
 

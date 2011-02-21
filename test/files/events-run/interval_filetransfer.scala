@@ -1,9 +1,13 @@
+package examples.filetransfer
+
+import scala.util.Random
+import scala.collection.mutable.HashMap
 import scala.events.Event
 import scala.collection.mutable.ListBuffer
 import scala.events.BetweenEvent
 import scala.events.ImperativeEvent
 import java.net.InetAddress
-import java.util.UUID
+import java.util.UUID 
 /***
  * 
  * @author Frank Englert
@@ -16,12 +20,12 @@ import java.util.UUID
  * 
  * Client			Server
  * --------------------------
- * FileHeaderRequest ->
- * 				<-	FileHeaderResponse(FileTokens : Array[long])
+ * FileHeaderRequest(data: fileId) ->
+ * 				<-	FileHeaderResponse(data : <chunkid1>,<chunkid2>,...)
  * FileChunkReqeust	 ->
- * 				<-	FileChunkResponse(data : Array[byte])
- * FileChunkReqeust	 ->
- * 				<-	FileChunkResponse(data : Array[byte])
+ * 				<-	FileChunkResponse(data : <dta>)
+ * FileChunkReqeust(data: fileChunkId)	 ->
+ * 				<-	FileChunkResponse(data : file content)
  * ....
  * FileChunkReqeust	 ->
  * 				<-	FileChunkResponse(data : Array[byte])
@@ -78,18 +82,19 @@ trait FileClient {
 }
 
 class EventDrivenFileTransfer extends Servant with FileClient{
-	val receive = new ImperativeEvent[FileMessage] 
+	val onReceive = new ImperativeEvent[FileMessage] 
 	val send = new ImperativeEvent[FileMessage]
 	
 	val fileTransferStopped = new ImperativeEvent[Unit]
 	                                              
 	val missingChunks = new ListBuffer[Long]
 	
-	val fileHeaderReceived = receive && ((msg : FileMessage) => msg.Kind == FileMessageKind.FileHeader ) 
+	val fileHeaderReceived = onReceive && ((msg : FileMessage) => msg.Kind == FileMessageKind.FileHeader ) 
 	val transferPending = new BetweenEvent(fileHeaderReceived, fileTransferStopped)
-	val fileChunkReceived = receive && ((msg:FileMessage) => msg.Kind  == FileMessageKind.FileChunk) within transferPending
+	val fileChunkReceived = onReceive && ((msg:FileMessage) => msg.Kind  == FileMessageKind.FileChunk) within transferPending
 	
 	transferPending.before += startTransfer
+	transferPending.after += ((Unit) => println("File transfer finished"))
 	
 	/*
 	 * The grammar of the file Header is <filename>(;<chunk_id>)*
@@ -97,11 +102,12 @@ class EventDrivenFileTransfer extends Servant with FileClient{
 	 * chunk_id is a long value
 	 */
 	def startTransfer(msg : FileMessage) {
-		val chunkIdList = msg.Payload.split(",")
 		
-		chunkIdList.drop(1).foreach( (s)=> missingChunks.append(s.toLong))
-		
-		requestNextChunk(msg.RemoteHost, chunkIdList.first )
+		val header = msg.Payload.split(":")
+		val chunkIdList = header(1).split(",")
+		println("Header is " + msg.Payload )
+		chunkIdList.foreach( (s)=> missingChunks.append(s.toLong))
+		requestNextChunk(msg.RemoteHost, header(0))
 	}
 	
 	def requestNextChunk(receiverHost : Servant, file : String) {
@@ -112,35 +118,37 @@ class EventDrivenFileTransfer extends Servant with FileClient{
 		}
 		val chunkId = missingChunks.first
 		val request = new FileMessage(UUID.randomUUID(), chunkId.toString, this, FileMessageKind.FileChunk)
-		val requestPending = new BetweenEvent(send, receive && ((msg : FileMessage) => msg.Id  == request.Id ))
-		requestPending.after += ((msg : FileMessage) => {
+		val requestPending = new BetweenEvent(send, onReceive && ((msg : FileMessage) => {msg.Id.equals(request.Id)} ))
+		lazy val onResponseReceive : (FileMessage) => Unit = ((msg : FileMessage) => {
+			requestPending.after -= onResponseReceive
+			println("Received request result")
 			storeChunkData(chunkId, msg, file)
 			requestNextChunk(msg.RemoteHost, file)
-		})
-		
+		});
+		requestPending.after += onResponseReceive
 		send(receiverHost, request)
 	}
 	
 	def storeChunkData(chunkId : Long, msg : FileMessage, fileName : String) {
 		
-		print (fileName + ": received chunk " + chunkId)
+		println (fileName + ": received chunk. Number of missing chunks " + missingChunks.size)
 		//Todo: Store the file chunk on disk
 		missingChunks .remove(0)
 	}
 	
 	def downloadFile(from : Servant, file : String) {
-		val request = new FileMessage(UUID.randomUUID(), file, this, FileMessageKind.FileHeader )
+		val request = new FileMessage(UUID.randomUUID(), file.hashCode.toString, this, FileMessageKind.FileHeader )
 		send(from, request)
 	}
 		
 	override def send(to: Servant, msg : FileMessage) {
-		super.send(to, msg)
 		send(msg)
+		super.send(to, msg)
 	}
 	
 	override def receive(msg : FileMessage, from : Servant) {
 		super.receive(msg, from)
-		receive (msg)
+		onReceive (msg)
 	}
 }
 
@@ -151,56 +159,59 @@ class StateDrivenFileTransfer extends Servant{
 	}
 	
 	var state = TransferState.WaitForHeader 
-	val missingChunks = new ListBuffer[Long]
+	val missingChunks = new ListBuffer[Int]
 	var fileName : String = null
 	
 	
 	private def handleFileHeader(msg : FileMessage) {
 		if(state != TransferState.WaitForHeader )
 		{
-			print("Received FileHeader in State " + state)
+			println("Received FileHeader in State " + state)
 			return
 		}
+		val header = msg.Payload.split(":")
 		
-		val tokens = msg.Payload .split(",")
-		tokens.drop(1).foreach(s=>missingChunks.append(s.toLong))
-		fileName = tokens.first
+		val tokens = header(1).split(",")
+		tokens.foreach(s=>missingChunks.append(s.toInt))
+		fileName = header(0)
 		
 		state = TransferState.Pending
 	}
 	
-	var chunkMap = Map[UUID, Long]()
+	var chunkMap = HashMap[UUID, Int]()
 	
 	def downloadFile(from : Servant, file : String) {
-		val request = new FileMessage(UUID.randomUUID(), file, this, FileMessageKind.FileHeader )
+		val request = new FileMessage(UUID.randomUUID(), file.hashCode.toString, this, FileMessageKind.FileHeader )
 		send(from, request)
 	}
 	
 	private def handleFileChunk(msg : FileMessage) {
 		if(state != TransferState.Pending ) {
-			print("There is currently no transfer pending!")
+			println("There is currently no transfer pending!")
 			return
 		}
 		
 		//Todo: Find the corresponding request and the chunk id
 		val chunkId = chunkMap(msg.Id)
 		
-		print(fileName + ": Received Chunk " + chunkId)
-		
+		println(fileName + ": Received Chunk. Number of missing Chunks is " + missingChunks.length)
+		missingChunks -= chunkId
 		if(missingChunks.length == 0)
 		{
 			state = TransferState.Finished
-			print("File transfer finished")
-		}
-		else {
-			requestChunk(msg.RemoteHost )
+			println("File transfer finished")
 		}
 	}
 	
 	def requestChunk(from : Servant) {
+		
+		if(state != TransferState.Pending )
+			return
 		val chunkId = missingChunks .first
 		val request = new FileMessage(UUID.randomUUID(), chunkId.toString, this, FileMessageKind.FileChunk)
-		chunkMap(request.Id) = chunkId
+		
+		chunkMap.put(request.Id, chunkId)
+		
 		send(from, request)
 	}
 	
@@ -208,20 +219,67 @@ class StateDrivenFileTransfer extends Servant{
 		super.receive(msg, from)
 		
 		if(msg.Kind == FileMessageKind.FileHeader ) {
+			println("Received file header. ")
 			handleFileHeader(msg);
+			requestChunk(from)
 		}
 		else if(msg.Kind  == FileMessageKind.FileChunk ) {
 			handleFileChunk(msg)
+			requestChunk(from)
 		}
 	}
 }
 
-class TestFileServer {
+class TestFileServer extends Servant {
 	
+	val bucket = HashMap[Int, String]()
+	
+	def add(name : String, content : String ) {
+		val chunkSize = 128
+		
+		val chunks = new ListBuffer[Int]
+		//1. Step: Split content into chunks
+		for(offset <- 0 until content.size by chunkSize) {
+			val data = content.substring(offset, Math.min(offset+chunkSize, content.size))
+			chunks.append(data.hashCode())
+			//2. Add Chunks to the bucket
+			bucket.put(data.hashCode, data)
+		}
+
+		//3. Add the FileHeader to the bucket
+		val header = chunks.foldLeft(name+":")((x,y)=>x+y.toString()+",")
+		//println("Header is " + header)
+		bucket.put(name.hashCode, header)
+	}
+	
+	override def receive(msg: FileMessage, from : Servant) {
+		println("FileServer received request")
+		val selectedKey: Int= msg.Payload.toInt
+		
+		if(!bucket.contains(selectedKey))
+			println("The requested key  " + selectedKey + " does not exist")
+		
+		val reply = new FileMessage(msg.Id, bucket.get(selectedKey).getOrElse(""), this, msg.Kind)
+		
+		this.send(from, reply)
+	}
 }
 
 object Run {
 	def main(args : Array[String]) : Unit = {
+		val server = new TestFileServer()
+		val stateDrivenFileTransfer = new StateDrivenFileTransfer
+		val eventDrivenFileTransfer = new EventDrivenFileTransfer
 		
+		val rnd = new Random()
+		server.add("file01.txt", rnd.nextString(1023))
+		
+		println("Added file01.txt")
+		
+		println("Starting State driven Filetransfer")
+		stateDrivenFileTransfer.downloadFile(server, "file01.txt")
+		
+		println("Starting Event driven Filetransfer")
+		eventDrivenFileTransfer.downloadFile(server, "file01.txt")
 	}
 }
