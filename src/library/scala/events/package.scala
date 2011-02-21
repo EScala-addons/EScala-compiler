@@ -21,7 +21,13 @@ package object events {
 
   def ?[T](e: => Event[T]) = new EventNodeCond(e)
   
+  /**
+   * use this for recursive/cyclic declarations
+   */
   def Lazy[T](e: => Event[T]): Event[T] = new EventNodeLazy(e)
+  /**
+   * use this for recursive/cyclic declarations
+   */
   def Lazy[T](ie: => IntervalEvent[T]): IntervalEvent[T] = between(Lazy(ie.before),Lazy( ie.after))
   
   

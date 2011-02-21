@@ -1,0 +1,18 @@
+before state1
+Event
+---
+before state2
+after state1
+Event
+---
+after state2
+before state1
+Event
+---
+before state2
+after state1
+Event
+---
+after state2
+before state1
+Event
