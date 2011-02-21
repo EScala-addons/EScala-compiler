@@ -17,12 +17,12 @@
 \newcommand{\after}[1]{\textit{after(#1)}}
 \newcommand{\aktiv}[1]{\textit{active(#1)}}
 \newcommand{\Interval}[1]{\textbf{interval#1}}
-\newcommand{\comp}[1]{\textit{comp(#1)}}
+\newcommand{\comp}[1]{\textit{#1.complement}}
 \newcommand{\val}[1]{\textit{value(#1)}}
+\newcommand{\betw}[2]{\textit{between(e#1,e#2)}}
 
 \hypersetup{%
-  pdftitle={TUD Corporate-Design f"ur {\LaTeX}}, pdfauthor={C. v. Loewenich und
-  J. Werner}, pdfsubject={Beispieltext}, pdfview=FitH, pdfstartview=FitV }
+  pdftitle={IntervalEvents in EScala: Design}, pdfauthor={Michael Kutschke und Frank Englert}, pdfsubject={IntervalEvents in EScala: Design}, pdfview=FitH, pdfstartview=FitV }
 
 \setcounter{seclinedepth}{1}
 
@@ -48,13 +48,6 @@
 \label{definitions}
 Sei \before{\Interval} : Event das Ereignis, das den Beginn des Intervalls int angibt
 und \after{\Interval} : Event jenes, welches das Ende des Intervalls angibt.
-Hierbei sind folgende Event-Sequenzen zulässig:
-\begin{itemize}
-\item einmal \before{\_} zu Beginn und einmal \after{\_} am Ende
-\item mehrfaches \before{\_} und ein \after{\_} am Ende 
-\item verschachtelte, paarweise passende \before{\_} und \after{\_} Ereignisse
-%\item beliebige \before{\_} und \after{\_} Events innerhalb des Intervals
-\end{itemize}
 Ausserdem gebe \aktiv\Interval{} : boolean an, ob das Intervall aktiv ist.
 In der jetzigen Fassung bedeutet dies einfach, ob man sich zeitlich innerhalb des
 Intervalls befindet. 
@@ -81,14 +74,17 @@ Einschr"ankung, wie im weiteren gezeigt werden wird.
 \label{active_bit_behaviour}
 \end{figure}
 
+\betw{1}{2} ist das Intervall, dass beim Auftreten von e1 aktiviert und beim Auftreten von e2 deaktiviert wird. Man
+beachte hierbei, dass \before\betw{1}{2} $\neq$  e1 und \after\betw{1}{2} $\neq$ e2.
 
 F"ur alle Intervalle muss gelten, dass active nur beim \before{\_} oder
 \after{\_} Event umgeschaltet wird, wobei \aktiv{\_} nur von einem \before{\_}
 Event gesetzt und von einem \after{\_} Event zur"uckgesetzt werden kann.
-Ausserdem sollten ausserhalb des Intervalls keine isolierten Events auftreten.
+Ausserdem sollten ausserhalb des Intervalls keine isolierten Events auftreten. Dies muss beim Implementierung von Unterklassen von IntervalEvent beachtet werden.
 
 \section{Operatoren}
-Im folgenden werden die auf Intervall-Events verfügbaren Operatoren definiert:
+Im folgenden werden die auf Intervall-Events verfügbaren Operatoren definiert. Hierbei ist jeweils \Interval\ ein Intervall und e ein punktuelles Event. Zu beachten ist, dass \before{\Interval{}} und \after{\Interval{}} ebenfalls punktuell sind und
+|| auf punktuellen Events Disjunktion, \&\&\ Konjunktion bzw. Filter nach Prädikaten und \textbackslash\ Differenz bedeutet.
 
 \subsection{Komplement \comp\Interval : Intervall}
 \begin{itemize}
@@ -98,22 +94,17 @@ Im folgenden werden die auf Intervall-Events verfügbaren Operatoren definiert:
 \end{itemize}
 Bei der Implementierung wird ein neues Intervall-Event erzeugt, bei dem das 
 Before-Event mit dem After-Event getauscht ist. Das Komplement bietet keinen
-Zugriff auf den Value des Intervall-Events.
+Zugriff auf den Wert des Intervall-Events.
 
 \subsection{Vereinigung \Interval{1} || \Interval{2} : Intervall}
 Die Semantik der ||-Vereinigung ist die Vereinigung der Zeitpunkte von
 \Interval{1} und \Interval{2}.
 \begin{itemize}
-\item \before{\Interval{1} || \Interval{2}}  <=> (\before{\Interval{1}} ||
-\before{\Interval{2}}) \&\& !
-\aktiv{\Interval{1} || \Interval{2}}
-%(((after && (_ => !ie.active)) || 
-% (ie.after && (_ => !active)) || 
-% (after and ie.after))) \ (before || ie.before), active || 
-% ie.active, _value)
-\item \after{\Interval{1} || \Interval{2}} <=> \after{\Interval{1}} \&\&
-!\aktiv{\Interval{2}} || \after{\Interval{2}} \&\& !\aktiv{\Interval{1}} ||
-\after{\Interval{1}} \&\& \after{\Interval{2}}except(\before{\Interval{1}}||\before{\Interval{2}})
+\item \before{\Interval{1} || \Interval{2}}  <=> \before{\Interval{1}} || \before{\Interval{2}}
+\item \after{\Interval{1} || \Interval{2}} <=> ((\after{\Interval{1}} \&\&
+!\aktiv{\Interval{2}}) || (\after{\Interval{2}} \&\& !\aktiv{\Interval{1}}) ||
+(\after{\Interval{1}} \&\& \after{\Interval{2}} )) \textbackslash\ (\before{\Interval{1}}|| \before{\Interval{2}})
+\item \aktiv{\Interval{1} || \Interval{2}} <=> \aktiv{Interval{1}} || \aktiv{\Interval{2}}
 
 \end{itemize}
 
@@ -121,9 +112,9 @@ Die Semantik der ||-Vereinigung ist die Vereinigung der Zeitpunkte von
 \begin{itemize}
 \item \before{\Interval{1} \&\& \Interval{2}} <=> (((\before{\Interval{1}} \&\& \aktiv{\Interval{2}}) ||
 (\before{\Interval{2}} \&\& \aktiv{\Interval{1}}) || (\before{\Interval{1}} \&\& \before{\Interval{2}}))
-\textbackslash (\after{\Interval{1}} || \after{\Interval{2}})) \&\& ! \aktiv{\Interval{1} \&\& \Interval{2}}
-\item \after{\Interval{1} \&\& \Interval{2}} <=> \before{\comp{\Interval{1}}} ||
-\before{\comp{\Interval{2}}}
+\textbackslash (\after{\Interval{1}} || \after{\Interval{2}}))
+\item \after{\Interval{1} \&\& \Interval{2}} <=> \after{\Interval{1}} ||
+\after{\Interval{2}}
 \item \aktiv{\Interval{1} \&\& \Interval{2}} <=> \aktiv{\Interval{1}} \&\& \aktiv{\Interval{2}}
 \end{itemize}
 
@@ -131,42 +122,39 @@ Die Semantik der ||-Vereinigung ist die Vereinigung der Zeitpunkte von
 Alle Zeitpunkte, die in \Interval{1} liegen, nicht aber in \Interval{2}:
 \begin{itemize}
   \item  \Interval{1} \textbackslash\ \Interval{2} <=> \Interval{1} \&\&
-  comp(\Interval{2})
+  \comp{\Interval{2}}
 \end{itemize}
 
 
-\subsection{within(\Interval{},e) : Event}
-within(\Interval{},e) <=> (e \&\& \aktiv{\Interval}) || (e \&\& \before{\Interval})
+\subsection{within(e,\Interval{}) : Event}
+within(e,\Interval{}) <=> (e \&\& \aktiv{\Interval}) || (e \&\& \before{\Interval})
 
-\subsection{!within(\Interval{},e) : Event}
-!within(\Interval{},e) <=> (e \&\& ! \aktiv{\Interval}) \textbackslash\ \before{\Interval}
+\subsection{not\_within(e,\Interval{}) : Event}
+not\_within(e,\Interval{}) <=> (e \&\& ! \aktiv{\Interval}) \textbackslash\ \before{\Interval}
 
-\subsection{ StrictlyWithin(\Interval{},e) : Event}
+\subsection{ StrictlyWithin(e,\Interval{}) : Event}
 StrictlyWithin(\Interval{},e) <=> (e \&\& \aktiv{\Interval}) \textbackslash\ \after{\Interval}
 
-\subsection{ !strictlyWithin(\Interval{},e) : Event }
-!strictlyWithin(\Interval{},e) <=> (e \&\& ! \aktiv{\Interval}) || (e \&\& \after{\Interval})
+\subsection{ not\_strictlyWithin(e,\Interval{}) : Event }
+not\_strictlyWithin(e,\Interval{}) <=> (e \&\& ! \aktiv{\Interval}) || (e \&\& \after{\Interval})
 
 
 \subsection{weitere Anmerkungen}
-Der Umstand, dass sich int und \comp{\Interval{}} zwei Zeitpunkte teilen, mag
-unintuitiv erscheinen, allerdings  bietet dies nicht nur Nachteile. So ist int
-|| \comp{\Interval{}} wie  erwartet immer aktiv, beginnt und endet niemals. int
+Der Umstand, dass sich \Interval{} und \comp{\Interval{}} zwei Zeitpunkte teilen, mag
+unintuitiv erscheinen, allerdings  bietet dies nicht nur Nachteile. So ist \Interval{}
+|| \comp{\Interval{}} wie  erwartet immer aktiv, beginnt und endet niemals. \Interval{}
 \&\& \comp{\Interval{}} ist niemals aktiv  und l"ost auch niemals before oder
 after Ereignisse aus.
 
   \section{An Events gebundene Werte}
 Es ist m"oglich, beliebige Werte an Events zu binden. Diese M"oglichkeit
-existiert auch f"ur Intervall-Events. Wann im Intervall welche Werte
-gelten, h"angt von der Art des Intervalls ab. 
+existiert auch f"ur Intervall-Events. Der Wert eines Intervalls entspricht dem Wert des Before-Events.
 
-Auf den aktellen Wert des Intervalls wird "uber \val(\Interval{})
+Auf den aktellen Wert des Intervalls wird "uber \val\Interval{}
 zugegriffen. 
 
-Nachfolgend wird das Standartverhalten der Intervall-Operatoren dargestellt.
-Allerdings kann das Verhalten der Operatoren bei Bedarf abge"andert werden. Dann
-muss beim Intervall-Event-Knoten eine Benutzerdefinierte Merge-Funktion
-angegeben werden, die Values der Events aggregiert.
+Nachfolgend wird das Standardverhalten der Intervall-Operatoren dargestellt.
+Allerdings kann das Verhalten der Operatoren bei Bedarf abge"andert werden. Dafür muss mit der Funktion map ähnlich wie bei puntuellen Events der Wert transformiert werden.
 
 \subsection{Intervall zwischen dem Event B und dem Event A)}
 F"ur between-Intervalle wie in Abbildung \ref{interval-between_b_a} gilt der Wert des
@@ -197,45 +185,10 @@ null & t >= 9
 \caption{Intervall-Event between(B,A)}
 \label{interval-between_b_a}
 \end{figure}
-
-
-
-Wenn die \before{\_}-Events mehrfach auftreten, hat das
-between-Intervall den Wert des ersten \before{\_}-Events. Ein Beispiel hierf"ur ist in Abbildung
-\ref{interval-between_b_a-multiple} zu sehen. F"ur
-Interval\ref{interval-between_b_a-multiple} gilt \[ val(t) =
-\begin{cases}
-null & t < 1\\
-B.val &  t >= 1 \; and \; t < 7\\
-null  & t >= 7
-\end{cases}
-\]
-
-\begin{figure}[h]
- \centering 
-\psset{unit=1cm}
-\begin{pspicture}(0,0)(10,2)
-\psgrid[subgriddiv=1,griddots=10,gridlabels=7pt](0,0)(10,1)
-%{
-	\rput(1.2,0.75){\psframebox*[framearc=.3]{B}}
-	\rput(7.2,0.75){\psframebox*[framearc=.3]{A}}
-	\psline[linewidth=1pt]{[-]}(1,0.5)(7,0.5)
-	
-	\rput(3.2,0.75){\psframebox*[framearc=.3]{B'}}
-	\rput(9.2,0.75){\psframebox*[framearc=.3]{A'}}
-	\psline[linewidth=1pt,linestyle=dotted]{[-]}(3,0.5)(9,0.5)
-%}
-\end{pspicture}
-\caption{Intervall-Event between(B,A) mit mehrfach auftretenden Before- und
-After-Events}
-\label{interval-between_b_a-multiple}
-\end{figure}
- 
  
 \subsection{Vereinigung von Intervallen}
-F"ur die Vereinigung von Intervallen ist es sinnvoll, den Wert des letzen
-\before{\_}-Events zu speichern. Damit hat man immer Zugriff auf den Wert des
-letzten Events, der die Bedingung erf"ullt hat. 
+Wie oben wird der Wert des \before{\_}-Events gespeichert. Dies ist in diesem Fall das Event, dass das Interval zuletzt
+aktiviert hat.
 
 \begin{figure}[h]
  \centering 
@@ -265,9 +218,8 @@ between(A,B) || between(A',B') gilt also die folgende Belegung des Wertes:
 \[
 val(t) = \begin{cases}
 null & t < 1 \\
-B.val & t >=1 \; and t < 3 \\
-B'.val & t >=3 \; and t < 9 \\
-null & t > 9 \\
+B.val & t >=1 \; and\; t < 9 \\
+null & t >= 9 \\
 \end{cases}
 \]
   
@@ -303,8 +255,8 @@ Wie in Abb. \ref{interval-and} zu sehen, ergibt sich das folgende Zeitliche
 Verhalten f"ur den Wert von Interval\ref{interval-and} \[
 val(t)=\begin{cases}
 null & t < 3 \\
-(B,B') & t >=3 \; and t <= 7 \\
-null & t > 7
+(B,B') & t >=3 \; and\; t < 7 \\
+null & t >= 7
 \end{cases}
 \]
 
@@ -339,11 +291,11 @@ gleich dem Wert des letzten Before-Events vor oder nach dem Schnitt.
 	\psline[linewidth=1pt]{[-]}(6,0.5)(9,0.5)
 %}
 \end{pspicture}
-\caption{between(B,A) except between(B',A')}
+\caption{between(B,A) \textbackslash\ between(B',A')}
 \label{interval-diff}
 \end{figure}
 
-F"ur Interval\ref{interval-diff} = between(B,A) except between(B', A') ergibt
+F"ur Interval\ref{interval-diff} = between(B,A) \textbackslash\ between(B', A') ergibt
 sich also folgende Belegung:
 \[
 val(t)=\begin{cases}
@@ -354,6 +306,12 @@ B'' & t\in[6,9]\\
 null & t >9
 \end{cases}
 \]
+
+
+
+Desweiteren sei zu den Werten gesagt, dass es bei within und strictlyWithin ebenfalls die Möglichkeit gibt, die Werte des punktuellen Events und des IntervalEvents zu verbinden. Dies ist aus Implementierungs-Sicht einem direkten Zugriff auf den Wert eines Intervalls innerhalb einer Event-Deklaration vorzuziehen, da der genaue Zeitpunkt des Wertwechsels nicht fest definiert ist, und deshalb an den Endpunkten des Intervalls die Werte, die \val{\Interval{}} zurückgibt, nicht verlässlich sind. Ausserhalb von Event-Deklarationen und angehängten Reaktionen kann allerdings gefahrlos darauf zugregriffen werden. Zu jedem Zeitpunkt, zu dem \aktiv{\Interval{}} korrekte Rückgaben macht, tut \val{\Interval{}} dies ebenfalls.
+
+Für verlässliche Werte von active und value sind die beiden Funktionen isActive und value zu verwenden, innerhalb des Event-Dispatchings greifen diese auf pull-basierte Techniken zurück, um verlässliche Werte zu generieren. Da die Verwendung dieser Funktionen meist unnötig ist, und die push-basierten Operatoren performancemäßig überlegen sind, sollte wo möglich darauf verzichtet werden.
 
 \include{implementation}
 \include{examples}

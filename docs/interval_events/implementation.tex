@@ -39,6 +39,21 @@ Funktion ausgel"ost wird.
 \end{center}
 \end{figure}
 
+\subsection{Die Klasse IntervalEvent}
+Die Klasse IntervalEvent stellt folgende Methoden zur Verfügung:
+
+\begin{description}
+\item{\bf before: } Das zum Interval zugehörige before-Ereignis wie oben definiert
+\item{\bf after: } das after-Ereignis, wie oben definiert
+\item{\bf value: } der Wert des Intervals, wie oben definiert. Zusätzlich wird via pull eine punktgenaue Abfrage ermöglicht,
+Unterklassen sollten jedoch getValue stattdessen verwenden und Spezialfälle (Endpunkte des Intervals) gesondert behandeln
+\item{\bf isActive: } den Wert des Active-Bits, wie oben definiert. Zusätzlich wird via pull der Anfangspunkt des Intervals eingeschlossen. Unterklassen sollten stattdessen active verwenden und den Spezialfall gesondert behandeln.
+\item{\bf complement,\&\&,||,\textbackslash: } wie oben definiert
+\item{\bf map(V => T):IntervalEvent[T] : } transformiert den Wert des Intervals
+\item{\bf \&\&(\Interval{2},(V => Boolean)): } filtert Intervalle nach Werten
+\end{description}
+
+Zusätzlich stellt das Package scala.events die Methode \textit{Lazy(\Interval{})} zur Verfügung, die für die Deklaration von rekursiv oder zyklisch voneinander abhängigen Intervallen gebraucht werden kann. \textit{from} und \textit{to} erlauben die Definition von Intervallen, die nur einen Start- bzw. Endpunkt besitzen.
 
 \subsection{Der Aufbau des Event-Graphen}
 Mithilfe von Event-Nodes k"onnen mehrere Events zu komplexeren Events

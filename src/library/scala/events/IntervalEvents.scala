@@ -17,16 +17,33 @@ trait IntervalEvent[Start] {
   protected def defaultValue = default
   protected var _value: Start = _
 
+  /**
+   * this is valid if and only if active is valid also, use value for reliable pull-based
+   * values if you really need to
+   * @return
+   */
   protected[events] def getValue = _value
+  /**
+   * use this to access this Interval's value. Note that subclasses of IntervalEvent should
+   * use getValue instead and treat the special case of before explicitly to avoid the
+   * performance overhead of pull
+   * @return
+   */
   def value : Start = {if (eventTrace.value.isEmpty) getValue //No events triggered
 		  			else if (isActive) { //pull activation
 		  				if (active) getValue //realStart already fired or we were active before
-		  				else realStart.pullIsActivated(EventIds.lastId).get
+		  				else realStart.pullIsActivated(EventIds.lastId).getOrElse(defaultValue)
 		  				}
 		  			else defaultValue }
 
   protected[this] var _active = false
   protected[events] def active = _active
+  /**
+   * use this to access this Interval's activation state. Note that subclasses should use
+   * active insted and treat the special case of before explicitly to avoid the performance
+   * overhead of pull
+   * @return
+   */
   def isActive = {if(eventTrace.value.isEmpty) active 
 		  			else if(active) realEnd.pullIsActivated(EventIds.lastId) == None
 		  			else realStart.pullIsActivated(EventIds.lastId) != None
@@ -145,7 +162,7 @@ protected[events] class PunktualNode[T](punktEv: Event[T], ref: ReferenceCountin
  // override def toString = punktEv.toString
 
   override def deploy {
-    ref ++;
+    ref ++;	// deploy Interval first, to avoid problems with indirect event triggering
     punktEv += onEvt
 
   }
@@ -200,8 +217,8 @@ protected[events] class BeforeNode[T](ev : Event[T]) extends EventNode[T]{
 
 class ExecutionEvent[T] extends IntervalEvent[T] {
 
-  def start: Event[T] = _start
-  def end: Event[_] = _end
+  def start: Event[T] = emptyevent//_start
+  def end: Event[_] = emptyevent//_end
 
   private var _start: Event[T] = _
   private var _end: Event[_] = _
