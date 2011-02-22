@@ -157,7 +157,7 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
                 //genTupleType(genericParam)
               //else
                 genericParam
-//println("tupledGenericParam: " + tupledGenericParam);
+println("tupledGenericParam: " + tupledGenericParam);
             
             // the event modifiers
              val modifiers = 
@@ -178,8 +178,8 @@ println("SYMBOL in instrumentation: " + sym)
               val afterEvName = buildAfterSetEventName(sym)
 //println("sym: ___________________ " + sym)
 //println("name: ___________________ " + name)
-//println("beforeEvName: ------------------- " + beforeEvName)
-//println("afterEvName: ------------------- " + afterEvName)
+println("........................................................................beforeEvName: ------------------- " + beforeEvName)
+println("........................................................................afterEvName: ------------------- " + afterEvName)
 //println("genEvent with params (dd, modifiers, beforeEvName): __________ " + dd + ", " + modifiers + ", " + beforeEvName)
 //println("")
               
@@ -193,6 +193,8 @@ println("SYMBOL in instrumentation: " + sym)
               // enter the declaration of the events in the class declarations 
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
+println("hasSuperaccessorFlag? " + beforeEv.symbol.hasFlag(SUPERACCESSOR))
+
 
               // type the events
               def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
@@ -231,12 +233,12 @@ println("SYMBOL in instrumentation: " + sym)
               var wrapperBody =
                   atPos(pos)(Block(
                             Apply(
-                                Ident(beforeEv.symbol),
+                                Ident(beforeEvName),
                                 tupledEvArgs :: Nil) ::
                             body ::
                             Nil,
                             Apply(
-                                Ident(afterEv.symbol),
+                                Ident(afterEvName),
                                 tupledEvArgs :: Nil
                             )
                         ))

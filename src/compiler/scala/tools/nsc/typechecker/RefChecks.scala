@@ -1029,7 +1029,6 @@ abstract class RefChecks extends InfoTransform {
 
         case ValDef(_, _, _, _) =>
           val tree1 = transform(tree); // important to do before forward reference check
-          
           if (tree.symbol.hasFlag(LAZY)) {
             assert(tree.symbol.isTerm, tree.symbol)
             val ValDef(_, _, _, rhs) = tree1
@@ -1038,6 +1037,10 @@ abstract class RefChecks extends InfoTransform {
             val lazyDefSym = vsym.lazyAccessor
             assert(lazyDefSym != NoSymbol, vsym)
             val ownerTransformer = new ChangeOwnerTraverser(vsym, lazyDefSym)
+						// TODO AG:
+						// currently in dirty, hardcoded way extended, TODO: understand SUPERACCESSOR better and handle catching only own case...
+						if(lazyDefSym.hasFlag(SUPERACCESSOR)) lazyDefSym.setFlag(ACCESSOR)
+
             val lazyDef = atPos(tree.pos)(
                 DefDef(lazyDefSym, ownerTransformer( 
                   if (tree.symbol.owner.isTrait // for traits, this is further transformed in mixins
@@ -1046,6 +1049,7 @@ abstract class RefChecks extends InfoTransform {
                          Assign(gen.mkAttributedRef(vsym), rhs)),
                          gen.mkAttributedRef(vsym)))))
             log("Made lazy def: " + lazyDef)
+println("Made lazy def: " + lazyDef + ", tpe: " + lazyDef.tpe)
             if (hasUnitType)
               typed(lazyDef) :: Nil
             else
@@ -1284,6 +1288,7 @@ abstract class RefChecks extends InfoTransform {
     }
     
     override def transform(tree: Tree): Tree = {
+//println("refchecks_______________ tree: " + tree)
       val savedLocalTyper = localTyper
       val savedCurrentApplication = currentApplication
       try {
@@ -1376,6 +1381,8 @@ abstract class RefChecks extends InfoTransform {
 
           case _ => tree
         }
+        
+//println("result --------------> " + result)
         result = result match {
           case CaseDef(pat, guard, body) =>
             inPattern = true
