@@ -137,43 +137,24 @@ abstract class ObservableInstrumentation extends ObservableUtil {
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
               if (sym.isInstrumented && !sym.hasAccessorFlag) =>
                               
-//println("observInstru: sym: " + sym)
-//println("observInstru: tree: " + tree)
-//println("params: " + sym + ", " + mods + ", " + name + ", " + tparams + ", " + vparams + ", " + retType + ", " + body)
-
-/*
-						if(sym.isGetter)
-							println("observInstru: isGetter?: " + sym.isGetter)
-						else 
-						if(sym.isSetter)
-*/
-							//println("observInstru: isSetter?: " + sym.isSetter)
-	
-
             val pos = sym.pos
             
             // generate the implementation method
             val newName = buildImplMethodName(sym)
-            //println("newName: " + newName)
-            
 
             // indicates whether this overrides another observable method
             val overrideObs = isSuperObservable(sym, clazz.symbol)
-            //println("override another observable?: " + overrideObs)
             // indicates whether this overrides an instrumented method (not necessary observable)
             val overrideInstr = isSuperInstrumented(sym, clazz.symbol)
             
             // the flags for the implementation method
             var implMod = Modifiers(PROTECTED | IMPLEMENTATION | (if(settings.Yeventsdebug.value) 0 else SYNTHETIC))
-						//println("step1 flag for implementation method: " + implMod)
             if (overrideInstr && sym.isOverride) {
               implMod = implMod | OVERRIDE  
             }
-            //println("step2 flag for implementation method: " + implMod)
             if (mods.isDeferred) {
               implMod = implMod | DEFERRED  
             }
-            //println("step3 flag for implementation method: " + implMod)
             
             // enter and type the implementation method
             val tparamsImpl = tparams.map(
@@ -255,8 +236,6 @@ abstract class ObservableInstrumentation extends ObservableUtil {
               afterEv = typeEvent(afterEv)
               
               
-              println("beforeEv: " + beforeEv)
-              // the wrapper method
 
               // list of parameters
               val args = vparams.flatten[global.ValDef].map(vd => Ident(vd.name))
@@ -309,10 +288,7 @@ abstract class ObservableInstrumentation extends ObservableUtil {
                               Nil,
                               Ident(newTermName("res"))
                         ))
-                }
-              
-//println("WRAPPER BODY: " + wrapperBody + "\n_____\n")
-                        
+                }          
                         
               // the symbol and type information
               sym.resetFlag(DEFERRED)
@@ -321,8 +297,7 @@ abstract class ObservableInstrumentation extends ObservableUtil {
                      vparams,
                      retType, wrapperBody)).setSymbol(sym)
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
-              
-              println("WRAPPER METH: " + wrapperMeth + "\n_____\n")
+             
               
               // add to the list of synthesized members
               synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
@@ -368,7 +343,6 @@ abstract class ObservableInstrumentation extends ObservableUtil {
 
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
 
-							println("WRAPPER METH else: " + wrapperMeth + "\n_____\n")
               // add to the list of synthesized members
               synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
 

@@ -42,40 +42,31 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
 
     override def transform(tree: Tree): Tree = {
       val sym = tree.symbol
-      //println("obsREF.................. tree + symbol: " + tree + ",\n " + tree.symbol)
 
       tree match {
         case dd: DefDef if sym.isOverride && sym.isImplementationMethod =>
           val oldMeth = meth
-          println(":::::::::found DefDef, symbol: " + sym)
           meth = dd
           val res = super.transform(tree)
           meth = oldMeth
           res
         case ee @ ExecEvent(kind, meth) =>
           val methSymbol = meth.symbol
-          println("------ ee: " + ee)
-          println(":::::::::found ExecEvent, symbol: " + methSymbol)
           methSymbol.tpe match {
             case mt @ MethodType(params, retType) =>
               // build the string representing the parameters
-              println("execEvent -> looking for Type: " + kind)
               val eventName = kind match {
                 case BeforeExec() => buildBeforeEventName(methSymbol)
                 case AfterExec() => buildAfterEventName(methSymbol)
                 case Execution() => buildExecutionEventName(methSymbol)
               }
-              println("execEvent -> resulting eventName: " + eventName)
-              
 
               // search the symbol in the class
               localTyper.typed(
                 atPos(tree.pos) {
                   meth match {
                     case Select(prefix, _) =>
-                    	println("PREFIX -___-___- " + prefix)
                       val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
-                      println("tester: " + tester + ", owner: " )
                       tester
                     case _ => /* should not happen here */
                       unit.error(tree.pos, "a reference to a method is expected")
@@ -89,7 +80,6 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
           }
         case se @ SetEvent(kind, field) =>
            val fieldSymbol = field.symbol           
-println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ", fieldsymbol: " + field.symbol)
             	
            val eventName = kind match {
                 case BeforeSet() => buildBeforeEventName(fieldSymbol)
@@ -104,10 +94,7 @@ println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ",
                 atPos(tree.pos) {
                   field match {
                     case Select(prefix, fieldSymbol) =>
-                    	println("PREFIX -___-___- " + prefix + ", ---> " + fieldSymbol  + "\nFIELDTYPE: " + field.tpe)
-                    	println("USING EVENTNAME: " + eventName)
                       val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol
-                      println("tester: " + tester)
                       tester
                       //EmptyTree
                       
@@ -117,7 +104,6 @@ println("given RAW se, kind, field: " + se + ",\n " + kind + ",\n " + field + ",
                   }
                 }
               )
-              //super.transform(tree)
               
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
           // super call in an observable method

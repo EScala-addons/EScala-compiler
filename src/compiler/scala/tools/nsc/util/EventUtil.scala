@@ -30,7 +30,6 @@ trait EventUtil {
     internalBuild(meth, "$impl")
 
   private def internalBuild(meth: Symbol, suffix: String) = {
-  	println("internalBuild, meth + meth.tpe: " + meth + ",\n" + meth.tpe + "\n" + meth.tpe.typeSymbol.rawname)
     meth.tpe match {
       case mt @ MethodType(params, retType) =>
         // build the string representing the parameters
@@ -45,7 +44,6 @@ trait EventUtil {
       	val paramString = myList.foldLeft("$")(
           (prefix, suf) => prefix + suf
         )
-        println("------ paramString: ---------- " + paramString)
         meth.name + paramString + suffix
         //meth.name + "_="
         
@@ -55,29 +53,14 @@ trait EventUtil {
   }
   
   private def internalBuildField(meth: Symbol, suffix: String) = {
-  	println("-----\nOWN: internalBuild, meth + meth.tpe: " + meth + ",\n" + meth.tpe + "\n" + meth.tpe.typeSymbol.rawname  + "\n-----")
     meth.tpe match {
       case mt @ MethodType(params, retType) =>
-        // build the string representing the parameters
-        
         val getterName = nme.setterToGetter(meth.name)
-        
         val paramString = mt.paramTypes.foldLeft("")(
           (prefix, pt) => prefix + "$" + pt.typeSymbol.rawname
         )
         // and the final name
         getterName + paramString + suffix
-        /*
-      case pt @ PolyType(tparams, result) =>
-      	val getterName = nme.setterToGetter(pt.typeSymbol.name)
-      	var myList = List(getterName)
-      	val paramString = myList.foldLeft("")(
-          (prefix, suf) => prefix + suf
-        )
-        println("------ paramString: ---------- " + paramString)
-        meth.name + paramString + suffix
-        //meth.name + "_="
-        */
       case _ => ""
      
     }

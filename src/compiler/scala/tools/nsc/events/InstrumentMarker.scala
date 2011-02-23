@@ -32,7 +32,6 @@ abstract class InstrumentMarker extends Transform
 
     var clazz: Symbol = NoSymbol
 
-println("classPARAMETER methodsInClass: " + methodsInClass)
 
     override def transform(tree: Tree) = {
       tree match {
@@ -42,11 +41,10 @@ println("classPARAMETER methodsInClass: " + methodsInClass)
           namer = analyzer.newNamer(namer.context.make(tree, clazz, clazz.info.decls))
 
           val methods = methodsInClass(cd.symbol)
-//println("methodsinclass, cd.symbol: " + methods + "\n" + cd.symbol)
           // the synthesized overridden methods if any
           var synthesized: List[DefDef] = Nil
           methods.foreach(markMethod(_, clazz) match {
-              case Some(m) => println("case classDef: m " + m + ", " + m.symbol.owner); synthesized = m :: synthesized
+              case Some(m) => synthesized = m :: synthesized
               case None => /* do nothing */
             })
           // copy the method with the new overridden methods
@@ -56,40 +54,10 @@ println("classPARAMETER methodsInClass: " + methodsInClass)
                               (isSuperInstrumented(dd.symbol, dd.symbol.owner)) && !isSuperObservable(dd.symbol, dd.symbol.owner)) =>
           // if the method overrides an isntrumented method (but not observable) set the instrumented flag too
           // if the overridden method was declared as `observable' the type checker should already have checked it
-          //println("instrument marker methode with: " + dd + ", " + dd.symbol.owner)
           if(settings.Yeventsdebug.value)
             println(dd + " overrides instrumented method")
           dd.symbol.setFlag(INSTRUMENTED)
           super.transform(tree)
-       
-       
-       	case vd @ ValDef(_,_, tptTree, rhsTree) if (vd.symbol.isVariable && !vd.symbol.hasFlag(INSTRUMENTED) && vd.symbol.hasGetter) =>       	
-       		println("instrument marker field with: " + vd + "\nsymbol: " + vd.symbol + "\nTYPE: " + vd.tpe + "\nTREE: " + rhsTree + "\n" + tptTree + "\n")
-       	/*
-       		val valSymbol = vd.symbol
-       		
-       		val setterTest = localTyper.typed(
-                atPos(tree.pos) {
-                	tptTree match {
-                  	case Select(prefix, valSymbol) =>
-                    	println("_______________INSTMARKER____________---PREFIX -___-___- " + prefix + ", ---> " + vd.symbol )
-                      val tester = Select(prefix, newTermName(vd.symbol + "_$eq")) setSymbol NoSymbol
-                      println("tester: " + tester)
-                      tester
-                		case _ =>
-                      unit.error(tree.pos, "a reference to a method is expected")
-                      EmptyTree
-                  }
-                }
-              )
-       		println("INSTMARK Case ValDef, setterTest: " + setterTest + ", "  + setterTest.symbol + " ==== " + setterTest.symbol.owner)
-       		
-       		//println("hasSetter? " + vd.symbol.isSetter)
-       		//println("isObservable? " + vd.symbol.hasFlag(OBSERVABLE))
-       		//println("isVariable? " + vd.symbol.isVariable)
-       	*/
-       		super.transform(tree)
-       
         case _ => super.transform(tree)
       }
     }
@@ -110,8 +78,8 @@ println("classPARAMETER methodsInClass: " + methodsInClass)
     /** Generates a new method overriding the given one and mark it as instrumented.
      */
     private def generateMethod(meth: Symbol, clazz: Symbol): DefDef = {
-      //if(settings.Yeventsdebug.value)
-        println("overriding " + meth + " declared in " + meth.owner + " in " + clazz + "--------------------------\nhasAcc: " + meth.hasAccessorFlag + "\n##############")
+      if(settings.Yeventsdebug.value)
+        println("overriding " + meth + " declared in " + meth.owner + " in " + clazz)
       // override the method defined in a parent class, marking it with the INSTRUMENTED flag
       // it simply calls the super method, instrumentation is done later
 

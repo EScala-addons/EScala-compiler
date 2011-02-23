@@ -140,11 +140,8 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
         	if(sym.isSetter && sym.isInstrumented) =>
         		val pos = sym.pos
 
-						
-            var genericParam = vparams.flatten.map(vd => vd.tpt)
-//println("genericParam: " + genericParam)
-            
-            
+					  var genericParam = vparams.flatten.map(vd => vd.tpt)
+              
             // toDelete? case never existing, because setter always got one param (only type needed)
             if(genericParam.isEmpty) {
               // Unit as generic parameter
@@ -157,11 +154,10 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
                 //genTupleType(genericParam)
               //else
                 genericParam
-println("tupledGenericParam: " + tupledGenericParam);
             
             // the event modifiers
-             val modifiers = 
-                  (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | (
+            val modifiers = 
+                 (dd.mods & ~OVERRIDE & ~OBSERVABLE & ~DEFERRED & ~INSTRUMENTED) | (
                     if(!sym.isObservable && !sym.isPrivate)
                       // only instrumented => protected events
                       PROTECTED //| LOCAL
@@ -169,97 +165,53 @@ println("tupledGenericParam: " + tupledGenericParam);
                       // the method is observable or private => same visibility
                       FINAL
                   )
-                  
-                  
-              
-println("SYMBOL in instrumentation: " + sym)
-
-              val beforeEvName = buildBeforeSetEventName(sym)
-              val afterEvName = buildAfterSetEventName(sym)
-//println("sym: ___________________ " + sym)
-//println("name: ___________________ " + name)
-println("........................................................................beforeEvName: ------------------- " + beforeEvName)
-println("........................................................................afterEvName: ------------------- " + afterEvName)
-//println("genEvent with params (dd, modifiers, beforeEvName): __________ " + dd + ", " + modifiers + ", " + beforeEvName)
-//println("")
-              
-              
-              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
-              var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam),
+         
+            val beforeEvName = buildBeforeSetEventName(sym)
+            val afterEvName = buildAfterSetEventName(sym)
+            var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
+            var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam),
                                      newAfterSetEvent(tupledGenericParam), pos)
-                                     
-						
-
-              // enter the declaration of the events in the class declarations 
-              namer.enterSyntheticSym(beforeEv)
-              namer.enterSyntheticSym(afterEv)
-println("hasSuperaccessorFlag? " + beforeEv.symbol.hasFlag(SUPERACCESSOR))
-
-
-              // type the events
-              def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
-              beforeEv = typeEvent(beforeEv)
-              afterEv = typeEvent(afterEv)
               
-//println("AFTER TYPING created Events:")
-//println("beforeEvent: " + beforeEv)
-//println("afterEvent: " + afterEv)
-              //beforeEv.symbol.setFlag(ACCESSOR)
-              //afterEv.symbol.setFlag(ACCESSOR)
+            // enter the declaration of the events in the class declarations 
+            namer.enterSyntheticSym(beforeEv)
+            namer.enterSyntheticSym(afterEv)
               
+            // type the events
+            def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
+            beforeEv = typeEvent(beforeEv)
+            afterEv = typeEvent(afterEv)
 
-              // list of parameters
-              val args = vparams.flatten[global.ValDef].map(vd => Ident(vd.name))
-              val evArgs = 
-                if(args.size == 0) {
-                  List(Literal(()))
-                } else
-                  args
-
-							println("given args, size: " + args + ", " + args.size)
-							
-
-
-              // the body is a block triggering before, calling the implementation,
-              // triggering after and returning the result
-              val tupledEvArgs =
-                if(evArgs.size > 1)
-                  genTupleTerm(evArgs)
-                else
-                  evArgs.head
+            // list of parameters
+            val args = vparams.flatten[global.ValDef].map(vd => Ident(vd.name))
+            val evArgs = 
+              if(args.size == 0) {
+                List(Literal(()))
+              } else
+               args
                   
-             println("tupledEvArgs (evArgs.size >1?: " + tupledEvArgs)
+            // the body is a block triggering before, calling the implementation,
+            // triggering after and returning the result
+            val tupledEvArgs =
+              if(evArgs.size > 1)
+                genTupleTerm(evArgs)
+              else
+                evArgs.head
               
-              var wrapperBody =
-                  atPos(pos)(Block(
-                            Apply(
-                                Ident(beforeEvName),
-                                tupledEvArgs :: Nil) ::
-                            body ::
-                            Nil,
-                            Apply(
-                                Ident(afterEvName),
-                                tupledEvArgs :: Nil
-                            )
-                        ))
-                //wrapperBody = localTyper.typed(wrapperBody).asInstanceOf[Block]
-                /*
-                println("WRAPPER BODY: " + wrapperBody + "\n_____\n")
-                var wrapperMeth = atPos(pos)(DefDef(mods, name,
-                     tparams,
-                     vparams,
-                     retType, wrapperBody)).setSymbol(sym)
-              	wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
-              	
-              	println("WRAPPER METH FieldInstru: " + wrapperMeth + "\n_____\n")
-              	*/
-                
-                
-                synthesized = beforeEv :: afterEv :: synthesized
+            var wrapperBody =
+                atPos(pos)(Block(
+                          Apply(
+                              Ident(beforeEvName),
+                              tupledEvArgs :: Nil) ::
+                          body ::
+                          Nil,
+                          Apply(
+                              Ident(afterEvName),
+                              tupledEvArgs :: Nil
+                          )
+                      ))
+            synthesized = beforeEv :: afterEv :: synthesized
 
-        	localTyper.typed(treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperBody).setType(null))
-        	//super.transform(tree)
-       	
+        		localTyper.typed(treeCopy.DefDef(dd, mods, name, tparams, vparams, retType, wrapperBody).setType(null))
         case _ => super.transform(tree)
       }
     }
@@ -271,34 +223,7 @@ println("hasSuperaccessorFlag? " + beforeEv.symbol.hasFlag(SUPERACCESSOR))
       
       val event = ValDef(flags, name, tpt, body)
       atPos(pos)(event)
-    }
-
-/*    
-    def buildBeforeEventName(meth: Symbol) =
-    internalBuild(meth, "$before")
-
-  	def buildAfterEventName(meth: Symbol) =
-    internalBuild(meth, "$after")
-    
-    private def internalBuild(meth: Symbol, suffix: String) = {
-    meth.tpe match {
-      case mt @ MethodType(params, retType) =>
-        // build the string representing the parameters
-        val paramString = mt.paramTypes.foldLeft("")(
-          (prefix, pt) => prefix + "$" + pt.typeSymbol.rawname
-        )
-println("EVENT UTIL, paramString: " + paramString)
-println("RAW PARAM meth (sym): " + meth)
-println("final NAME parts : " + meth.rawname + " -- " + paramString + " -- " + suffix)
-println("")
-        // and the final name
-        meth.name + paramString + suffix
-      case _ => ""
-    }
-  }
-*/    
-    
-    
+    }    
   }
 
 }

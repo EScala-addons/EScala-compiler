@@ -1049,7 +1049,6 @@ abstract class RefChecks extends InfoTransform {
                          Assign(gen.mkAttributedRef(vsym), rhs)),
                          gen.mkAttributedRef(vsym)))))
             log("Made lazy def: " + lazyDef)
-println("Made lazy def: " + lazyDef + ", tpe: " + lazyDef.tpe)
             if (hasUnitType)
               typed(lazyDef) :: Nil
             else
@@ -1288,7 +1287,6 @@ println("Made lazy def: " + lazyDef + ", tpe: " + lazyDef.tpe)
     }
     
     override def transform(tree: Tree): Tree = {
-//println("refchecks_______________ tree: " + tree)
       val savedLocalTyper = localTyper
       val savedCurrentApplication = currentApplication
       try {
@@ -1382,7 +1380,6 @@ println("Made lazy def: " + lazyDef + ", tpe: " + lazyDef.tpe)
           case _ => tree
         }
         
-//println("result --------------> " + result)
         result = result match {
           case CaseDef(pat, guard, body) =>
             inPattern = true

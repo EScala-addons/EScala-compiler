@@ -1620,21 +1620,15 @@ trait Typers { self: Analyzer =>
     
    	
    	def typedSetEvent(ev: SetEvent, mode: Int, pt: Type): Tree = {  
-//println("given event OWN: " + ev.kind + ", " + ev.field)
    		// Feldreferenzuntersuchung:
    		val typedRef = typed(ev.field)
-//println("typedRef OWN: " + typedRef)
    		val typedEvent = treeCopy.SetEvent(ev, ev.kind, typedRef)
-//println("typedEvent OWN: " + typedEvent)
    		val sym = typedRef.symbol
-//println("sym OWN: " + sym + "..... " + sym.tpe)
-//println("typedRef.tpe: " + typedRef.tpe)
-       val dataType : Either[Type,(Type, Type)] =
+      val dataType : Either[Type,(Type, Type)] =
         sym.tpe match {
           case meth @ PolyType(params, rtpe) =>
             //val method = params.last.owner
             val paramType = typedRef.tpe
-            println("paramType, rtpe " + paramType + ", " + rtpe)
             ev.kind match {
                 case BeforeSet() => Left(paramType)
                 case AfterSet() => Left(paramType) // rtpe wrong Param! Need Type Unit .... 
@@ -1643,13 +1637,12 @@ trait Typers { self: Analyzer =>
             error(sym.pos, "UNKNOWN FIELD-EVENT EXPRESSION")
             Left(ErrorType)
       }      
-//println("dataType OWN: " + dataType)
       //check that the method is observable or defined in the class or in a parent class
       val isLocal = typedRef match {
         case Select(This(_), _) | Select(Super(_, _), _) => true
         case _ => false
       }
-//println("checking conditions isMethod, isInstrumented, isLocal, isObservable: " + sym.isMethod + ", " + sym.isInstrumented + ", " + isLocal + ", " + sym.isObservable)
+
       if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
         error(typedRef.pos, "the argument must be an observable method or a local method")
       }
@@ -1658,7 +1651,6 @@ trait Typers { self: Analyzer =>
       val eventType = 
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))      
-//println("eventType OWN: " + eventType)
    		// Tree return:
    		typedEvent.setType(eventType)
    	}
@@ -1671,7 +1663,6 @@ trait Typers { self: Analyzer =>
             case Apply(tree, List()) => tree
             case _ => typedRef
         }
-println("typedMeth: " + typedMeth)
       val dataType : Either[Type,(Type, Type)] =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
@@ -1682,7 +1673,6 @@ println("typedMeth: " + typedMeth)
                 case 1 => meth.paramTypes.head
                 case _ => tupleType(meth.paramTypes)
             }
-println("RTPE: " + rtpe + ", termsymbol: " + rtpe.termSymbol + "-> type " + rtpe.termSymbol.tpe)
             ev.kind match {
                 case BeforeExec() => Left(paramType)
                 case AfterExec() => Left(tupleType(List(paramType, rtpe)))
@@ -1692,7 +1682,6 @@ println("RTPE: " + rtpe + ", termsymbol: " + rtpe.termSymbol + "-> type " + rtpe
             error(typedMeth.pos, "a reference to a method expected")
             Left(ErrorType)
       }
-println("dataType: " + dataType)
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
       val sym = typedMeth.symbol      
       //check that the method is observable or defined in the class or in a parent class
@@ -1703,7 +1692,6 @@ println("dataType: " + dataType)
       if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
         error(typedMeth.pos, "the argument must be an observable method or a local method")
       }
-//println("sym: " + sym)
 			// eventType = Event[dataType]      
       val eventType = 
         if(dataType.isRight)
@@ -1712,7 +1700,6 @@ println("dataType: " + dataType)
         else
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))
-//println("eventType: " + eventType)
 			typedEvent.setType(eventType)
     }
     // @ESCALA END
@@ -1843,7 +1830,6 @@ println("dataType: " + dataType)
       namer.enterSyms(trees)
       typedStats(trees, NoSymbol)
       useCase.defined = context.scope.toList filterNot (useCase.aliases contains _)
-//      println("defined use cases: "+(useCase.defined map (sym => sym+":"+sym.tpe)))
     }
 
     /**
