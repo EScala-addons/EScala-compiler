@@ -140,7 +140,7 @@ Technical documentation
 -----------------------
 
 For the implementation of observables classes, we have defined two new phases in
-the compiler : ``observableclass`` et ``allinstances``. They are placed in this order
+the compiler : ``observableclass`` and ``allinstances``. They are placed in this order
 just after the ``obsrefs`` phase.
 
 The ``observableclass`` phase
