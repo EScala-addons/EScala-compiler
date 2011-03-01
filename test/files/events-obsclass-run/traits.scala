@@ -1,17 +1,17 @@
 import scala.events.anyInstance
 
-trait Trait {
+observable trait Trait {
     observable def credit() {println("Credit")}
 }
 
-observable class Transaction extends Trait
+class Transaction extends Trait
 
 object Test {
 
     def beforeCredit() {println("Be prepared to receive money")}
 
     def main(args: Array[String]) {
-        evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
+        evt e_bcredit[Unit] = beforeExec(anyInstance[Trait].credit)
 
         e_bcredit += beforeCredit _
 
