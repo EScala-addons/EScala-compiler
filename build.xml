@@ -1623,6 +1623,7 @@ BOOTRAPING TEST AND TEST SUITE
           <path refid="pack.classpath"/>
           <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
         </compilationpath>
+        <negtests  dir="${partest.dir}/${partest.srcdir}/events-obsclass-neg" includes="*.scala"/>
         <runtests  dir="${partest.dir}/${partest.srcdir}/events-obsclass-run" includes="*.scala"/>
       </partest>
     </target>
