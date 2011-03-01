@@ -1,0 +1,7 @@
+object.scala:13: error: not found: type Transaction
+        evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
+                                                     ^
+object.scala:13: error: a reference to a method expected
+        evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
+                                                                  ^
+two errors found

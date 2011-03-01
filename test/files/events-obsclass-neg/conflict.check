@@ -1,0 +1,10 @@
+conflict.scala:13: error: method anyInstance of type String does not take type parameters.
+    evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
+                                                ^
+conflict.scala:13: error: a reference to a method expected
+    evt e_bcredit[Unit] = beforeExec(anyInstance[Transaction].credit)
+                                                              ^
+conflict.scala:21: error: method allInstances of type String does not take type parameters.
+        var l = allInstances[Transaction]
+                            ^
+three errors found
