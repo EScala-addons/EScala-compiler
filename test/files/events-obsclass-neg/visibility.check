@@ -1,0 +1,4 @@
+visibility.scala:3: error: illegal combination of modifiers: observable/varargs and private for: class Klass
+private observable class Klass (val param: String) {
+                         ^
+one error found
