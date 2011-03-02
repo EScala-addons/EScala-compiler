@@ -211,12 +211,11 @@ abstract class EventNode[T] extends Event[T] {
       return if (wasLastActivated) Some(lastValue) else None
     else {
       lastPulledId = Id
-      wasLastActivated = true
-      /* By definition, the event is active if found on a circular path
-       * this makes both sense for difference (pull is in the except path) and
-       * lazy And (it makes sense to assume that it happens at the same time as itself).
-       * Some definition must be done, as circular pulls are possible, to avoid side-effects
-       * from earlier pulls as well as infinite recursion
+      wasLastActivated = false
+      /* 
+       * some definition has to be made here, and report of non-activation 
+       * through a circular pull-path probably poses the least problems (e.g. chosing a 
+       * value to report back)
        */
       pullParents(Id) match {
         case None => {
