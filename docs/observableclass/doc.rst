@@ -133,7 +133,11 @@ Observable method can be used as well like : ::
 
 
 You notice that you have to ensure that ``[Unit]`` must be precised when declaring event
-using ``anyInstance``.
+using ``anyInstance`` unless the parameter type can be infered, for instance : ::
+
+  evt e_bcredit = beforeExec(anyInstance[Transaction].credit).map((x: Int) => x + x)
+
+
 
 
 Technical documentation
