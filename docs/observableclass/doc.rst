@@ -113,7 +113,7 @@ called.
 
 Observable method can be used as well like : ::
 
-  import scala.events.anyInstances
+  import scala.events.anyInstance
 
   observable class Pipo {
      observable def obsmethod() { ... }
@@ -174,10 +174,10 @@ The ``observableclass`` phase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this phase, the compiler will look for observables classes (classes with the 
-``observable`` keyword.
+``observable`` keyword).
 
 For each observable class found, the compiler will create an object (with ``ModuleDef``)
-named ``<nameoftheclass>$all``, placed in the same level of the class. This object herits 
+named ``<nameoftheclass>$all``, placed in the same level as the class. This object herits
 from ``scala.events.AllObject[Class]``.
 
 Here is the code of ``scala.events.AllObject`` : ::
