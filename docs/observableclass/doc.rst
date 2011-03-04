@@ -138,7 +138,30 @@ using ``anyInstance`` unless the parameter type can be infered, for instance : :
   evt e_bcredit = beforeExec(anyInstance[Transaction].credit).map((x: Int) => x + x)
 
 
+``Traits`` can also be declared as observable. All instances of all classes
+extending them (even if not declared as observable) can be used with
+``anyInstance`` and ``allInstances`` : ::
 
+  import scala.events.anyInstance
+
+  observable trait Trait {
+      observable def obsmethod() { ... }
+  }
+  
+  class Pipo extends Trait
+  
+  object Test {
+      def somemethod() { ... }
+  
+      def main(args: Array[String]) {
+          evt e_bcredit[Unit] = beforeExec(anyInstance[Trait].obsmethod)
+  
+          e_bcredit += somemethod _
+  
+          var p1 = new Pipo
+          p1.obsmethod
+      }
+  }
 
 Technical documentation
 -----------------------
