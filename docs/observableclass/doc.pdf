@@ -1,4 +1,4 @@
-%PDF-1.4
+%PDF-1.3
 %“Œ‹ž ReportLab Generated PDF document http://www.reportlab.com
 % 'BasicFonts': class PDFDictionary 
 1 0 obj
@@ -7,7 +7,8 @@
  /F2 3 0 R
  /F3 4 0 R
  /F4 5 0 R
- /F5 8 0 R >>
+ /F5 6 0 R
+ /F6 9 0 R >>
 endobj
 % 'F1': class PDFType1Font 
 2 0 obj
@@ -38,22 +39,31 @@ endobj
 endobj
 % 'F4': class PDFType1Font 
 5 0 obj
-% Font Helvetica-BoldOblique
-<< /BaseFont /Helvetica-BoldOblique
+% Font Times-Roman
+<< /BaseFont /Times-Roman
  /Encoding /WinAnsiEncoding
  /Name /F4
  /Subtype /Type1
  /Type /Font >>
 endobj
-% 'Page1': class PDFPage 
+% 'F5': class PDFType1Font 
 6 0 obj
+% Font Helvetica-BoldOblique
+<< /BaseFont /Helvetica-BoldOblique
+ /Encoding /WinAnsiEncoding
+ /Name /F5
+ /Subtype /Type1
+ /Type /Font >>
+endobj
+% 'Page1': class PDFPage 
+7 0 obj
 % Page dictionary
-<< /Contents 25 0 R
+<< /Contents 26 0 R
  /MediaBox [ 0
  0
  595.2756
  841.8898 ]
- /Parent 24 0 R
+ /Parent 25 0 R
  /Resources << /Font 1 0 R
  /ProcSet [ /PDF
  /Text
@@ -65,14 +75,14 @@ endobj
  /Type /Page >>
 endobj
 % 'Page2': class PDFPage 
-7 0 obj
+8 0 obj
 % Page dictionary
-<< /Contents 26 0 R
+<< /Contents 27 0 R
  /MediaBox [ 0
  0
  595.2756
  841.8898 ]
- /Parent 24 0 R
+ /Parent 25 0 R
  /Resources << /Font 1 0 R
  /ProcSet [ /PDF
  /Text
@@ -83,24 +93,24 @@ endobj
  /Trans <<  >>
  /Type /Page >>
 endobj
-% 'F5': class PDFType1Font 
-8 0 obj
+% 'F6': class PDFType1Font 
+9 0 obj
 % Font Courier-Bold
 << /BaseFont /Courier-Bold
  /Encoding /WinAnsiEncoding
- /Name /F5
+ /Name /F6
  /Subtype /Type1
  /Type /Font >>
 endobj
 % 'Page3': class PDFPage 
-9 0 obj
+10 0 obj
 % Page dictionary
-<< /Contents 27 0 R
+<< /Contents 28 0 R
  /MediaBox [ 0
  0
  595.2756
  841.8898 ]
- /Parent 24 0 R
+ /Parent 25 0 R
  /Resources << /Font 1 0 R
  /ProcSet [ /PDF
  /Text
@@ -112,14 +122,14 @@ endobj
  /Type /Page >>
 endobj
 % 'Page4': class PDFPage 
-10 0 obj
+11 0 obj
 % Page dictionary
-<< /Contents 28 0 R
+<< /Contents 29 0 R
  /MediaBox [ 0
  0
  595.2756
  841.8898 ]
- /Parent 24 0 R
+ /Parent 25 0 R
  /Resources << /Font 1 0 R
  /ProcSet [ /PDF
  /Text
@@ -131,14 +141,14 @@ endobj
  /Type /Page >>
 endobj
 % 'Page5': class PDFPage 
-11 0 obj
+12 0 obj
 % Page dictionary
-<< /Contents 29 0 R
+<< /Contents 30 0 R
  /MediaBox [ 0
  0
  595.2756
  841.8898 ]
- /Parent 24 0 R
+ /Parent 25 0 R
  /Resources << /Font 1 0 R
  /ProcSet [ /PDF
  /Text
@@ -149,296 +159,302 @@ endobj
  /Trans <<  >>
  /Type /Page >>
 endobj
-% 'R12': class PDFCatalog 
-12 0 obj
+% 'R13': class PDFCatalog 
+13 0 obj
 % Document Root
-<< /Outlines 14 0 R
- /PageLabels 30 0 R
+<< /Outlines 15 0 R
+ /PageLabels 31 0 R
  /PageMode /UseNone
- /Pages 24 0 R
+ /Pages 25 0 R
  /Type /Catalog >>
 endobj
-% 'R13': class PDFInfo 
-13 0 obj
+% 'R14': class PDFInfo 
+14 0 obj
 << /Author ()
- /CreationDate (D:20110228031121-01'00')
- /Creator (\(unspecified\))
+ /CreationDate (D:20110304022354-01'00')
  /Keywords ()
- /Producer (ReportLab PDF Library - www.reportlab.com)
+ /Producer (ReportLab http://www.reportlab.com)
  /Subject (\(unspecified\))
  /Title (Observable class implementation in EScala) >>
 endobj
-% 'R14': class PDFOutlines 
-14 0 obj
+% 'R15': class PDFOutlines 
+15 0 obj
 << /Count 12
- /First 15 0 R
- /Last 21 0 R
+ /First 16 0 R
+ /Last 22 0 R
  /Type /Outlines >>
 endobj
 % 'Outline.0': class OutlineEntryObject 
-15 0 obj
+16 0 obj
 << /Count 1
- /Dest [ 7 0 R
+ /Dest [ 8 0 R
  /XYZ
  62.69291
  765.0236
  0 ]
- /First 16 0 R
- /Last 16 0 R
- /Next 17 0 R
- /Parent 14 0 R
+ /First 17 0 R
+ /Last 17 0 R
+ /Next 18 0 R
+ /Parent 15 0 R
  /Title (Introduction) >>
 endobj
 % 'Outline.10.0': class OutlineEntryObject 
-16 0 obj
-<< /Dest [ 7 0 R
+17 0 obj
+<< /Dest [ 8 0 R
  /XYZ
  62.69291
  684.0236
  0 ]
- /Parent 15 0 R
+ /Parent 16 0 R
  /Title (Example) >>
 endobj
 % 'Outline.1': class OutlineEntryObject 
-17 0 obj
+18 0 obj
 << /Count 3
- /Dest [ 9 0 R
+ /Dest [ 10 0 R
  /XYZ
  62.69291
  765.0236
  0 ]
- /First 18 0 R
- /Last 20 0 R
- /Next 21 0 R
- /Parent 14 0 R
- /Prev 15 0 R
+ /First 19 0 R
+ /Last 21 0 R
+ /Next 22 0 R
+ /Parent 15 0 R
+ /Prev 16 0 R
  /Title (User guide) >>
 endobj
 % 'Outline.11.0': class OutlineEntryObject 
-18 0 obj
-<< /Dest [ 9 0 R
+19 0 obj
+<< /Dest [ 10 0 R
  /XYZ
  62.69291
  732.0236
  0 ]
- /Next 19 0 R
- /Parent 17 0 R
+ /Next 20 0 R
+ /Parent 18 0 R
  /Title (The observable keyword) >>
 endobj
 % 'Outline.11.1': class OutlineEntryObject 
-19 0 obj
-<< /Dest [ 9 0 R
+20 0 obj
+<< /Dest [ 10 0 R
  /XYZ
  62.69291
  650.8236
  0 ]
- /Next 20 0 R
- /Parent 17 0 R
- /Prev 18 0 R
+ /Next 21 0 R
+ /Parent 18 0 R
+ /Prev 19 0 R
  /Title (The allInstances VarList) >>
 endobj
 % 'Outline.11.2': class OutlineEntryObject 
-20 0 obj
-<< /Dest [ 9 0 R
+21 0 obj
+<< /Dest [ 10 0 R
  /XYZ
  62.69291
  399.6236
  0 ]
- /Parent 17 0 R
- /Prev 19 0 R
+ /Parent 18 0 R
+ /Prev 20 0 R
  /Title (The anyInstance shortcut) >>
 endobj
 % 'Outline.2': class OutlineEntryObject 
-21 0 obj
+22 0 obj
 << /Count 2
- /Dest [ 11 0 R
+ /Dest [ 12 0 R
  /XYZ
  62.69291
  765.0236
  0 ]
- /First 22 0 R
- /Last 23 0 R
- /Parent 14 0 R
- /Prev 17 0 R
+ /First 23 0 R
+ /Last 24 0 R
+ /Parent 15 0 R
+ /Prev 18 0 R
  /Title (Technical documentation) >>
 endobj
 % 'Outline.12.0': class OutlineEntryObject 
-22 0 obj
-<< /Dest [ 11 0 R
+23 0 obj
+<< /Dest [ 12 0 R
  /XYZ
  62.69291
  702.0236
  0 ]
- /Next 23 0 R
- /Parent 21 0 R
+ /Next 24 0 R
+ /Parent 22 0 R
  /Title (The observableclass phase) >>
 endobj
 % 'Outline.12.1': class OutlineEntryObject 
-23 0 obj
-<< /Dest [ 11 0 R
+24 0 obj
+<< /Dest [ 12 0 R
  /XYZ
  62.69291
  378.8236
  0 ]
- /Parent 21 0 R
- /Prev 22 0 R
+ /Parent 22 0 R
+ /Prev 23 0 R
  /Title (The allinstances phase) >>
 endobj
-% 'R24': class PDFPages 
-24 0 obj
+% 'R25': class PDFPages 
+25 0 obj
 % page tree
 << /Count 5
- /Kids [ 6 0 R
- 7 0 R
- 9 0 R
+ /Kids [ 7 0 R
+ 8 0 R
  10 0 R
- 11 0 R ]
+ 11 0 R
+ 12 0 R ]
  /Type /Pages >>
 endobj
-% 'R25': class PDFStream 
-25 0 obj
+% 'R26': class PDFStream 
+26 0 obj
 % page stream
-<< /Length 1452 >>
+<< /Length 1505 >>
 stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 0 0 1 0 0 cm BT /F1 12 Tf 14.4 TL ET
 q
 1 0 0 1 62.69291 741.0236 cm
 q
-0 0 0 rg
-BT 1 0 0 1 0 4 Tm /F2 20 Tf 24 TL 28.74488 0 Td (Observable class implementation in EScala) Tj T* -28.74488 0 Td ET
+BT 1 0 0 1 0 9.64 Tm 28.74488 0 Td 24 TL /F2 20 Tf 0 0 0 rg (Observable class implementation in EScala) Tj T* -28.74488 0 Td ET
 Q
 Q
 q
 1 0 0 1 62.69291 719.0236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Documentation of the practical lab made during the winter semester 2010/2011 at the TU Darmstadt.) Tj T* ET
+0 0 0 rg
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (Documentation of the practical lab made during the winter semester 2010/2011 at the TU Darmstadt.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 701.0236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Git branch : ) Tj /F3 10 Tf (ipl-ws1011-observ-class) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F1 10 Tf 0 0 0 rg (Git branch : ) Tj /F3 10 Tf (ipl-ws1011-observ-class) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 685.0236 cm
+1 0 0 1 62.69291 641.0236 cm
+0 0 0 rg
+BT /F4 10 Tf 12 TL ET
+q
+1 0 0 1 0 45 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F4 10 Tf 12 TL (Authors :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F5 10 Tf 12 TL (Authors :) Tj T* ET
 Q
+Q
+BT 1 0 0 1 0 32 Tm  T* ET
+q
+1 0 0 1 10 36 cm
 Q
 q
-1 0 0 1 62.69291 646.0236 cm
+1 0 0 1 10 36 cm
+Q
+q
+1 0 0 1 10 18 cm
 0 0 0 rg
-BT /F1 10 Tf 12 TL ET
-BT 1 0 0 1 0 26 Tm  T* ET
+BT /F4 10 Tf 12 TL ET
 q
-1 0 0 1 20 30 cm
-Q
-q
-1 0 0 1 20 30 cm
-Q
-q
-1 0 0 1 20 18 cm
-0 0 0 rg
-BT /F1 10 Tf 12 TL ET
-q
-1 0 0 1 6 -3 cm
+1 0 0 1 6 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
 Q
 Q
 q
-1 0 0 1 23 -3 cm
-q
-0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Alexandre Chataignon) Tj T* ET
-Q
-Q
-q
-Q
-Q
-q
-1 0 0 1 20 12 cm
-Q
-q
-1 0 0 1 20 0 cm
-0 0 0 rg
-BT /F1 10 Tf 12 TL ET
-q
-1 0 0 1 6 -3 cm
+1 0 0 1 23 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (Alexandre Chataignon) Tj T* ET
 Q
 Q
 q
-1 0 0 1 23 -3 cm
+Q
+Q
+q
+1 0 0 1 10 18 cm
+Q
+q
+1 0 0 1 10 18 cm
+Q
+q
+1 0 0 1 10 0 cm
+0 0 0 rg
+BT /F4 10 Tf 12 TL ET
+q
+1 0 0 1 6 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (David Wagner) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
+Q
+Q
+q
+1 0 0 1 23 3 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (David Wagner) Tj T* ET
 Q
 Q
 q
 Q
 Q
 q
-1 0 0 1 20 0 cm
+1 0 0 1 10 0 cm
+Q
+q
+1 0 0 1 10 0 cm
 Q
 q
 Q
 Q
 q
-1 0 0 1 62.69291 646.0236 cm
+1 0 0 1 62.69291 641.0236 cm
 Q
  
 endstream
+
 endobj
-% 'R26': class PDFStream 
-26 0 obj
+% 'R27': class PDFStream 
+27 0 obj
 % page stream
-<< /Length 1932 >>
+<< /Length 1951 >>
 stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 0 0 1 0 0 cm BT /F1 12 Tf 14.4 TL ET
 q
 1 0 0 1 62.69291 744.0236 cm
 q
-BT 1 0 0 1 0 3.5 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (Introduction) Tj T* ET
+BT 1 0 0 1 0 8.435 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (Introduction) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 726.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (The goal of this practical lab was to implement the use of observable class in escala.) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (The goal of this practical lab was to implement the use of observable class in escala.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 696.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL 1.710542 Tw (The purpose of observable class is to define an event that will be declared for every instance of this) Tj T* 0 Tw (observable class.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm /F1 10 Tf 12 TL 1.710542 Tw (The purpose of observable class is to define an event that will be declared for every instance of this) Tj T* 0 Tw (observable class.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 666.0236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (Example) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (Example) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 624.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 26 Tm /F1 10 Tf 12 TL .209398 Tw (For example, a bank need to make transactions. Before any credit on every Transaction, they have to call) Tj T* 0 Tw 1.942651 Tw (a method of a TransactionManager object \(for example, writing the transaction in a log, verifying the) Tj T* 0 Tw (transaction, ...\).) Tj T* ET
+BT 1 0 0 1 0 28.82 Tm /F1 10 Tf 12 TL .209398 Tw (For example, a bank need to make transactions. Before any credit on every Transaction, they have to call) Tj T* 0 Tw 1.942651 Tw (a method of a TransactionManager object \(for example, writing the transaction in a log, verifying the) Tj T* 0 Tw (transaction, ...\).) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 606.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (With observable class, code would look like that :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (With observable class, code would look like that :) Tj T* ET
 Q
 Q
 q
@@ -456,7 +472,7 @@ n -6 -6 468.6898 228 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 206 Tm /F3 10 Tf 12 TL (observable class Transaction {) Tj T*  T* (  observable def credit\(\) {) Tj T* (      System.out.println\("Credit"\)) Tj T* (  }) Tj T*  T* (}) Tj T*  T* (class TransactionManager {) Tj T*  T* (    evt e_bcredit[Unit] = beforeExec\(anyInstance[Transaction].credit\)) Tj T*  T* (    e_bcredit += beforeCredit _) Tj T*  T* (    def beforeCredit\(\) {) Tj T* (        System.out.println\("Before credit"\)) Tj T* (    }) Tj T* (}) Tj T* ET
+BT 1 0 0 1 0 209.71 Tm /F3 10 Tf 12 TL (observable class Transaction {) Tj T*  T* (  observable def credit\(\) {) Tj T* (      System.out.println\("Credit"\)) Tj T* (  }) Tj T*  T* (}) Tj T*  T* (class TransactionManager {) Tj T*  T* (    evt e_bcredit[Unit] = beforeExec\(anyInstance[Transaction].credit\)) Tj T*  T* (    e_bcredit += beforeCredit _) Tj T*  T* (    def beforeCredit\(\) {) Tj T* (        System.out.println\("Before credit"\)) Tj T* (    }) Tj T* (}) Tj T* ET
 Q
 Q
 Q
@@ -467,30 +483,31 @@ q
 Q
  
 endstream
+
 endobj
-% 'R27': class PDFStream 
-27 0 obj
+% 'R28': class PDFStream 
+28 0 obj
 % page stream
-<< /Length 3490 >>
+<< /Length 3527 >>
 stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 0 0 1 0 0 cm BT /F1 12 Tf 14.4 TL ET
 q
 1 0 0 1 62.69291 744.0236 cm
 q
-BT 1 0 0 1 0 3.5 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (User guide) Tj T* ET
+BT 1 0 0 1 0 8.435 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (User guide) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 714.0236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F5 15 Tf (observable ) Tj /F2 15 Tf (keyword) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F6 15 Tf (observable ) Tj /F2 15 Tf (keyword) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 696.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (To declare a class as observable, just add the observable keyword in its declaration) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (To declare a class as observable, just add the observable keyword in its declaration) Tj T* ET
 Q
 Q
 q
@@ -508,7 +525,7 @@ n -6 -6 468.6898 24 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F3 10 Tf 12 TL (observable class Pipo {}) Tj T* ET
+BT 1 0 0 1 0 5.71 Tm /F3 10 Tf 12 TL (observable class Pipo {}) Tj T* ET
 Q
 Q
 Q
@@ -517,20 +534,20 @@ Q
 q
 1 0 0 1 62.69291 632.8236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F5 15 Tf (allInstances ) Tj /F2 15 Tf (VarList) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F6 15 Tf (allInstances ) Tj /F2 15 Tf (VarList) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 602.8236 cm
 q
-BT 1 0 0 1 0 14 Tm .710651 Tw 12 TL /F1 10 Tf 0 0 0 rg (Once a class is observable, all its instances will be elements of a list ) Tj /F3 10 Tf (allInstances[ClassType]) Tj /F1 10 Tf (. To) Tj T* 0 Tw (use allInstances, you will a to import it first from the ) Tj /F3 10 Tf (scala.events ) Tj /F1 10 Tf (library.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm .710651 Tw 12 TL /F1 10 Tf 0 0 0 rg (Once a class is observable, all its instances will be elements of a list ) Tj /F3 10 Tf (allInstances[ClassType]) Tj /F1 10 Tf (. To) Tj T* 0 Tw (use allInstances, you will a to import it first from the ) Tj /F3 10 Tf (scala.events ) Tj /F1 10 Tf (library.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 584.8236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (For example :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (For example :) Tj T* ET
 Q
 Q
 q
@@ -548,7 +565,7 @@ n -6 -6 468.6898 144 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 122 Tm /F3 10 Tf 12 TL (import scala.events.allInstances) Tj T*  T* (observable class Pipo {}) Tj T* (object Test {) Tj T* (    def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T*  T* (        println\(allInstances[Pipo]\)) Tj T* (    }) Tj T* (}) Tj T* ET
+BT 1 0 0 1 0 125.71 Tm /F3 10 Tf 12 TL (import scala.events.allInstances) Tj T*  T* (observable class Pipo {}) Tj T* (object Test {) Tj T* (    def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T*  T* (        println\(allInstances[Pipo]\)) Tj T* (    }) Tj T* (}) Tj T* ET
 Q
 Q
 Q
@@ -557,26 +574,26 @@ Q
 q
 1 0 0 1 62.69291 411.6236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Will have for a result : ) Tj /F3 10 Tf (VarList\(Pipo@d42d08, Pipo@1d86fd3\)) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F1 10 Tf 0 0 0 rg (Will have for a result : ) Tj /F3 10 Tf (VarList\(Pipo@d42d08, Pipo@1d86fd3\)) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 381.6236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F5 15 Tf (anyInstance ) Tj /F2 15 Tf (shortcut) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F6 15 Tf (anyInstance ) Tj /F2 15 Tf (shortcut) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 339.6236 cm
 q
-BT 1 0 0 1 0 26 Tm 2.067765 Tw 12 TL /F1 10 Tf 0 0 0 rg (As observable classes' first purpose is to use events on all the instances of the class, you can use) Tj T* 0 Tw 1.434597 Tw /F3 10 Tf (anyInstances[ClassType] ) Tj /F1 10 Tf (to apply an event to any instance of this class. Like ) Tj /F3 10 Tf (allInstances) Tj /F1 10 Tf (, it) Tj T* 0 Tw (has to be imported from the ) Tj /F3 10 Tf (scala.events ) Tj /F1 10 Tf (library.) Tj T* ET
+BT 1 0 0 1 0 28.82 Tm 2.067765 Tw 12 TL /F1 10 Tf 0 0 0 rg (As observable classes' first purpose is to use events on all the instances of the class, you can use) Tj T* 0 Tw 1.434597 Tw /F3 10 Tf (anyInstances[ClassType] ) Tj /F1 10 Tf (to apply an event to any instance of this class. Like ) Tj /F3 10 Tf (allInstances) Tj /F1 10 Tf (, it) Tj T* 0 Tw (has to be imported from the ) Tj /F3 10 Tf (scala.events ) Tj /F1 10 Tf (library.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 321.6236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (For example :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (For example :) Tj T* ET
 Q
 Q
 q
@@ -594,7 +611,7 @@ n -6 -6 468.6898 216 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 194 Tm /F3 10 Tf 12 TL (import scala.events.anyInstances) Tj T*  T* (observable class Pipo {) Tj T* (   evt e1 = ...) Tj T* (}) Tj T*  T* (object Test {) Tj T* (  evt e_any[Unit] = anyInstance[Pipo].e1) Tj T* (  e_any += SomeMethod  _) Tj T*  T* (  def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T* (  }) Tj T*  T* (  def SomeMethod\(\) { ... }) Tj T* (}) Tj T* ET
+BT 1 0 0 1 0 197.71 Tm /F3 10 Tf 12 TL (import scala.events.anyInstances) Tj T*  T* (observable class Pipo {) Tj T* (   evt e1 = ...) Tj T* (}) Tj T*  T* (object Test {) Tj T* (  evt e_any[Unit] = anyInstance[Pipo].e1) Tj T* (  e_any += SomeMethod  _) Tj T*  T* (  def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T* (  }) Tj T*  T* (  def SomeMethod\(\) { ... }) Tj T* (}) Tj T* ET
 Q
 Q
 Q
@@ -602,24 +619,25 @@ Q
 Q
  
 endstream
+
 endobj
-% 'R28': class PDFStream 
-28 0 obj
+% 'R29': class PDFStream 
+29 0 obj
 % page stream
-<< /Length 1407 >>
+<< /Length 2966 >>
 stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 0 0 1 0 0 cm BT /F1 12 Tf 14.4 TL ET
 q
 1 0 0 1 62.69291 753.0236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (With this code, every time e1 will occur on p1 or p2, ) Tj /F3 10 Tf (SomeMethod\(\) ) Tj /F1 10 Tf (will be called.) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F1 10 Tf 0 0 0 rg (With this code, every time e1 will occur on p1 or p2, ) Tj /F3 10 Tf (SomeMethod\(\) ) Tj /F1 10 Tf (will be called.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 735.0236 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (Observable method can be used as well like :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (Observable method can be used as well like :) Tj T* ET
 Q
 Q
 q
@@ -637,7 +655,7 @@ n -6 -6 468.6898 216 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 194 Tm /F3 10 Tf 12 TL (import scala.events.anyInstances) Tj T*  T* (observable class Pipo {) Tj T* (   observable def obsmethod\(\) { ... }) Tj T* (}) Tj T*  T* (object Test {) Tj T* (  evt e_any[Unit] = beforeExec\(anyInstance[Pipo].obsmethod\)) Tj T* (  e_any += SomeMethod  _) Tj T*  T* (  def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T* (  }) Tj T*  T* (  def SomeMethod\(\) { ... }) Tj T* (}) Tj T* ET
+BT 1 0 0 1 0 197.71 Tm /F3 10 Tf 12 TL (import scala.events.anyInstance) Tj T*  T* (observable class Pipo {) Tj T* (   observable def obsmethod\(\) { ... }) Tj T* (}) Tj T*  T* (object Test {) Tj T* (  evt e_any[Unit] = beforeExec\(anyInstance[Pipo].obsmethod\)) Tj T* (  e_any += SomeMethod  _) Tj T*  T* (  def main\(args: Array[String]\) {) Tj T* (        val p1 = new Pipo) Tj T* (        val p2 = new Pipo) Tj T* (  }) Tj T*  T* (  def SomeMethod\(\) { ... }) Tj T* (}) Tj T* ET
 Q
 Q
 Q
@@ -646,55 +664,103 @@ Q
 q
 1 0 0 1 62.69291 477.8236 cm
 q
-BT 1 0 0 1 0 14 Tm 3.401318 Tw 12 TL /F1 10 Tf 0 0 0 rg (You notice that you have to ensure that ) Tj /F3 10 Tf ([Unit] ) Tj /F1 10 Tf (must be precised when declaring event using) Tj T* 0 Tw /F3 10 Tf (anyInstance) Tj /F1 10 Tf (.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm 3.401318 Tw 12 TL /F1 10 Tf 0 0 0 rg (You notice that you have to ensure that ) Tj /F3 10 Tf ([Unit] ) Tj /F1 10 Tf (must be precised when declaring event using) Tj T* 0 Tw /F3 10 Tf (anyInstance ) Tj /F1 10 Tf (unless the parameter type can be infered, for instance :) Tj T* ET
 Q
 Q
 q
-1 0 0 1 62.69291 477.8236 cm
+1 0 0 1 62.69291 446.3849 cm
+q
+q
+.930106 0 0 .930106 0 0 cm
+q
+1 0 0 1 6.6 7.095962 cm
+q
+.662745 .662745 .662745 RG
+.5 w
+.960784 .960784 .862745 rg
+n -6 -6 504 24 re B*
+Q
+q
+BT 1 0 0 1 0 5.71 Tm 12 TL /F3 10 Tf 0 0 0 rg (evt e_bcredit = beforeExec\(anyInstance[Transaction].credit\).map\(\(x: Int\) =) Tj (>) Tj ( x + x\)) Tj T* ET
+Q
+Q
+Q
+Q
+Q
+q
+1 0 0 1 62.69291 414.3849 cm
+q
+BT 1 0 0 1 0 16.82 Tm 1.793735 Tw 12 TL /F3 10 Tf 0 0 0 rg (Traits ) Tj /F1 10 Tf (can also be declared as observable. All instances of all classes extending them \(even if not) Tj T* 0 Tw (declared as observable\) can be used with ) Tj /F3 10 Tf (anyInstance ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (allInstances ) Tj /F1 10 Tf (:) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 153.1849 cm
+q
+q
+1 0 0 1 0 0 cm
+q
+1 0 0 1 6.6 6.6 cm
+q
+.662745 .662745 .662745 RG
+.5 w
+.960784 .960784 .862745 rg
+n -6 -6 468.6898 252 re B*
+Q
+q
+0 0 0 rg
+BT 1 0 0 1 0 233.71 Tm /F3 10 Tf 12 TL (import scala.events.anyInstance) Tj T*  T* (observable trait Trait {) Tj T* (    observable def obsmethod\(\) { ... }) Tj T* (}) Tj T*  T* (class Pipo extends Trait) Tj T*  T* (object Test {) Tj T* (    def somemethod\(\) { ... }) Tj T*  T* (    def main\(args: Array[String]\) {) Tj T* (        evt e_bcredit[Unit] = beforeExec\(anyInstance[Trait].obsmethod\)) Tj T*  T* (        e_bcredit += somemethod _) Tj T*  T* (        var p1 = new Pipo) Tj T* (        p1.obsmethod) Tj T* (    }) Tj T* (}) Tj T* ET
+Q
+Q
+Q
+Q
+Q
+q
+1 0 0 1 62.69291 145.1849 cm
 Q
  
 endstream
+
 endobj
-% 'R29': class PDFStream 
-29 0 obj
+% 'R30': class PDFStream 
+30 0 obj
 % page stream
-<< /Length 5554 >>
+<< /Length 5654 >>
 stream
-1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 0 0 1 0 0 cm BT /F1 12 Tf 14.4 TL ET
 q
 1 0 0 1 62.69291 744.0236 cm
 q
-BT 1 0 0 1 0 3.5 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (Technical documentation) Tj T* ET
+BT 1 0 0 1 0 8.435 Tm 21 TL /F2 17.5 Tf 0 0 0 rg (Technical documentation) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 714.0236 cm
 q
-BT 1 0 0 1 0 14 Tm 2.498651 Tw 12 TL /F1 10 Tf 0 0 0 rg (For the implementation of observables classes, we have defined two new phases in the compiler :) Tj T* 0 Tw /F3 10 Tf (observableclass ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (allinstances) Tj /F1 10 Tf (. They are placed in this order just after the ) Tj /F3 10 Tf (obsrefs ) Tj /F1 10 Tf (phase.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm 2.498651 Tw 12 TL /F1 10 Tf 0 0 0 rg (For the implementation of observables classes, we have defined two new phases in the compiler :) Tj T* 0 Tw /F3 10 Tf (observableclass ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (allinstances) Tj /F1 10 Tf (. They are placed in this order just after the ) Tj /F3 10 Tf (obsrefs ) Tj /F1 10 Tf (phase.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 684.0236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F5 15 Tf (observableclass ) Tj /F2 15 Tf (phase) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F6 15 Tf (observableclass ) Tj /F2 15 Tf (phase) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 666.0236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (In this phase, the compiler will look for observables classes \(classes with the ) Tj /F3 10 Tf (observable ) Tj /F1 10 Tf (keyword.) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F1 10 Tf 0 0 0 rg (In this phase, the compiler will look for observables classes \(classes with the ) Tj /F3 10 Tf (observable ) Tj /F1 10 Tf (keyword\).) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 624.0236 cm
 q
-BT 1 0 0 1 0 26 Tm 4.416905 Tw 12 TL /F1 10 Tf 0 0 0 rg (For each observable class found, the compiler will create an object \(with ) Tj /F3 10 Tf (ModuleDef) Tj /F1 10 Tf (\) named) Tj T* 0 Tw 6.648314 Tw /F3 10 Tf (<) Tj (nameoftheclass) Tj (>) Tj ($all) Tj /F1 10 Tf (, placed in the same level of the class. This object herits from) Tj T* 0 Tw /F3 10 Tf (scala.events.AllObject[Class]) Tj /F1 10 Tf (.) Tj T* ET
+BT 1 0 0 1 0 28.82 Tm 4.416905 Tw 12 TL /F1 10 Tf 0 0 0 rg (For each observable class found, the compiler will create an object \(with ) Tj /F3 10 Tf (ModuleDef) Tj /F1 10 Tf (\) named) Tj T* 0 Tw 6.463314 Tw /F3 10 Tf (<) Tj (nameoftheclass) Tj (>) Tj ($all) Tj /F1 10 Tf (, placed in the same level as the class. This object herits from) Tj T* 0 Tw /F3 10 Tf (scala.events.AllObject[Class]) Tj /F1 10 Tf (.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 606.0236 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F1 10 Tf 0 0 0 rg (Here is the code of ) Tj /F3 10 Tf (scala.events.AllObject ) Tj /F1 10 Tf (:) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F1 10 Tf 0 0 0 rg (Here is the code of ) Tj /F3 10 Tf (scala.events.AllObject ) Tj /F1 10 Tf (:) Tj T* ET
 Q
 Q
 q
@@ -712,7 +778,7 @@ n -6 -6 468.6898 132 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 110 Tm /F3 10 Tf 12 TL (class AllObject[T] {) Tj T* (  var all = new VarList[T]) Tj T*  T* (  def register\(instance: T\) {) Tj T* (    all += instance) Tj T* (  }) Tj T* (  def unRegister\(instance: T\) {) Tj T* (    all -= instance) Tj T* (  }) Tj T* (}) Tj T* ET
+BT 1 0 0 1 0 113.71 Tm /F3 10 Tf 12 TL (class AllObject[T] {) Tj T* (  var all = new VarList[T]) Tj T*  T* (  def register\(instance: T\) {) Tj T* (    all += instance) Tj T* (  }) Tj T* (  def unRegister\(instance: T\) {) Tj T* (    all -= instance) Tj T* (  }) Tj T* (}) Tj T* ET
 Q
 Q
 Q
@@ -721,31 +787,31 @@ Q
 q
 1 0 0 1 62.69291 432.8236 cm
 q
-BT 1 0 0 1 0 14 Tm .172339 Tw 12 TL /F1 10 Tf 0 0 0 rg (As you can see, ) Tj /F3 10 Tf (AllObject ) Tj /F1 10 Tf (contains basicaly a VarList named ) Tj /F3 10 Tf (all ) Tj /F1 10 Tf (and two methods to add or remove) Tj T* 0 Tw (instance.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm .172339 Tw 12 TL /F1 10 Tf 0 0 0 rg (As you can see, ) Tj /F3 10 Tf (AllObject ) Tj /F1 10 Tf (contains basicaly a VarList named ) Tj /F3 10 Tf (all ) Tj /F1 10 Tf (and two methods to add or remove) Tj T* 0 Tw (instance.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 390.8236 cm
 q
-BT 1 0 0 1 0 26 Tm 1.158221 Tw 12 TL /F1 10 Tf 0 0 0 rg (Then, once the $all object is created and corectly typed, the compiler will modify the constructor of the) Tj T* 0 Tw .435868 Tw (class to call the ) Tj /F3 10 Tf (register ) Tj /F1 10 Tf (method of ) Tj /F3 10 Tf (AllObject ) Tj /F1 10 Tf (on himself, so every time the class is instancied, the) Tj T* 0 Tw (instance will be register in the ) Tj /F3 10 Tf (all ) Tj /F1 10 Tf (attribute of the ) Tj /F3 10 Tf (AllObject) Tj /F1 10 Tf (.) Tj T* ET
+BT 1 0 0 1 0 28.82 Tm 1.158221 Tw 12 TL /F1 10 Tf 0 0 0 rg (Then, once the $all object is created and corectly typed, the compiler will modify the constructor of the) Tj T* 0 Tw .435868 Tw (class to call the ) Tj /F3 10 Tf (register ) Tj /F1 10 Tf (method of ) Tj /F3 10 Tf (AllObject ) Tj /F1 10 Tf (on himself, so every time the class is instancied, the) Tj T* 0 Tw (instance will be register in the ) Tj /F3 10 Tf (all ) Tj /F1 10 Tf (attribute of the ) Tj /F3 10 Tf (AllObject) Tj /F1 10 Tf (.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 360.8236 cm
 q
-BT 1 0 0 1 0 3 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F5 15 Tf (allinstances ) Tj /F2 15 Tf (phase) Tj T* ET
+BT 1 0 0 1 0 7.23 Tm 18 TL /F2 15 Tf 0 0 0 rg (The ) Tj /F6 15 Tf (allinstances ) Tj /F2 15 Tf (phase) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 330.8236 cm
 q
-BT 1 0 0 1 0 14 Tm 1.140651 Tw 12 TL /F1 10 Tf 0 0 0 rg (In this phase, the compiler will look for all the ) Tj /F3 10 Tf (AllInstances ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (AnyInstances ) Tj /F1 10 Tf (calls to transform) Tj T* 0 Tw (them.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm 1.140651 Tw 12 TL /F1 10 Tf 0 0 0 rg (In this phase, the compiler will look for all the ) Tj /F3 10 Tf (AllInstances ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (AnyInstances ) Tj /F1 10 Tf (calls to transform) Tj T* 0 Tw (them.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 300.8236 cm
 q
-BT 1 0 0 1 0 14 Tm .538651 Tw 12 TL /F3 10 Tf 0 0 0 rg (AllInstances ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (AnyInstances ) Tj /F1 10 Tf (are in fact defined in the library so the compiler passes the namer) Tj T* 0 Tw (and typer phases. The code in the library is like that :) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm .538651 Tw 12 TL /F3 10 Tf 0 0 0 rg (AllInstances ) Tj /F1 10 Tf (and ) Tj /F3 10 Tf (AnyInstances ) Tj /F1 10 Tf (are in fact defined in the library so the compiler passes the namer) Tj T* 0 Tw (and typer phases. The code in the library is like that :) Tj T* ET
 Q
 Q
 q
@@ -763,7 +829,7 @@ n -6 -6 666 36 re B*
 Q
 q
 0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F3 10 Tf 12 TL (def allInstances[C]: VarList[C] = throw new NoSuchMethodException\("this code has to be compiled with EScala"\)) Tj T* (def anyInstance[C]: C = throw new NoSuchMethodException\("this code has to be compiled with EScala"\)) Tj T* ET
+BT 1 0 0 1 0 17.71 Tm /F3 10 Tf 12 TL (def allInstances[C]: VarList[C] = throw new NoSuchMethodException\("this code has to be compiled with EScala"\)) Tj T* (def anyInstance[C]: C = throw new NoSuchMethodException\("this code has to be compiled with EScala"\)) Tj T* ET
 Q
 Q
 Q
@@ -773,68 +839,71 @@ q
 1 0 0 1 62.69291 234.6247 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 14 Tm /F1 10 Tf 12 TL .772093 Tw (As you can see, these are dummy method just to pass the firsts phases but if they are not transformed,) Tj T* 0 Tw (the code will throw an exception.) Tj T* ET
+BT 1 0 0 1 0 16.82 Tm /F1 10 Tf 12 TL .772093 Tw (As you can see, these are dummy method just to pass the firsts phases but if they are not transformed,) Tj T* 0 Tw (the code will throw an exception.) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 216.6247 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL (So this phase will transform them by looking for the $all object associed to the T type, and then :) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL (So this phase will transform them by looking for the $all object associed to the T type, and then :) Tj T* ET
 Q
 Q
 q
 1 0 0 1 62.69291 210.6247 cm
 Q
 q
-1 0 0 1 62.69291 174.6247 cm
+1 0 0 1 62.69291 168.6247 cm
 0 0 0 rg
-BT /F1 10 Tf 12 TL ET
+BT /F4 10 Tf 12 TL ET
 BT 1 0 0 1 0 2 Tm  T* ET
 q
-1 0 0 1 20 30 cm
+1 0 0 1 20 36 cm
 Q
 q
-1 0 0 1 20 30 cm
+1 0 0 1 20 36 cm
 Q
 q
 1 0 0 1 20 18 cm
 0 0 0 rg
-BT /F1 10 Tf 12 TL ET
+BT /F4 10 Tf 12 TL ET
 q
-1 0 0 1 6 -3 cm
+1 0 0 1 6 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
 Q
 Q
 q
-1 0 0 1 23 -3 cm
+1 0 0 1 23 3 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F3 10 Tf 0 0 0 rg (allInstances[C] ) Tj /F1 10 Tf (is in fact ) Tj /F3 10 Tf (C$all.all) Tj T* ET
-Q
-Q
-q
+BT 1 0 0 1 0 4.82 Tm 12 TL /F3 10 Tf 0 0 0 rg (allInstances[C] ) Tj /F1 10 Tf (is in fact ) Tj /F3 10 Tf (C$all.all) Tj T* ET
 Q
 Q
 q
-1 0 0 1 20 12 cm
+Q
+Q
+q
+1 0 0 1 20 18 cm
+Q
+q
+1 0 0 1 20 18 cm
 Q
 q
 1 0 0 1 20 0 cm
 0 0 0 rg
-BT /F1 10 Tf 12 TL ET
+BT /F4 10 Tf 12 TL ET
 q
-1 0 0 1 6 -3 cm
+1 0 0 1 6 3 cm
 q
 0 0 0 rg
-BT 1 0 0 1 0 2 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
+BT 1 0 0 1 0 4.82 Tm /F1 10 Tf 12 TL 10.5 0 Td (\177) Tj T* -10.5 0 Td ET
 Q
 Q
 q
-1 0 0 1 23 -3 cm
+1 0 0 1 23 3 cm
 q
-BT 1 0 0 1 0 2 Tm 12 TL /F3 10 Tf 0 0 0 rg (anyInstance[C] ) Tj /F1 10 Tf (is in fact ) Tj /F3 10 Tf (C$all.all.any\(...\)) Tj T* ET
+BT 1 0 0 1 0 4.82 Tm 12 TL /F3 10 Tf 0 0 0 rg (anyInstance[C] ) Tj /F1 10 Tf (is in fact ) Tj /F3 10 Tf (C$all.all.any\(...\)) Tj T* ET
 Q
 Q
 q
@@ -844,104 +913,109 @@ q
 1 0 0 1 20 0 cm
 Q
 q
+1 0 0 1 20 0 cm
+Q
+q
 Q
 Q
 q
-1 0 0 1 62.69291 174.6247 cm
+1 0 0 1 62.69291 168.6247 cm
 Q
  
 endstream
+
 endobj
-% 'R30': class PDFPageLabels 
-30 0 obj
+% 'R31': class PDFPageLabels 
+31 0 obj
 % Document Root
 << /Nums [ 0
- 31 0 R
- 1
  32 0 R
- 2
+ 1
  33 0 R
- 3
+ 2
  34 0 R
+ 3
+ 35 0 R
  4
- 35 0 R ] >>
-endobj
-% 'R31': class PDFPageLabel 
-31 0 obj
-% None
-<< /S /D
- /St 1 >>
+ 36 0 R ] >>
 endobj
 % 'R32': class PDFPageLabel 
 32 0 obj
 % None
 << /S /D
- /St 2 >>
+ /St 1 >>
 endobj
 % 'R33': class PDFPageLabel 
 33 0 obj
 % None
 << /S /D
- /St 3 >>
+ /St 2 >>
 endobj
 % 'R34': class PDFPageLabel 
 34 0 obj
 % None
 << /S /D
- /St 4 >>
+ /St 3 >>
 endobj
 % 'R35': class PDFPageLabel 
 35 0 obj
 % None
 << /S /D
+ /St 4 >>
+endobj
+% 'R36': class PDFPageLabel 
+36 0 obj
+% None
+<< /S /D
  /St 5 >>
 endobj
 xref
-0 36
+0 37
 0000000000 65535 f
 0000000113 00000 n
-0000000257 00000 n
-0000000422 00000 n
-0000000597 00000 n
-0000000758 00000 n
-0000000945 00000 n
-0000001224 00000 n
-0000001505 00000 n
-0000001674 00000 n
-0000001953 00000 n
-0000002233 00000 n
-0000002514 00000 n
-0000002673 00000 n
-0000002962 00000 n
-0000003088 00000 n
-0000003305 00000 n
-0000003457 00000 n
-0000003687 00000 n
-0000003872 00000 n
-0000004074 00000 n
-0000004258 00000 n
-0000004487 00000 n
-0000004676 00000 n
-0000004843 00000 n
-0000004984 00000 n
-0000006535 00000 n
-0000008566 00000 n
-0000012155 00000 n
-0000013661 00000 n
-0000019318 00000 n
-0000019463 00000 n
-0000019540 00000 n
-0000019617 00000 n
-0000019694 00000 n
-0000019771 00000 n
+0000000269 00000 n
+0000000434 00000 n
+0000000609 00000 n
+0000000770 00000 n
+0000000939 00000 n
+0000001126 00000 n
+0000001405 00000 n
+0000001686 00000 n
+0000001855 00000 n
+0000002135 00000 n
+0000002415 00000 n
+0000002696 00000 n
+0000002855 00000 n
+0000003108 00000 n
+0000003234 00000 n
+0000003451 00000 n
+0000003603 00000 n
+0000003834 00000 n
+0000004020 00000 n
+0000004223 00000 n
+0000004408 00000 n
+0000004637 00000 n
+0000004826 00000 n
+0000004993 00000 n
+0000005135 00000 n
+0000006741 00000 n
+0000008793 00000 n
+0000012421 00000 n
+0000015488 00000 n
+0000021247 00000 n
+0000021392 00000 n
+0000021469 00000 n
+0000021546 00000 n
+0000021623 00000 n
+0000021700 00000 n
 trailer
 << /ID 
  % ReportLab generated PDF document -- digest (http://www.reportlab.com) 
- [(\337\023\003\340\330ow*\216\201\325\244\236\240Y\334) (\337\023\003\340\330ow*\216\201\325\244\236\240Y\334)] 
+ [(\307\362\376\305\303\346\334\)\247G\267\242O\204\375u) (\307\362\376\305\303\346\334\)\247G\267\242O\204\375u)] 
 
- /Info 13 0 R
- /Root 12 0 R
- /Size 36 >>
+ /Info 14 0 R
+ /Root 13 0 R
+ /Size 37 >>
 startxref
-19818
+21747
 %%EOF
