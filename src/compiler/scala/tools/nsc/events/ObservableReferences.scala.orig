@@ -66,8 +66,7 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
                 atPos(tree.pos) {
                   meth match {
                     case Select(prefix, _) =>
-                      val tester = Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
-                      tester
+                      Select(prefix, newTermName(eventName)) setSymbol NoSymbol //(prefix.symbol.info.decl(eventName))
                     case _ => /* should not happen here */
                       unit.error(tree.pos, "a reference to a method is expected")
                       EmptyTree
@@ -78,6 +77,8 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
               unit.error(tree.pos, "a reference to a method is expected")
               EmptyTree
           }
+<<<<<<< Updated upstream
+=======
         case se @ SetEvent(kind, field) =>
            val fieldSymbol = field.symbol           
             	
@@ -105,6 +106,7 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
                 }
               )
               
+>>>>>>> Stashed changes
         case app @ Apply(Select(sup @ Super(qual, mix), n), p) if meth != null => 
           // super call in an observable method
           // call to the super observable method must be replaced 

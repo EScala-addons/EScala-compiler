@@ -140,20 +140,22 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
         	if(sym.isSetter && sym.isInstrumented) =>
         		val pos = sym.pos
 
-					  var genericParam = vparams.flatten.map(vd => vd.tpt)
-              
-            // toDelete? case never existing, because setter always got one param (only type needed)
-            if(genericParam.isEmpty) {
-              // Unit as generic parameter
-              genericParam = List(Ident(newTypeName("Unit")))
-            }
-            
-            // always else-case? then no if needed
-            val tupledGenericParam =
-              //if(genericParam.size > 1)
-                //genTupleType(genericParam)
-              //else
-                genericParam
+						val leftHs : Tree = body match
+						{
+							case as @ Assign(lhs, rhs) =>								
+								lhs
+							case _ =>
+								body
+						}
+						
+						val typedLhs = localTyper.typed(leftHs)
+						
+//println("typed: " + typedLhs.tpe)
+						
+//println("leftHs.symbol? " + leftHs.symbol)
+//println("leftHs.type? " + leftHs.symbol.tpe)
+            val tupledGenericParam = vparams.flatten.map(vd => vd.tpt)
+//println("tupledGenericParam: " + tupledGenericParam)
             
             // the event modifiers
             val modifiers = 
@@ -168,7 +170,9 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
          
             val beforeEvName = buildBeforeSetEventName(sym)
             val afterEvName = buildAfterSetEventName(sym)
-            var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeSetEvent(tupledGenericParam), pos)
+            // Event Callback params: (currentVal, newVal)
+            var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam ::: List(typedLhs)), newBeforeSetEvent(tupledGenericParam ::: List(typedLhs)), pos)
+            // Event Callback params: (newVal) --> oldVal not reachable because afterEvent compiled after body(with reassignment)
             var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam),
                                      newAfterSetEvent(tupledGenericParam), pos)
               
@@ -191,17 +195,18 @@ abstract class ObservableFieldInstrumentation extends ObservableUtil {
                   
             // the body is a block triggering before, calling the implementation,
             // triggering after and returning the result
-            val tupledEvArgs =
-              if(evArgs.size > 1)
-                genTupleTerm(evArgs)
-              else
-                evArgs.head
-              
+            val tupledEvArgs = evArgs.head
+              //if(evArgs.size > 1)
+                //genTupleTerm(evArgs)
+              //else
+                //evArgs.head
+            //println("tupledEvArgs: " + tupledEvArgs)  
+            
             var wrapperBody =
                 atPos(pos)(Block(
                           Apply(
                               Ident(beforeEvName),
-                              tupledEvArgs :: Nil) ::
+                              leftHs :: List(tupledEvArgs)) ::
                           body ::
                           Nil,
                           Apply(

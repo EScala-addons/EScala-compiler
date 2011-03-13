@@ -1,16 +1,11 @@
 package scala.tools.nsc
 package events
 
-import util.EventUtil
-import transform._
-
 import ast.parser.TreeBuilder
 
-trait ObservableUtil extends Transform 
-                     with EventUtil
-                     with TypingTransformers{
-	self =>
-	
+trait ObservableUtil {
+  self: ObservableInstrumentation =>
+
   val global: Global
   import global._
   import symtab.Flags._
@@ -60,6 +55,9 @@ trait ObservableUtil extends Transform
         newTypeName("AfterExecution"))
     makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
+<<<<<<< Updated upstream
+
+=======
   
   protected[events] def newBeforeSetEvent(tparams: List[Tree]) = {
     makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
@@ -69,6 +67,7 @@ trait ObservableUtil extends Transform
     makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
   }
   
+>>>>>>> Stashed changes
   protected[events] def newExecutionEvent(beforeTparams: List[Tree], afterTparams: List[Tree]) =
     Apply(
       Select(

@@ -1617,6 +1617,8 @@ trait Typers { self: Analyzer =>
           newTypeName("EmptyEvent")
         )
       }
+<<<<<<< Updated upstream
+=======
     
    	
    	def typedSetEvent(ev: SetEvent, mode: Int, pt: Type): Tree = {  
@@ -1655,15 +1657,18 @@ trait Typers { self: Analyzer =>
    		typedEvent.setType(eventType)
    	}
    
+>>>>>>> Stashed changes
 
     def typedExecEvent(ev: ExecEvent, mode: Int, pt: Type): Tree = {
       val typedRef = typed(ev.meth, FUNmode, WildcardType)
-			val typedMeth = 
+
+      val typedMeth = 
         typedRef match {
             case Apply(tree, List()) => tree
             case _ => typedRef
         }
-      val dataType : Either[Type,(Type, Type)] =
+      
+      val dataType : Type Either (Type, Type) =
         typedMeth.tpe match {
           case meth @ MethodType(params, rtpe) =>
             //val method = params.last.owner
@@ -1682,7 +1687,9 @@ trait Typers { self: Analyzer =>
             error(typedMeth.pos, "a reference to a method expected")
             Left(ErrorType)
       }
+      
       val typedEvent = treeCopy.ExecEvent(ev, ev.kind, typedMeth)
+
       val sym = typedMeth.symbol      
       //check that the method is observable or defined in the class or in a parent class
       val isLocal = typedMeth match {
@@ -1692,7 +1699,8 @@ trait Typers { self: Analyzer =>
       if(!sym.isMethod || (!sym.isInstrumented && !isLocal)) {
         error(typedMeth.pos, "the argument must be an observable method or a local method")
       }
-			// eventType = Event[dataType]      
+      
+      // eventType = Event[dataType]      
       val eventType = 
         if(dataType.isRight)
           typeRef(IntervalEventClass.typeConstructor.prefix,
@@ -1700,7 +1708,8 @@ trait Typers { self: Analyzer =>
         else
           typeRef(ImperativeEventClass.typeConstructor.prefix, 
                   ImperativeEventClass, List(dataType.left.get))
-			typedEvent.setType(eventType)
+      
+      typedEvent.setType(eventType)
     }
     // @ESCALA END
 
@@ -1830,6 +1839,7 @@ trait Typers { self: Analyzer =>
       namer.enterSyms(trees)
       typedStats(trees, NoSymbol)
       useCase.defined = context.scope.toList filterNot (useCase.aliases contains _)
+//      println("defined use cases: "+(useCase.defined map (sym => sym+":"+sym.tpe)))
     }
 
     /**
@@ -3929,9 +3939,6 @@ trait Typers { self: Analyzer =>
 
         case ev @ ExecEvent(kind, meth) =>
           typedExecEvent(ev, mode, pt)       
-        
-        case ev @ SetEvent(kind, field) =>
-          typedSetEvent(ev, mode, pt)       
         // @ESCALA END
 
         case tdef @ TypeDef(_, _, _, _) =>

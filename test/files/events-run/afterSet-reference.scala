@@ -1,41 +1,32 @@
 class help
 {
-	observable var setTesterParent : String = "var def in parent"
-	var setTesterImplicitParent = "var !observable and def in parent"
-	
-	//observable def execTesterObservableParent(tempVar : String) = println("tempVar: " + tempVar)
-	//def execTesterParent(counter : Int) = println("param value: " + counter.toString)
+	observable var setTesterParent : String = "Test Observable"
+	var setTesterImplicitParent = "Test Implicit"
+
 }
 
 class sub extends help
 {
-	//observable var setTesterThis = "var def in this"
-	//evt testSetObservableThis = afterSet(setTesterThis)
+	observable var setTesterThis = "var def in this"
+	evt afterSetThis = afterSet(setTesterThis)
+	evt beforeSetThis = beforeSet(setTesterThis)
 	
-	//evt testSetObservableParent = afterSet(setTesterParent)
-	//evt testSetImplicitParent = afterSet(setTesterImplicitParent)
-	
-	//evt testExecObservableParent = afterExec(execTesterObservableParent)
-	//evt testExecParent = afterExec(execTesterParent)
-	
-	// var unused = "unusedVar"
-	//def reactBefore(i: Int) = println("react before m(" + i + ")")
-	
-	
-	//var implicitDef = "implicitTest" 
-	//evt testImplicit = afterSet(implicitDef)
+	evt afterSetParentObservable = afterSet(setTesterParent)
+	evt beforeSetParentImplicit = beforeSet(setTesterImplicitParent)
 }
 
 object Test {
   def main(args: Array[String]) {
     val s = new sub
-    evt testSetObservableParent = afterSet(s.setTesterParent)
-    testSetObservableParent += reactAfter _
-    s setTesterParent = "updated var def"
+    
+    s.beforeSetParentImplicit += reactBefore _
+    s.afterSetParentObservable += reactAfter _
+    
+    s setTesterParent = "Test Observable var update"
+    s setTesterImplicitParent = "Test Implicit var update"
+    
+    def reactBefore(oldVal : String, newVal : String) = println("BeforeEvent: replacing -" + oldVal + "-\nwith -" + newVal + "-")
+  	def reactAfter(newVal : String) = println("After-Event, assigned value:" + newVal)
   }
-
-  //def reactBefore(i: Int) = println("react before m(" + i + ")")
-
-  def reactAfter(str : String) = println("AfterEvent handled with value: " + str)
 
 }
