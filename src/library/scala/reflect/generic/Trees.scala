@@ -234,7 +234,6 @@ trait Trees { self: Universe =>
   abstract sealed class ExecEvtKind  
   case class BeforeExec extends ExecEvtKind  
   case class AfterExec extends ExecEvtKind
-  case class Execution extends ExecEvtKind
   
   /**
    * Event expression referencing points before or after method execution

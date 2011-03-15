@@ -17,9 +17,6 @@ trait EventUtil {
   def buildAfterEventName(meth: Symbol) =
     internalBuild(meth, "$after")
 
-  def buildExecutionEventName(meth: Symbol) =
-    internalBuild(meth, "$execution")
-
   def buildImplMethodName(meth: Symbol) =
     internalBuild(meth, "$impl")
 
@@ -84,10 +81,6 @@ trait EventUtil {
     internalBuild(meth, parameters, "after")
   }
 
-  def buildExecutionEventName(meth: Name, parameters: List[List[ValDef]]) = {
-    internalBuild(meth, parameters, "execution")
-  }
-  
   def buildImplMethodName(meth: Name, parameters: List[List[ValDef]]) = {
     internalBuild(meth, parameters, "impl")
   }

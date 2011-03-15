@@ -218,20 +218,15 @@ abstract class ObservableInstrumentation extends Transform
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
-              val execEvName = buildExecutionEventName(sym)
-              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeExecEvent(tupledGenericParam, execEvName), pos)
+              var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), newBeforeExecEvent(tupledGenericParam), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)),
-                                     newAfterExecEvent(tupledGenericParam ::: List(retType), execEvName), pos)
-              var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
-                                    newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
+                                     newAfterExecEvent(tupledGenericParam ::: List(retType)), pos)
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
-              namer.enterSyntheticSym(execEv)
 
               // type the events
               def typeEvent(ev: ValDef) = localTyper.typed(ev).asInstanceOf[ValDef]
-              execEv = typeEvent(execEv)
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
               
@@ -302,7 +297,7 @@ abstract class ObservableInstrumentation extends Transform
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
               
               // add to the list of synthesized members
-              synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
+              synthesized = wrapperMeth :: beforeEv :: afterEv :: synthesized
             } else if(!overrideObs && overrideInstr && sym.isObservable) {
               // the method overrides an already internally instrumented method
               // makes the protected events visible
@@ -314,19 +309,14 @@ abstract class ObservableInstrumentation extends Transform
 
               val beforeEvName = buildBeforeEventName(sym)
               val afterEvName = buildAfterEventName(sym)
-              val execEvName = buildExecutionEventName(sym)
               var beforeEv = genEvent(dd, modifiers, beforeEvName, genImperativeEventTpt(tupledGenericParam), superBeforeExec(sym.name), pos)
               var afterEv = genEvent(dd, modifiers, afterEvName, genImperativeEventTpt(tupledGenericParam ::: List(retType)), superAfterExec(sym.name), pos)
-              var execEv = genEvent(dd, modifiers, execEvName, genExecutionEventTpt(tupledGenericParam, tupledGenericParam ::: List(retType)),
-                                    newExecutionEvent(tupledGenericParam, tupledGenericParam ::: List(retType)), pos)
 
               // enter the declaration of the events in the class declarations
               namer.enterSyntheticSym(beforeEv)
               namer.enterSyntheticSym(afterEv)
-              namer.enterSyntheticSym(execEv)
 
               // type the events
-              execEv = localTyper.typed(execEv).asInstanceOf[ValDef]
               beforeEv = localTyper.typed(beforeEv).asInstanceOf[ValDef]
               afterEv = localTyper.typed(afterEv).asInstanceOf[ValDef]
 
@@ -346,7 +336,7 @@ abstract class ObservableInstrumentation extends Transform
               wrapperMeth = localTyper.typed(wrapperMeth).asInstanceOf[DefDef]
 
               // add to the list of synthesized members
-              synthesized = wrapperMeth :: beforeEv :: afterEv :: execEv :: synthesized
+              synthesized = wrapperMeth :: beforeEv :: afterEv :: synthesized
 
             } else {
                // remove the original method from the symbol table

@@ -42,30 +42,11 @@ trait ObservableUtil {
         nme.CONSTRUCTOR),
       Nil)
 
-  protected[events] def newBeforeExecEvent(tparams: List[Tree], exec: Name) = {
-    val dependentType =
-      Select(
-        Ident(exec),
-        newTypeName("BeforeExecution"))
-    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
-  }
+  protected[events] def newBeforeExecEvent(tparams: List[Tree]) = 
+    makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
 
-  protected[events] def newAfterExecEvent(tparams: List[Tree], exec: Name) = {
-    val dependentType =
-      Select(
-        Ident(exec),
-        newTypeName("AfterExecution"))
-    makeNew(genImperativeEventTpt(tparams) :: dependentType :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
-  }
-
-  protected[events] def newExecutionEvent(beforeTparams: List[Tree], afterTparams: List[Tree]) =
-    Apply(
-      Select(
-        New(
-          genExecutionEventTpt(beforeTparams, afterTparams)
-        ),
-        nme.CONSTRUCTOR),
-      Nil)
+  protected[events] def newAfterExecEvent(tparams: List[Tree]) =
+    makeNew(genImperativeEventTpt(tparams) :: Nil, emptyValDef, Nil, List(Nil), NoPosition, NoPosition)
 
   private def tupleize(params: List[Tree]) = 
     if(params.size > 1)
@@ -84,34 +65,6 @@ trait ObservableUtil {
         newTypeName("ImperativeEvent")
       ),
     generics)
-  }
-
-  protected[events] def genExecutionEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
-    val beforeG = tupleize(beforeTparams)
-    val afterG = tupleize(afterTparams)
-    AppliedTypeTree(
-      Select(
-        Select(
-          Ident("scala"),
-          newTermName("events")
-        ),
-        newTypeName("ExecutionEvent")
-      ),
-    beforeG ::: afterG)
-  }
-
-  protected[events] def genIntervalEventTpt(beforeTparams: List[Tree], afterTparams: List[Tree]) = {
-    val beforeG = tupleize(beforeTparams)
-    val afterG = tupleize(afterTparams)
-    AppliedTypeTree(
-      Select(
-        Select(
-          Ident("scala"),
-          newTermName("events")
-        ),
-        newTypeName("IntervalEvent")
-      ),
-    beforeG ::: afterG)
   }
 
   protected[events] def superBeforeExec(meth: Name) =

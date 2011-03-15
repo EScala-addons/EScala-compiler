@@ -58,7 +58,6 @@ abstract class ObservableReferences extends Transform with TypingTransformers wi
               val eventName = kind match {
                 case BeforeExec() => buildBeforeEventName(methSymbol)
                 case AfterExec() => buildAfterEventName(methSymbol)
-                case Execution() => buildExecutionEventName(methSymbol)
               }
 
               // search the symbol in the class

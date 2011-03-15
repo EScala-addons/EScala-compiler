@@ -264,7 +264,6 @@ trait Definitions extends reflect.generic.StandardDefinitions {
     
     // @ESCALA
     lazy val EventClass = getClass("scala.events.Event")
-    lazy val IntervalEventClass = getClass("scala.events.IntervalEvent")    
     lazy val ImperativeEventClass = getClass("scala.events.ImperativeEvent")    
     // @ESCALA END
     

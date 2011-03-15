@@ -75,7 +75,6 @@ trait StdNames extends reflect.generic.StdNames with NameManglers {
     final val EVENTkw: TermName      = kw("evt")
     final val BEFOREkw: TermName     = kw("beforeExec")
     final val AFTERkw: TermName      = kw("afterExec")
-    final val EXECUTIONkw: TermName  = kw("execution")
     final val IMPERATIVEkw: TermName = kw("imperative")
     // @ESCALA END
     

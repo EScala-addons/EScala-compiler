@@ -974,7 +974,6 @@ trait Scanners extends ScannersCommon {
     nme.EVENTkw     -> EVENT,
     nme.BEFOREkw    -> BEFORE,
     nme.AFTERkw     -> AFTER,
-    nme.EXECUTIONkw -> EXECUTION,
     nme.IMPERATIVEkw-> IMPERATIVE
     // @ESCALA END
   )

@@ -228,7 +228,6 @@ trait TreePrinters { trees: SymbolTable =>
           kind match {
             case BeforeExec() => print("beforeExec(")
             case AfterExec() => print("afterExec(")
-            case Execution() => print("execution(")
           }
           print(meth)
           print(")")

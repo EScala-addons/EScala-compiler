@@ -47,6 +47,8 @@ trait Event[+T] {
    */
   def then[U, S >: T](other: => Event[U]) = new EventNodeSequence[S, U, (S, U)](this, other, (p1: S, p2: U) => (p1, p2))
 
+  //def after[S >: T](other: => Event[_]) = new EventNodeSequence[Any,S,S](other, this, (_: Any, p: S) => p)
+
   /**
    * Event filtered with a predicate
    */
@@ -57,8 +59,6 @@ trait Event[+T] {
    */
   def &&[U >: T](pred: () => Boolean) = new EventNodeFilter[U](this, _ => pred())
 
-  def &&[U >: T](itp: IntervalEventFilter) = new EventNodeFilterInterval[U](this, itp)
-  
   /**
    * Event is triggered except if the other one is triggered
    */
@@ -83,12 +83,6 @@ trait Event[+T] {
    * Transform the event parameter independently of the parameter value
    */
   def map[U, S >: T](mapping: () => U) = new EventNodeMap[S, U](this, _ => mapping())
-
-  /**
-   * Event is triggered if the first event was already triggered but not the second one yet
-   */
-   //def between[U, V, S >: T](e1: Event[U], e2: Event[V]) = new BetweenEventNode[S,U,V](this, e1, e2)
-   //def between[U, V, S >: T](ep: (Event[U], Event[V])) = new BetweenEventNode[S,U,V](this, ep._1, ep._2)
 
   /**
    * Drop the event parameter; equivalent to map((_: Any) => ())
@@ -634,24 +628,6 @@ class EventNodeExcept[T,U](accpeted: Event[T], except: Event[U]) extends EventNo
   override def undeploy {
     accpeted -= onAccepted
     except -= onExcept
-  }
-}
-
-class EventNodeFilterInterval[T](event: Event[T], itp: IntervalEventFilter) extends EventNode[T] {
-
-  lazy val onEvt = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
-    if(itp())
-      reactions(id, v, reacts)
-  }
-
-  override def deploy {
-    event += onEvt
-    itp.deploy
-  }
-
-  override def undeploy {
-    event -= onEvt
-    itp.undeploy
   }
 }
 

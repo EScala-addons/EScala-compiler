@@ -1478,13 +1478,6 @@ self =>
               accept(RPAREN)
               after
             }
-          case EXECUTION =>
-            atPos(in.offset, in.skipToken) {
-              accept(LPAREN)
-              val exec = ExecEvent(Execution(), simpleExpr())
-              accept(RPAREN)
-              exec
-            }
           // @ESCALA END
           case _ =>
             syntaxErrorOrIncomplete("illegal start of simple expression", true)
