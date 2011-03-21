@@ -17,14 +17,14 @@ object Test {
     drag += {(x: Int, y: Int) => println("mouse drag to (" + x + ", " + y + ")")}
     drop += {(x: Int, y: Int) => println("mouse drop at (" + x + ", " + y + ")")}
 
-    mouseDown(1, 1)
-    mouseUp(1, 1)
-    mouseMove(2, 2)
-    mouseDown(2, 2)
-    mouseMove(2, 3)
-    mouseMove(2, 4)
-    mouseUp(2, 4)
-    mouseMove(2, 5)
+    mouseDown((1, 1))
+    mouseUp((1, 1))
+    mouseMove((2, 2))
+    mouseDown((2, 2))
+    mouseMove((2, 3))
+    mouseMove((2, 4))
+    mouseUp((2, 4))
+    mouseMove((2, 5))
   }
 }
 

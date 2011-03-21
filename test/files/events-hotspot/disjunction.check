@@ -1,0 +1,8 @@
+trigger event 2
+event 2 reaction 1
+event 2 reaction 2
+e3 = e1 || e2 reaction calls proceed = trigger event 2
+event 1 reaction 2 with proceed
+trigger event 1
+event 1 reaction 1
+e3 = e1 || e2 reaction calls proceed = trigger event 1

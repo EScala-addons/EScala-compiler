@@ -20,11 +20,11 @@ trait IntervalEvent[+Start, +Stop] {
   protected[this] def startCondition(v: Start) = true
   protected[this] def endCondition(v: Stop) = true
 
-  protected[this] lazy val started = (id: Int, v: Start, reacts: ListBuffer[(() => Unit, Trace)]) => {
+  protected[this] lazy val started = (id: Int, v: Start, proceed: () => Unit, reacts: ListBuffer[(() => Unit, Trace)]) => {
     _active = true
   }
 
-  protected[this] lazy val ended = (id: Int, v: Stop, reacts: ListBuffer[(() => Unit, Trace)]) => {
+  protected[this] lazy val ended = (id: Int, v: Stop, proceed: () => Unit, reacts: ListBuffer[(() => Unit, Trace)]) => {
     _active = false
   }
 

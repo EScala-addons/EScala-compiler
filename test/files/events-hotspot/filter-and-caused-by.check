@@ -1,0 +1,16 @@
+trigger event 2 with v = 1
+reaction of event 2, v = 1
+reaction of e3 = e1 || e2 override proceed, v = 1
+trigger event 1 with v = 2
+reaction of event 1, v = 2
+reaction of e3 = e1 || e2 override proceed, v = 2
+e5 = e3 && causedBy(e1)
+reaction of event 5, v = 2
+now call proceed
+trigger event 1 with v = 2
+trigger event 2 with v = 3
+reaction of event 2, v = 3
+reaction of e3 = e1 || e2 override proceed, v = 3
+e4 = e3 && ((x:Int) => x = 3) calls proceed first
+trigger event 2 with v = 3
+reaction of event 4, v = 3

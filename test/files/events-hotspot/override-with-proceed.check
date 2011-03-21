@@ -1,0 +1,6 @@
+reaction 1 with 'proceed': trigger with value 5
+reaction 2: v = 5
+reaction 3
+reaction 4: v = 8
+reaction 1 with 'proceed': trigger with value 8
+reaction 3

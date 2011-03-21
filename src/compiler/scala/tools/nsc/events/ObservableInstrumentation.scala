@@ -138,7 +138,7 @@ abstract class ObservableInstrumentation extends Transform
           result
         case dd @ DefDef(mods, name, tparams, vparams, retType, body)
               if sym.isInstrumented =>
-                              
+
             val pos = sym.pos
             
             // generate the implementation method
@@ -193,6 +193,7 @@ abstract class ObservableInstrumentation extends Transform
               // Unit as generic parameter
               genericParam = List(Ident(newTypeName("Unit")))
             }
+
             val tupledGenericParam =
               if(genericParam.size > 1)
                 genTupleType(genericParam)
@@ -234,7 +235,7 @@ abstract class ObservableInstrumentation extends Transform
               execEv = typeEvent(execEv)
               beforeEv = typeEvent(beforeEv)
               afterEv = typeEvent(afterEv)
-              
+
               // the wrapper method
 
               // list of parameters
@@ -252,7 +253,7 @@ abstract class ObservableInstrumentation extends Transform
                   genTupleTerm(evArgs)
                 else
                   evArgs.head
-              
+
               val wrapperBody =
                 if(retType.tpe == definitions.UnitClass.tpe) {
                   // the return type is unit, do not save the result
@@ -266,7 +267,7 @@ abstract class ObservableInstrumentation extends Transform
                             Nil,
                             Apply(
                                 Ident(afterEvName),
-                                tupledEvArgs :: List(Literal(()))
+                                genTupleTerm(tupledEvArgs :: List(Literal(()))) :: Nil
                             )
                         ))
                 } else {
@@ -283,16 +284,13 @@ abstract class ObservableInstrumentation extends Transform
                                     args)) ::
                               Apply(
                                 Ident(afterEvName),
-                                tupledEvArgs :: List(Ident("res"))
+                                genTupleTerm(tupledEvArgs :: List(Ident("res"))) :: Nil
                               ) ::
                               Nil,
                               Ident(newTermName("res"))
                         ))
                 }
               
-              
-                        
-                        
               // the symbol and type information
               sym.resetFlag(DEFERRED)
               var wrapperMeth = atPos(pos)(DefDef(mods, name,

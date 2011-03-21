@@ -1,0 +1,5 @@
+reaction 2 overrides proceed, v = 5
+reaction 3
+trigger with v = 8
+reaction 1, v = 8
+reaction 3

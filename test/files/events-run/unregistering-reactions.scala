@@ -1,9 +1,9 @@
 object Test {
   def main(args: Array[String]) {
     val c = new C
-    c.e(1,2)
+    c.e((1,2))
     c.e -= c.react2 _
-    c.e(3,4)
+    c.e((3,4))
   }
 }
 

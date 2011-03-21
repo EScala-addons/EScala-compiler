@@ -188,7 +188,7 @@ PROPERTIES
 
   <!-- if ANT_OPTS is already set by the environment, it will be unaltered,
        but if it is unset it will take this default value. -->
-  <property name="env.ANT_OPTS" value="-Xms1024M -Xmx1024M -Xss1M -XX:MaxPermSize=192M -XX:+UseParallelGC" />
+  <property name="env.ANT_OPTS" value="-Xms1024M -Xmx2048M -Xss1M -XX:MaxPermSize=1024M -XX:+UseParallelGC" />
   
   <!--  to find max heap usage: -Xaprof ; currently at 980M for locker.comp -->
   <echo message="Forking with JVM opts: ${env.ANT_OPTS} ${jvm.opts}" />
@@ -1605,6 +1605,20 @@ BOOTRAPING TEST AND TEST SUITE
       </partest>
     </target>
     <!-- END @LS events -->
+
+    <target name="test.events.hotspot.suite" depends="pack.done">
+       <property name="partest.srcdir" value="files" />
+       <partest showlog="yes" erroronfailed="yes" javacmd="${java.home}/bin/java"
+                timeout="2400000" javaccmd="${javac.cmd}"
+                srcdir="${partest.srcdir}"
+                scalacopts="${scalac.args.optimise}">
+          <compilationpath>
+            <path refid="pack.classpath"/>
+            <fileset dir="${partest.dir}/files/lib" includes="*.jar" />
+          </compilationpath>
+          <runtests  dir="${partest.dir}/${partest.srcdir}/events-hotspot" includes="*.scala"/>
+        </partest>
+      </target>
 
 
   <target name="test.scaladoc" depends="pack.done">
