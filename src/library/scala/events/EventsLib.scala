@@ -62,8 +62,7 @@ trait Event[+T] {
   /**
    * Event is triggered except if the other one is triggered
    */
- def \[U >: T](other: Event[U]) = new EventNodeExcept[U](this, other)
- def \[U >: T,S](other: Event[S]) = new EventNodeExcept[U,S](this, other)
+  def \[U >: T,S](other: Event[S]) = new EventNodeExcept[U,S](this, other)
 
   /**
    * Events conjunction
@@ -78,13 +77,12 @@ trait Event[+T] {
   /**
    * Transform the event parameter
    */
- def map[U, S >: T, V >: S](mapping: V => U) = new EventNodeMap[S, U](this, mapping)
- def map[U, S >: T, V >: T <: S](mapping: S => U) = new EventNodeMap[V, U](this, mapping)
+  def map[U, S >: T, V >: T <: S](mapping: S => U) = new EventNodeMap[V, U](this, mapping)
 
- /**
-  * Transform the event parameter independently of the parameter value
-  */
- def map[U, S >: T](mapping: () => U) = new EventNodeMap[S, U](this, _ => mapping())
+  /**
+   * Transform the event parameter independently of the parameter value
+   */
+  def map[U, S >: T](mapping: () => U) = new EventNodeMap[S, U](this, _ => mapping())
 
   /**
    * Event is triggered if the first event was already triggered but not the second one yet
@@ -591,7 +589,6 @@ class EventNodeCond[T](event: =>Event[T]) extends EventNode[T] {
   }
 }
 
-class EventNodeExcept[T](accpeted: Event[T], except: Event[T]) extends EventNode[T] {
 class EventNodeExcept[T,U](accpeted: Event[T], except: Event[U]) extends EventNode[T] {
   
   private val myReacts = new ListBuffer[(() => Unit, Trace)]
@@ -607,8 +604,7 @@ class EventNodeExcept[T,U](accpeted: Event[T], except: Event[U]) extends EventNo
     }
   }
   
- lazy val onExcept = (id: Int, v: T, reacts: ListBuffer[(() => Unit, Trace)]) => {
- lazy val onExcept = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)]) => {
+  lazy val onExcept = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)]) => {
     // the except event is received, set the id to
     if(this.id != id) {
       this.id = id
@@ -697,15 +693,13 @@ object Variable {
 /*
  * Implementation of an observable list
  */
-class VarList[T]() extends Iterable[T] {
 class VarList[T] private(private val buffer: ListBuffer[T]) extends Iterable[T] {
 
- def this() = this(new ListBuffer[T])
+  def this() = this(new ListBuffer[T])
 
 
   // Use list buffer for implementation
- private val buffer = new ListBuffer[T]
- // private val buffer = new ListBuffer[T]
+  // private val buffer = new ListBuffer[T]
 
   // delegate the iterator implementation
   override def iterator = buffer.iterator
@@ -725,9 +719,9 @@ class VarList[T] private(private val buffer: ListBuffer[T]) extends Iterable[T] 
     buffer.clear()
   }
 
- def reverse: VarList[T] = new VarList(buffer.reverse)
+  def reverse: VarList[T] = new VarList(buffer.reverse)
 
- //def find(fun: T => Boolean): Option[T] = buffer.find(fun)
+  //def find(fun: T => Boolean): Option[T] = buffer.find(fun)
 
   /*
    * A convenience operator creating an event based on the list
