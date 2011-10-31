@@ -12,7 +12,7 @@ import java.util.Date
  * 
  */
 
-object TesterDepLevel {
+object Test {
   protected val tstampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SS ")
   def tstamp = tstampFormat.format(new Date)
 

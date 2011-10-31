@@ -9,7 +9,7 @@ import java.util.Date
  *  (sum of referenced Vars)
  */
 
-object TesterSignalRef {
+object Test {
 	protected val tstampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SS ")
     def tstamp = tstampFormat.format(new Date)
   
