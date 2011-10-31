@@ -1,0 +1,15 @@
+STARTING TESTING
+logging start: 2011-10-31 23:41:54:487 
+##################
+Var a myDeps: List(scala.events.behaviour.Dependent@14b7453, scala.events.behaviour.Dependent@c21495, scala.events.behaviour.Dependent@1d5550d, scala.events.behaviour.Dependent@c2ea3f)
+##################
+beh1.level: 1
+beh3.level: 2
+beh5.level: 3
+beh6.level: 4
+beh1 changed: (old, new): 15
+beh3 changed: (old, new): 25
+beh5 changed: (old, new): 45
+beh6 changed: (old, new): 85
+logging start: 2011-10-31 23:41:54:534 
+FINISHED TESTING

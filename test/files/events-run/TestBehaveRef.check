@@ -1,0 +1,16 @@
+STARTING TESTING
+logging start: 2011-10-31 23:42:22:598 
+init state: switch = ( if (x) a else b)
+a my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+b my deps (must be 0): List()
+changed x!
+a my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+b my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+changed b!
+a my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+b my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+changed a!
+a my deps (must be 0): List()
+b my deps (must be 1): List(scala.events.behaviour.Dependent@150bd4d)
+logging end: 2011-10-31 23:42:22:645 
+FINISHED TESTING

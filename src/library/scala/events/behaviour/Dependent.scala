@@ -17,7 +17,6 @@ object Dependent {
 }
 
 class Dependent extends Ordered[Dependent] {
-//class Dependent {
   var level : Int = -1
   
   def resetLevel() = {
@@ -25,7 +24,6 @@ class Dependent extends Ordered[Dependent] {
   }
   
   def compare(that : Dependent) = {
-    //that.level - this.level
     this.level - that.level
   }
   // Event reacting on Changing-update:

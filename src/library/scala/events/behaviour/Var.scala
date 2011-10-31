@@ -1,6 +1,5 @@
 package scala.events
 package behaviour
-//import scala.events._
 import scala.collection.mutable._
 import java.io._
 
@@ -21,16 +20,15 @@ object Var {
   def apply[T](init: T) = new Var(init)
 }
 
-class Var[T](init: T) {
+class Var[T](init: T) extends Reactive[T] {
   var _value: T = init
-  var myDeps = new ArrayStack[Dependent]
 
   /**
    * def apply:
    * getter for current value
    * @return currentValue : T
    */
-  def apply() = {
+  override def apply() = {
     currentDependents()
     _value
   }
@@ -58,21 +56,16 @@ class Var[T](init: T) {
 	  catch {
 		case np : NullPointerException => {
 			// println("NullPointerCatched!")
-			import java.io.FileWriter
-			import scala.compat.Platform
-			val writer = new FileWriter("C:/DEV/Scala/git/animals/signal-modules/logs/nullPointers.txt", false)
-			writer.write("NullPointerCatched" + Platform.EOL)
+			// import java.io.FileWriter
+			// import scala.compat.Platform
+			// val writer = new FileWriter("C:/DEV/Scala/git/animals/signal-modules/logs/nullPointers.txt", false)
+			// writer.write("NullPointerCatched" + Platform.EOL)
 		}
 	  }
       // 3: call observers on this Var by throwing changed event
       changed(newVal)
 	  onChange(oldVal, newVal)
     }
-
-  def flatten[U](implicit evf: T => Event[U]) = new EventNodeFlattenCh(this, evf)
-  lazy val onChange = new ImperativeEvent[(T,T)]
-  lazy val changed = new ImperativeEvent[T]
-  
 
   /**
    * def currentDependents
@@ -81,7 +74,7 @@ class Var[T](init: T) {
    * 	- Dependent.level updated if this is first reference in signal-expression
    * 	- Dependent of signal-expression owner is added to depList of this
    */
-  def currentDependents() = {
+  def currentDependents() : T = {
     val curStack = Signal.dependentStack.get
     curStack.foreach(dep =>
       {
@@ -91,6 +84,7 @@ class Var[T](init: T) {
           myDeps push dep
         }
       })
+     _value
   }
 
   /**
@@ -127,60 +121,5 @@ class Var[T](init: T) {
   
   // DEBUGGING DEF: TO REMOVE because internal data
   def getMyDeps() = myDeps.toList
-
-}
-
-
-/*
- * Implements reference to an event of an object (referenced by a behaviour)
- */
-class EventNodeFlattenCh[T, U](target: Var[T], evf: T => Event[U]) extends EventNode[U] {
-
-  /*
-  * Currently referenced event
-  */
-  private var ev: Event[U] = if (target() != null) evf(target()) else emptyevent
-
-  import EventsLibConversions._
-
-  /*
-   * Reaction to a change of the target
-   */
-  lazy val onTargetChanged = toTupledFun2((oldTarget: T, newTarget: T) => {
-    // unregister from the current event
-    ev -= onEvt
-    // retrieve and save the new event
-    if (newTarget != null)
-      ev = evf(newTarget)
-    else
-      ev = emptyevent
-    // register to the new event
-    ev += onEvt
-  })
-
-  /*
-   * Reaction to the currently referenced event
-   */
-  lazy val onEvt = (id: Int, v: U, reacts: ListBuffer[(() => Unit, Trace)]) => {
-    reactions(id, v, reacts)
-  }
-
-  /*
-  * Register to the referenced event and changes of the target
-  */
-  protected override def deploy {
-    ev += onEvt
-    target.onChange += onTargetChanged
-  }
-
-  /*
-  * Unregister from the referenced event and changes of the target
-  */
-  protected override def undeploy {
-    ev -= onEvt
-    target.onChange -= onTargetChanged
-  }
-
-  override def toString = getClass.getName
 
 }

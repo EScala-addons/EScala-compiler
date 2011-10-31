@@ -1,0 +1,10 @@
+STARTING TESTING
+logging start: 2011-10-31 23:42:45:655 
+got change! to: 103
+got change! to: 12
+got change! to: 22
+got change! to: 52
+got change! to: 102
+debug beh.changes(history): List(102, 52, 22, 12, 103, 3)
+FINISHED TESTING
+logging end: 2011-10-31 23:42:45:749 
